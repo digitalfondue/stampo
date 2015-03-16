@@ -1,0 +1,17 @@
+TODO:
+
+- "nice url" : done, add global config for disable nice url and override in the file
+
+- create a distribution package
+
+- init command
+	
+- handle more common errors
+- add help :D
+- add documentation and examples 
+				
+- explicit support metadata for 
+	- date (default format is ISO whatever?)
+	- tags
+	- categories
+	- authors

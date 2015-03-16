@@ -1,0 +1,43 @@
+Templates:
+==========
+
+For pebble template:
+ 	- _all_ the path of imported pebble templates must always be relative to 
+ 	  the root of the directories.
+ 	
+ 	- a fromMap function has been exposed, as pebble does not permit to have dynamic lookup for map key: e.g.:
+ 	  
+ 	  {{fromMap(myMap, value)}}
+
+
+Localization:
+=============
+
+For pebble template:
+	- use the custom message function, e.g.
+	 
+	  {{message('hello', header, header2)}}
+	  
+	  the first parameter is the property name and the others are the optional 
+	  parameters
+
+For freemarker template:
+	- use the message function, e.g. ${message('hello', 'param1')}
+	  the first parameter is the property name and the others are the optional 
+	  parameters
+
+
+Content extension:
+==================
+
+ - example for single language:
+ 
+ 	- no processor involved: 
+ 		- /content/test.txt will generate a file in /output/test.txt
+ 		
+ 	- markdown processor involved: (mapping from .md to .html is present)
+ 		- /content/test-markdown.md will generate a file in /output/test-markdown.html
+ 		
+ 	- pebble processor involved: (no mapping .peb to * is present)
+ 		- /content/test-pebble.peb will generate a file /output/test-pebble.peb
+ 		- /content/test-pebble-html.html.peb will generate a file /output/test-pebble-html.html
