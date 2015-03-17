@@ -9,7 +9,11 @@
 	<inceptionYear>2015</inceptionYear>
 
 	<name>stampo</name>
-	<url>http://maven.apache.org</url>
+	<url>https://github.com/digitalfondue/stampo</url>
+
+	<prerequisites>
+		<maven>3.0.1</maven>
+	</prerequisites>
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -29,7 +33,7 @@
 		<dependency>
 			<groupId>org.yaml</groupId>
 			<artifactId>snakeyaml</artifactId>
-			<version>1.14</version>
+			<version>1.15</version>
 		</dependency>
 		<dependency>
 			<groupId>com.mitchellbosecke</groupId>
@@ -39,7 +43,7 @@
 		<dependency>
 			<groupId>org.pegdown</groupId>
 			<artifactId>pegdown</artifactId>
-			<version>1.4.2</version>
+			<version>1.5.0</version>
 		</dependency>
 		<dependency>
 			<groupId>org.freemarker</groupId>
@@ -67,6 +71,7 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-jar-plugin</artifactId>
+				<version>2.6</version>
 				<configuration>
 					<archive>
 						<manifest>
@@ -86,7 +91,7 @@
 					</includes>
 					<properties>
 						<owner>digitalfondue</owner>
-                        <email>info@digitalfondue.ch</email>
+						<email>info@digitalfondue.ch</email>
 					</properties>
 				</configuration>
 				<executions>
@@ -105,6 +110,30 @@
 					<execution>
 						<goals>
 							<goal>one-jar</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+			<plugin>
+				<groupId>org.eluder.coveralls</groupId>
+				<artifactId>coveralls-maven-plugin</artifactId>
+				<version>3.0.1</version>
+			</plugin>
+			<plugin>
+				<groupId>org.jacoco</groupId>
+				<artifactId>jacoco-maven-plugin</artifactId>
+				<version>0.7.2.201409121644</version>
+				<executions>
+					<execution>
+						<goals>
+							<goal>prepare-agent</goal>
+						</goals>
+					</execution>
+					<execution>
+						<id>report</id>
+						<phase>prepare-package</phase>
+						<goals>
+							<goal>report</goal>
 						</goals>
 					</execution>
 				</executions>
