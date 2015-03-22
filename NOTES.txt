@@ -41,3 +41,25 @@ Content extension:
  	- pebble processor involved: (no mapping .peb to * is present)
  		- /content/test-pebble.peb will generate a file /output/test-pebble.peb
  		- /content/test-pebble-html.html.peb will generate a file /output/test-pebble-html.html
+
+ 		
+Configuration file:
+===================
+
+Supported keys:
+
+ - locales
+ - default-locale
+ - use-ugly-url
+ 
+ 
+File metadata:
+==============
+
+Supported keys:
+
+ - date
+ - only-for-locales
+ - override-output-to-path
+ - override-locale
+ - override-layout

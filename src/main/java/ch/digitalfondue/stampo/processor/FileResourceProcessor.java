@@ -141,9 +141,10 @@ class FileResourceProcessor {
     if (extension.equals(".")) {
       extension = extension + ext1.orElse("");
     }
+    
+    boolean useUglyUrl = fileResource.getMetadata().getOverrideUseUglyUrl().orElseGet(configuration::useUglyUrl);
 
-    // FIXME disable the creation of "nice url" if ugly url is enabled or there is an override
-    if (".html".equals(extension) && !"index".equals(fileNameWithoutExt)
+    if (!useUglyUrl && ".html".equals(extension) && !"index".equals(fileNameWithoutExt)
         && !fileResource.getMetadata().getOverrideOutputToPath().isPresent()) {
       return fileNameWithoutExt + "/index.html";// nice url
     } else {

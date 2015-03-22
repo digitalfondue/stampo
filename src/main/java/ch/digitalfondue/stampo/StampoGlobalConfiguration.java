@@ -34,6 +34,10 @@ import ch.digitalfondue.stampo.i18n.ResourceBundleControl;
 import ch.digitalfondue.stampo.renderer.Renderer;
 
 public class StampoGlobalConfiguration {
+  
+  public static final String CONF_LOCALES = "locales";
+  public static final String CONF_DEFAULT_LOCALES = "default-locale";
+  public static final String CONF_USE_UGLY_URL = "use-ugly-url";
 
   private final Map<String, Object> configuration;
   private final List<Locale> locales;
@@ -83,7 +87,7 @@ public class StampoGlobalConfiguration {
   @SuppressWarnings("unchecked")
   private static List<Locale> extractLocales(Map<String, Object> configuration) {
 
-    Object locales = configuration.getOrDefault("locales", Locale.ENGLISH.toString());
+    Object locales = configuration.getOrDefault(CONF_LOCALES, Locale.ENGLISH.toString());
     List<String> l;
     if (locales instanceof String) {
       l = singletonList(locales.toString());
@@ -97,7 +101,7 @@ public class StampoGlobalConfiguration {
   }
 
   private static Optional<Locale> defaultLocale(Map<String, Object> configuration) {
-    return ofNullable(configuration.get("default-locale")).map(Object::toString).map(
+    return ofNullable(configuration.get(CONF_DEFAULT_LOCALES)).map(Object::toString).map(
         Locale::forLanguageTag);
   }
 
@@ -115,6 +119,10 @@ public class StampoGlobalConfiguration {
 
   public List<Locale> getLocales() {
     return locales;
+  }
+  
+  public boolean useUglyUrl() {
+    return ofNullable(configuration.get(CONF_USE_UGLY_URL)).map(Boolean.class::cast).orElse(false);
   }
 
   public Path getBaseDirectory() {

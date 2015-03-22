@@ -28,7 +28,6 @@ import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -108,8 +107,7 @@ public class FileResource implements Resource {
 
   @Override
   public long getCreationTime() {
-    return Optional.ofNullable(metadata.getRawMap().get("date")).map(x -> (Date) x)
-        .map(Date::getTime).orElse(Resource.super.getCreationTime());
+    return metadata.getDate().map(Date::getTime).orElseGet(() -> Resource.super.getCreationTime());
   }
 
   public String getContent() {

@@ -16,16 +16,23 @@
 package ch.digitalfondue.stampo.resource;
 
 import java.util.Collections;
-import java.util.LinkedHashSet;
+import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public class FileMetadata {
+  
+  public static final String METADATA_ONLY_FOR_LOCALES = "only-for-locales";
+  public static final String METADATA_OVERRIDE_OUTPUT_TO_PATH = "override-output-to-path";
+  public static final String METADATA_OVERRIDE_LOCALE = "override-locale";
+  public static final String METADATA_OVERRIDE_LAYOUT = "override-layout";
+  public static final String METADATA_OVERRIDE_USE_UGLY_URL = "override-use-ugly-url";
+  
+  public static final String METADATA_DATE = "date";
 
   private final Map<String, Object> metadata;
 
@@ -48,35 +55,29 @@ public class FileMetadata {
     }
   };
 
+  public Optional<Date> getDate() {
+    return Optional.ofNullable(metadata.get(METADATA_DATE)).map(Date.class::cast);
+  }
 
   public Optional<List<Locale>> getOnlyForLocales() {
-    return Optional.ofNullable(metadata.get("only-for-locales")).map(TO_STRING_LIST)
+    return Optional.ofNullable(metadata.get(METADATA_ONLY_FOR_LOCALES)).map(TO_STRING_LIST)
         .map((l) -> l.stream().map(Locale::forLanguageTag).collect(Collectors.toList()));
   }
 
   public Optional<String> getOverrideOutputToPath() {
-    return Optional.ofNullable(metadata.get("override-output-to-path")).map(Object::toString);
+    return Optional.ofNullable(metadata.get(METADATA_OVERRIDE_OUTPUT_TO_PATH)).map(Object::toString);
   }
 
   public Optional<Locale> getOverrideLocale() {
-    return Optional.ofNullable(metadata.get("override-locale")).map(Object::toString)
+    return Optional.ofNullable(metadata.get(METADATA_OVERRIDE_LOCALE)).map(Object::toString)
         .map(Locale::forLanguageTag);
   }
 
-  public Set<String> getTags() {
-    return toSet("tags");
-  }
-
-  public Set<String> getCategories() {
-    return toSet("categories");
-  }
-
   public Optional<String> getOverrideLayout() {
-    return Optional.ofNullable(metadata.get("override-layout")).map(Object::toString);
+    return Optional.ofNullable(metadata.get(METADATA_OVERRIDE_LAYOUT)).map(Object::toString);
   }
-
-  private Set<String> toSet(String propertyName) {
-    return new LinkedHashSet<>(Optional.ofNullable(metadata.get(propertyName)).map(TO_STRING_LIST)
-        .orElse(Collections.emptyList()));
+  
+  public Optional<Boolean> getOverrideUseUglyUrl() {
+    return Optional.ofNullable(metadata.get(METADATA_OVERRIDE_USE_UGLY_URL)).map(Boolean.class::cast);
   }
 }
