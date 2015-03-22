@@ -11,6 +11,20 @@
 	<name>stampo</name>
 	<url>https://github.com/digitalfondue/stampo</url>
 
+	<scm>
+		<connection>scm:git:git@github.com:digitalfondue/stampo.git</connection>
+		<developerConnection>scm:git:git@github.com:digitalfondue/stampo.git</developerConnection>
+		<url>https://github.com/digitalfondue/stampo.git</url>
+		<tag>HEAD</tag>
+	</scm>
+
+	<licenses>
+		<license>
+			<name>Apache License, Version 2.0</name>
+			<url>http://www.apache.org/licenses/LICENSE-2.0</url>
+		</license>
+	</licenses>
+
 	<prerequisites>
 		<maven>3.0.1</maven>
 	</prerequisites>
@@ -118,10 +132,31 @@
 				<groupId>com.jolira</groupId>
 				<artifactId>onejar-maven-plugin</artifactId>
 				<version>1.4.4</version>
+				<configuration>
+					<filename>stampo.jar</filename>
+				</configuration>
 				<executions>
 					<execution>
 						<goals>
 							<goal>one-jar</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+			<plugin>
+				<groupId>org.codehaus.mojo</groupId>
+				<artifactId>license-maven-plugin</artifactId>
+				<version>1.8</version>
+				<executions>
+					<execution>
+						<phase>generate-resources</phase>
+						<configuration>
+							<includedScopes>runtime,compile</includedScopes>
+							<includeTransitiveDependencies>true</includeTransitiveDependencies>
+							<fileTemplate>src/assembly/third-party.ftl</fileTemplate>
+						</configuration>
+						<goals>
+							<goal>add-third-party</goal>
 						</goals>
 					</execution>
 				</executions>
@@ -140,6 +175,25 @@
 						<id>prepare-agent</id>
 						<goals>
 							<goal>prepare-agent</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+			<plugin>
+				<artifactId>maven-assembly-plugin</artifactId>
+				<version>2.5.3</version>
+				<configuration>
+					<descriptors>
+						<descriptor>src/assembly/distribution.xml</descriptor>
+					</descriptors>
+					<finalName>stampo-${project.version}</finalName>
+					<appendAssemblyId>false</appendAssemblyId>
+				</configuration>
+				<executions>
+					<execution>
+						<phase>package</phase>
+						<goals>
+							<goal>single</goal>
 						</goals>
 					</execution>
 				</executions>

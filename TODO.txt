@@ -2,8 +2,6 @@ TODO:
 
 - "nice url" : done, add global config for disable nice url and override in the file
 
-- create a distribution package
-
 - init command
 	
 - handle more common errors
@@ -15,3 +13,5 @@ TODO:
 	- tags
 	- categories
 	- authors
+
+- add a global view of the generated structure as a model parameter for the sitemap generation usecase.
