@@ -37,6 +37,7 @@ import java.nio.file.Paths;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -45,6 +46,7 @@ import java.util.Optional;
 import java.util.function.BiConsumer;
 
 import org.yaml.snakeyaml.Yaml;
+import org.yaml.snakeyaml.constructor.ConstructorException;
 import org.yaml.snakeyaml.parser.ParserException;
 
 import ch.digitalfondue.stampo.exception.LayoutException;
@@ -86,11 +88,11 @@ public class Stampo {
     if (exists(configFile)) {
       Yaml yaml = new Yaml();
       try (InputStream is = newInputStream(configFile)) {
-        Map<String, Object> c = (Map<String, Object>) yaml.loadAs(is, Map.class);
+        Map<String, Object> c = ofNullable((Map<String, Object>) yaml.loadAs(is, Map.class)).orElse(Collections.emptyMap());
         this.configuration = new StampoGlobalConfiguration(c, baseInputDir, outputDir, renderers);
       } catch (IOException ioe) {
         throw new IllegalArgumentException(ioe);
-      } catch (ParserException pe) {
+      } catch (ConstructorException | ParserException pe) {
         throw new YamlParserException(configFile, pe);
       }
     } else {

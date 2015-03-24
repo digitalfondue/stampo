@@ -24,6 +24,7 @@ import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 import java.util.ResourceBundle;
 import java.util.ResourceBundle.Control;
 
@@ -64,7 +65,7 @@ public class ResourceBundleControl extends Control {
 
     @Override
     protected Object handleGetObject(String key) {
-      //TODO: add some kind of caching (store latest modification time)
+      // TODO: add some kind of caching (store latest modification time)
       return extractProperties(propFile).get(key);
     }
 
@@ -79,7 +80,9 @@ public class ResourceBundleControl extends Control {
       if (Files.exists(propFile)) {
         try (InputStream is = Files.newInputStream(propFile)) {
           properties =
-              Collections.unmodifiableMap((Map<String, Object>) new Yaml().loadAs(is, Map.class));
+              Collections.unmodifiableMap(Optional.ofNullable(
+                  (Map<String, Object>) new Yaml().loadAs(is, Map.class)).orElse(
+                  Collections.emptyMap()));
         } catch (ParserException pe) {
           YamlParserException ype = new YamlParserException(propFile, pe);
           System.err.println(ype.getMessage());

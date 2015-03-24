@@ -28,8 +28,10 @@ import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import org.yaml.snakeyaml.Yaml;
 
@@ -51,7 +53,7 @@ public class FileResource implements Resource {
     this.parent = parent;
     this.metadata = new FileMetadata(readContent().metadata);
   }
-  
+
   public FileResource(FileResource fileResource, Resource parent) {
     this.configuration = fileResource.configuration;
     this.path = fileResource.path;
@@ -118,31 +120,7 @@ public class FileResource implements Resource {
     return metadata;
   }
 
-  /**
-   * State machine for parsing a resource that can potentially have an embedded metadata section.
-   */
-  private static class Context {
-    private final Iterator<String> it;
-    private final StringBuilder beforePossibleMetadaSection = new StringBuilder();
-    private final StringBuilder possibleMetadataSection = new StringBuilder();
-    private final StringBuilder content = new StringBuilder();
-    private State state = State.SKIP_EMPTY_LINES;
 
-    public Context(Iterator<String> it) {
-      this.it = it;
-    }
-
-    public String getTextContent() {
-      if (state == State.NO_SEPARATOR) {
-        return new StringBuilder(beforePossibleMetadaSection.toString())
-            .append(possibleMetadataSection.toString()).append(content.toString()).toString();
-      } else if (state == State.END_SEPARATOR) {
-        return content.toString();
-      } else {
-        throw new IllegalStateException("cannot get text content in the current state");
-      }
-    }
-  }
 
   private static class Content {
     private final Map<String, Object> metadata;
@@ -154,75 +132,40 @@ public class FileResource implements Resource {
     }
   }
 
-  private enum State {
-    SKIP_EMPTY_LINES {
-      boolean process(Context ctx) {
-        while (ctx.it.hasNext()) {
-          String line = ctx.it.next();
-          ctx.beforePossibleMetadaSection.append(line).append("\n");
-          if ("".equals(line.trim())) {
-            continue;
-          } else if ("---".equals(line)) {
-            ctx.state = BEGIN_SEPARATOR;
-            return true;
-          } else {
-            ctx.state = NO_SEPARATOR;
-            return true;
-          }
-        }
-        ctx.state = NO_SEPARATOR;
-        return true;
-      }
-    },
-    BEGIN_SEPARATOR {
-      boolean process(Context ctx) {
-        while (ctx.it.hasNext()) {
-          String line = ctx.it.next();
-          if ("---".equals(line)) {
-            ctx.state = END_SEPARATOR;
-            return true;
-          } else {
-            ctx.possibleMetadataSection.append(line).append("\n");
-          }
-        }
-        ctx.state = NO_SEPARATOR;
-        return true;
-      }
-    },
-    END_SEPARATOR {
-      boolean process(Context ctx) {
-        readAllLines(ctx);
-        return false;
-      }
-    },
-    NO_SEPARATOR {
-      boolean process(Context ctx) {
-        readAllLines(ctx);
-        return false;
-      }
-    };
 
-    abstract boolean process(Context ctx);
 
-    void readAllLines(Context ctx) {
-      while (ctx.it.hasNext()) {
-        String line = ctx.it.next();
-        ctx.content.append(line).append("\n");
+  @SuppressWarnings("unchecked")
+  private static Content readContent(String content) {
+
+    Pattern p = Pattern.compile("^---$", Pattern.MULTILINE);
+
+    Matcher m = p.matcher(content);
+    if (m.find()) {
+
+      int findStart1 = m.start();
+      int findEnd1 = m.end();
+
+      if (content.substring(0, findStart1).trim().isEmpty() && m.find()) {
+        int findStart2 = m.start();
+        int findEnd2 = m.end();
+
+        // we remove the new line after the last "---"
+        String leftTrimmedContent = content.substring(findEnd2 + System.lineSeparator().length());
+
+        return new Content(Optional.ofNullable(
+            new Yaml().loadAs(content.substring(findEnd1, findStart2), Map.class)).orElse(
+            Collections.emptyMap()), leftTrimmedContent);
       }
     }
+
+
+    return new Content(Collections.emptyMap(), content);
   }
 
-
-  // TODO: add mode READ_ONLY_METADATA and READ_ONLY_CONTENT for possible optimization case
+  //
   private Content readContent() {
-    try (Stream<String> str = Files.lines(path, StandardCharsets.UTF_8)) {
-      Context context = new Context(str.iterator());
-      while (context.state.process(context));
-      @SuppressWarnings("unchecked")
-      Map<String, Object> metadata =
-          context.state == State.END_SEPARATOR ? (Map<String, Object>) new Yaml().loadAs(
-              context.possibleMetadataSection.toString(), Map.class) : Collections.emptyMap();
-      return new Content(metadata, context.getTextContent());
+    try {
+      return readContent(new String(Files.readAllBytes(path), StandardCharsets.UTF_8));
     } catch (IOException ioe) {
       throw new IllegalStateException(ioe);
     }

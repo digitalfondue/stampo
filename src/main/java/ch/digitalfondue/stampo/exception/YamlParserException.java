@@ -17,13 +17,11 @@ package ch.digitalfondue.stampo.exception;
 
 import java.nio.file.Path;
 
-import org.yaml.snakeyaml.parser.ParserException;
-
 public class YamlParserException extends RuntimeException {
 
   private static final long serialVersionUID = 5790094550670284429L;
 
-  public YamlParserException(Path configFile, ParserException pe) {
+  public YamlParserException(Path configFile, Throwable pe) {
     super("Error reading yaml file: " + configFile + " " + pe.getMessage(), pe);
   }
 

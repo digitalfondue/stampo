@@ -37,7 +37,4 @@ public interface Resource {
       throw new IllegalStateException(e);
     }
   }
-
-
-
 }

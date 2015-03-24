@@ -44,7 +44,6 @@ class FreemarkerTemplateLoader implements TemplateLoader {
   @Override
   public Reader getReader(Object templateSource, String encoding) throws IOException {
     Path template = (Path) templateSource;
-
     if (template.startsWith(contentDir)) {// content
       return new StringReader(FileResource.getContentFileResource(template, contentDir, root)
           .getContent());
@@ -60,10 +59,13 @@ class FreemarkerTemplateLoader implements TemplateLoader {
 
   @Override
   public Object findTemplateSource(String name) throws IOException {
-
+    //handle relative or absolute path names
+    Path orig = configuration.getContentDir().getFileSystem().getPath(name).normalize();
     Path p = configuration.getContentDir().getFileSystem().getPath("/" + name).normalize();
     if (p.startsWith(configuration.getBaseDirectory())) {
       return p;
+    } else if (orig.startsWith(configuration.getBaseDirectory())) {
+      return orig;
     } else {
       return configuration.getBaseDirectory().resolve(name);
     }
