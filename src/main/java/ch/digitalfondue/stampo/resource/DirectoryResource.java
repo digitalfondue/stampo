@@ -16,6 +16,7 @@
 package ch.digitalfondue.stampo.resource;
 
 import java.nio.file.Path;
+import java.util.Comparator;
 
 import ch.digitalfondue.stampo.StampoGlobalConfiguration;
 
@@ -23,8 +24,8 @@ public class DirectoryResource extends RootResource {
 
   private final Resource parent;
 
-  public DirectoryResource(StampoGlobalConfiguration configuration, Path path, Resource parent) {
-    super(configuration, path);
+  public DirectoryResource(StampoGlobalConfiguration configuration, Path path, Resource parent, Comparator<FileResource> fileResourceComparator) {
+    super(configuration, path, fileResourceComparator);
     this.parent = parent;
   }
 

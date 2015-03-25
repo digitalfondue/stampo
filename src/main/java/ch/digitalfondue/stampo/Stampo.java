@@ -38,6 +38,7 @@ import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -59,6 +60,7 @@ import ch.digitalfondue.stampo.renderer.freemarker.FreemarkerRenderer;
 import ch.digitalfondue.stampo.renderer.markdown.MarkdownRenderer;
 import ch.digitalfondue.stampo.renderer.pebble.PebbleRenderer;
 import ch.digitalfondue.stampo.resource.Directory;
+import ch.digitalfondue.stampo.resource.FileResource;
 import ch.digitalfondue.stampo.resource.LocaleAwareDirectory;
 import ch.digitalfondue.stampo.resource.PathOverrideAwareDirectory;
 import ch.digitalfondue.stampo.resource.PathOverrideAwareDirectory.Mode;
@@ -133,7 +135,9 @@ public class Stampo {
 
     cleanupBuildDirectory();
 
-    Directory root = new RootResource(configuration, configuration.getContentDir());
+    Comparator<FileResource> newFileFirst = Comparator.comparingLong(FileResource::getCreationTime).reversed();
+    
+    Directory root = new RootResource(configuration, configuration.getContentDir(), newFileFirst);
     Directory rootWithOverrideHidden = new PathOverrideAwareDirectory(Mode.HIDE, root);
     Directory rootWithOnlyOverride =
         new PathOverrideAwareDirectory(Mode.SHOW_ONLY_PATH_OVERRIDE, root);
@@ -151,7 +155,6 @@ public class Stampo {
                 (l) -> l.equals(locale) ? of(configuration.getBaseOutputDir()) : empty())//
                 .orElse(configuration.getBaseOutputDir().resolve(locale.toString()));
 
-        //uncheckedCreateDirectories(finalOutputDir);
 
         render(localeAwareRoot, new ResourceProcessor(finalOutputDir, localeAwareRoot,
             configuration), locale, outputHandler);
@@ -160,7 +163,6 @@ public class Stampo {
       render(rootWithOnlyOverride, new ResourceProcessor(configuration.getBaseOutputDir(),
           rootWithOnlyOverride, configuration), defaultLocale.orElse(Locale.ENGLISH), outputHandler);
     } else {
-      //uncheckedCreateDirectories(configuration.getBaseOutputDir());
       render(rootWithOverrideHidden, new ResourceProcessor(configuration.getBaseOutputDir(),
           rootWithOverrideHidden, configuration), locales.get(0), outputHandler);
 
@@ -170,14 +172,6 @@ public class Stampo {
 
     copyStaticDirectory(staticDirectoryAction);
   }
-
-//  private static void uncheckedCreateDirectories(Path dir) {
-//    try {
-//      createDirectories(dir);
-//    } catch (IOException e) {
-//      throw new IllegalArgumentException(e);
-//    }
-//  }
 
   private void render(Directory root, ResourceProcessor renderer, Locale locale,
       ProcessedInputHandler outputHandler) {

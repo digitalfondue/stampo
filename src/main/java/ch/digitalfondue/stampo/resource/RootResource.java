@@ -35,7 +35,7 @@ public class RootResource implements Resource, Directory {
   private final Map<String, Directory> directories;
   private final Map<String, FileResource> files;
 
-  public RootResource(StampoGlobalConfiguration configuration, Path path) {
+  public RootResource(StampoGlobalConfiguration configuration, Path path, Comparator<FileResource> fileResourceComparator) {
     List<Directory> ds = new ArrayList<>();
     List<FileResource> fs = new ArrayList<>();
 
@@ -43,7 +43,7 @@ public class RootResource implements Resource, Directory {
     try {
       Files.newDirectoryStream(path).forEach((p) -> {
         if (Files.isDirectory(p)) {
-          ds.add(new DirectoryResource(configuration, p, this));
+          ds.add(new DirectoryResource(configuration, p, this, fileResourceComparator));
         } else if (!mustBeIgnored(p, configuration.getIgnorePatterns())) {
           fs.add(new FileResource(configuration, p, this));
         }
@@ -52,8 +52,7 @@ public class RootResource implements Resource, Directory {
       throw new IllegalStateException(e);
     }
 
-    // new files first
-    fs.sort(Comparator.comparingLong(FileResource::getCreationTime).reversed());
+    fs.sort(fileResourceComparator);
 
     this.files = toMap(fs);
     //
