@@ -207,7 +207,7 @@ public class Stampo {
     }
   }
 
-  private void cleanupBuildDirectory() {
+  public void cleanupBuildDirectory() {
     if (exists(configuration.getBaseOutputDir()) && isDirectory(configuration.getBaseOutputDir())) {
       try {
         walkFileTree(configuration.getBaseOutputDir(), new SimpleFileVisitor<Path>() {
