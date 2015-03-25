@@ -1,5 +1,9 @@
 TODO:
 
+- add a static "directory" view. With the files ordered using a "natural" order.
+
+- tests
+
 - check and fix any inconsistencies created by the override-output-to-path property
 
 - init command
@@ -9,9 +13,9 @@ TODO:
 - add documentation and examples 
 				
 - explicit support metadata for 
-	- date (default format is ISO whatever?)
+	- date
 	- tags
 	- categories
 	- authors
 
-- add a global view of the generated structure as a model parameter for the sitemap generation usecase.
+- add a global view of the generated structure as a model parameter for the sitemap generation usecase

@@ -63,3 +63,4 @@ Supported keys:
  - override-output-to-path
  - override-locale
  - override-layout
+ - override-use-ugly-url
