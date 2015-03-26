@@ -66,13 +66,7 @@ class FileResourceProcessor {
 
   FileResourceProcessorOutput applyProcessors(FileResource fileResource, Locale locale) {
 
-    Map<String, Object> model = new HashMap<>();
-    model.put("root", root);
-    model.put("configuration", configuration);
-    model.put("metadata", fileResource.getMetadata());
-    model.put("resource", fileResource);
-    model.put("locale", locale);
-
+    Map<String, Object> model = ModelPreparer.prepare(root, configuration, locale, fileResource);
 
     Optional<String> extension = fileResource.getFileExtensions().stream().findFirst();
 

@@ -23,7 +23,6 @@ import java.io.Writer;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
-import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 
@@ -77,12 +76,7 @@ public class ResourceProcessor {
     FileResourceProcessorOutput processed =
         fileResourceProcessor.applyProcessors(resource, finalLocale);
 
-    Map<String, Object> model = new HashMap<>();
-    model.put("root", root);
-    model.put("configuration", configuration);
-    model.put("locale", finalLocale);
-    model.put("resource", resource);
-    model.put("metadata", resource.getMetadata());
+    Map<String, Object> model = ModelPreparer.prepare(root, configuration, finalLocale, resource);
     
     model.put("content", processed.getContent());
 
