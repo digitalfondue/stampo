@@ -16,16 +16,13 @@
 package ch.digitalfondue.stampo.resource;
 
 import java.nio.file.Path;
-import java.util.Comparator;
-
-import ch.digitalfondue.stampo.StampoGlobalConfiguration;
 
 public class DirectoryResource extends RootResource {
 
   private final Resource parent;
 
-  public DirectoryResource(StampoGlobalConfiguration configuration, Path path, Resource parent, Comparator<FileResource> fileResourceComparator) {
-    super(configuration, path, fileResourceComparator);
+  public DirectoryResource(ResourceFactory resourceFactory, Path path, Resource parent) {
+    super(resourceFactory, path);
     this.parent = parent;
   }
 

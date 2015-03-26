@@ -60,10 +60,13 @@ import ch.digitalfondue.stampo.renderer.freemarker.FreemarkerRenderer;
 import ch.digitalfondue.stampo.renderer.markdown.MarkdownRenderer;
 import ch.digitalfondue.stampo.renderer.pebble.PebbleRenderer;
 import ch.digitalfondue.stampo.resource.Directory;
+import ch.digitalfondue.stampo.resource.DirectoryResource;
 import ch.digitalfondue.stampo.resource.FileResource;
+import ch.digitalfondue.stampo.resource.FileResourceWithMetadataSection;
 import ch.digitalfondue.stampo.resource.LocaleAwareDirectory;
 import ch.digitalfondue.stampo.resource.PathOverrideAwareDirectory;
 import ch.digitalfondue.stampo.resource.PathOverrideAwareDirectory.Mode;
+import ch.digitalfondue.stampo.resource.ResourceFactory;
 import ch.digitalfondue.stampo.resource.RootResource;
 
 import com.beust.jcommander.JCommander;
@@ -137,10 +140,12 @@ public class Stampo {
 
     Comparator<FileResource> newFileFirst = Comparator.comparingLong(FileResource::getCreationTime).reversed();
     
-    Directory root = new RootResource(configuration, configuration.getContentDir(), newFileFirst);
-    Directory rootWithOverrideHidden = new PathOverrideAwareDirectory(Mode.HIDE, root);
+    ResourceFactory resourceFactory = new ResourceFactory(DirectoryResource::new, FileResourceWithMetadataSection::new, newFileFirst, configuration);
+    
+    Directory root = new RootResource(resourceFactory, configuration.getContentDir());
+    Directory rootWithOverrideHidden = new PathOverrideAwareDirectory(Mode.HIDE, root, FileResourceWithMetadataSection::new);
     Directory rootWithOnlyOverride =
-        new PathOverrideAwareDirectory(Mode.SHOW_ONLY_PATH_OVERRIDE, root);
+        new PathOverrideAwareDirectory(Mode.SHOW_ONLY_PATH_OVERRIDE, root, FileResourceWithMetadataSection::new);
 
     if (locales.size() > 1) {
 
@@ -148,7 +153,7 @@ public class Stampo {
 
       for (Locale locale : locales) {
 
-        Directory localeAwareRoot = new LocaleAwareDirectory(locale, rootWithOverrideHidden);
+        Directory localeAwareRoot = new LocaleAwareDirectory(locale, rootWithOverrideHidden, FileResourceWithMetadataSection::new);
 
         Path finalOutputDir =
             defaultLocale.flatMap(

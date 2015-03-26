@@ -19,24 +19,27 @@ import java.nio.file.Path;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.function.BiFunction;
 
 public class PathOverrideAwareDirectory implements Directory {
 
   private final Directory directory;
   private final Mode mode;
+  private final BiFunction<FileResource, Directory, FileResource> fileResourceWrapper;
 
   public enum Mode {
     HIDE, SHOW_ONLY_PATH_OVERRIDE
   }
 
-  public PathOverrideAwareDirectory(Mode mode, Directory directory) {
+  public PathOverrideAwareDirectory(Mode mode, Directory directory, BiFunction<FileResource, Directory, FileResource> fileResourceWrapper) {
     this.mode = mode;
     this.directory = directory;
+    this.fileResourceWrapper = fileResourceWrapper;
   }
 
   @Override
   public Resource getParent() {
-    return new PathOverrideAwareDirectory(mode, (Directory) directory.getParent());
+    return new PathOverrideAwareDirectory(mode, (Directory) directory.getParent(), fileResourceWrapper);
   }
 
   @Override
@@ -51,7 +54,7 @@ public class PathOverrideAwareDirectory implements Directory {
       boolean hasOverride = kv.getValue().getMetadata().getOverrideOutputToPath().isPresent();
       if ((hasOverride && mode == Mode.SHOW_ONLY_PATH_OVERRIDE)
           || (!hasOverride && mode == Mode.HIDE)) {
-        filtered.put(kv.getKey(), new FileResourceWithMetadataSection(kv.getValue(), this));
+        filtered.put(kv.getKey(), fileResourceWrapper.apply(kv.getValue(), this));
       }
     }
     return filtered;
@@ -61,7 +64,7 @@ public class PathOverrideAwareDirectory implements Directory {
   public Map<String, Directory> getDirectories() {
     Map<String, Directory> wrapped = new LinkedHashMap<>();
     for (Entry<String, Directory> k : directory.getDirectories().entrySet()) {
-      wrapped.put(k.getKey(), new PathOverrideAwareDirectory(mode, k.getValue()));
+      wrapped.put(k.getKey(), new PathOverrideAwareDirectory(mode, k.getValue(), fileResourceWrapper));
     }
     return wrapped;
   }

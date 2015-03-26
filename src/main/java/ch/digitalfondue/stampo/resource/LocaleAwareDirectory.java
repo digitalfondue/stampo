@@ -20,6 +20,7 @@ import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.function.BiFunction;
 import java.util.Optional;
 
 
@@ -27,10 +28,12 @@ public class LocaleAwareDirectory implements Directory {
 
   private final Locale locale;
   private final Directory directory;
+  private final BiFunction<FileResource, Directory, FileResource> fileResourceWrapper;
 
-  public LocaleAwareDirectory(Locale locale, Directory directory) {
+  public LocaleAwareDirectory(Locale locale, Directory directory, BiFunction<FileResource, Directory, FileResource> fileResourceWrapper) {
     this.locale = locale;
     this.directory = directory;
+    this.fileResourceWrapper = fileResourceWrapper;
   }
 
   @Override
@@ -50,7 +53,7 @@ public class LocaleAwareDirectory implements Directory {
               .anyMatch((x) -> x.equals(locale.toString())) : true;
 
       if (includeByMetadata.orElse(includeByFileExtension)) {
-        filtered.put(kv.getKey(), new FileResourceWithMetadataSection(kv.getValue(), this));
+        filtered.put(kv.getKey(), fileResourceWrapper.apply(kv.getValue(), this));
       }
     }
     return filtered;
@@ -60,14 +63,14 @@ public class LocaleAwareDirectory implements Directory {
   public Map<String, Directory> getDirectories() {
     Map<String, Directory> wrapped = new LinkedHashMap<>();
     for (Entry<String, Directory> k : directory.getDirectories().entrySet()) {
-      wrapped.put(k.getKey(), new LocaleAwareDirectory(locale, k.getValue()));
+      wrapped.put(k.getKey(), new LocaleAwareDirectory(locale, k.getValue(), fileResourceWrapper));
     }
     return wrapped;
   }
 
   @Override
   public Resource getParent() {
-    return new LocaleAwareDirectory(locale, (Directory) directory.getParent());
+    return new LocaleAwareDirectory(locale, (Directory) directory.getParent(), fileResourceWrapper);
   }
 
   @Override

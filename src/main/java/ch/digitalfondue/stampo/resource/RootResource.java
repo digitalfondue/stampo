@@ -27,15 +27,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import ch.digitalfondue.stampo.StampoGlobalConfiguration;
-
 public class RootResource implements Resource, Directory {
 
   private final Path path;
   private final Map<String, Directory> directories;
   private final Map<String, FileResource> files;
 
-  public RootResource(StampoGlobalConfiguration configuration, Path path, Comparator<FileResource> fileResourceComparator) {
+  public RootResource(ResourceFactory resourceFactory, Path path) {
     List<Directory> ds = new ArrayList<>();
     List<FileResource> fs = new ArrayList<>();
 
@@ -43,16 +41,16 @@ public class RootResource implements Resource, Directory {
     try {
       Files.newDirectoryStream(path).forEach((p) -> {
         if (Files.isDirectory(p)) {
-          ds.add(new DirectoryResource(configuration, p, this, fileResourceComparator));
-        } else if (!mustBeIgnored(p, configuration.getIgnorePatterns())) {
-          fs.add(new FileResourceWithMetadataSection(configuration, p, this));
+          ds.add(resourceFactory.directory(p, this));
+        } else if (!mustBeIgnored(p, resourceFactory.getConfiguration().getIgnorePatterns())) {
+          fs.add(resourceFactory.fileResource(p, this));
         }
       });
     } catch (IOException e) {
       throw new IllegalStateException(e);
     }
 
-    fs.sort(fileResourceComparator);
+    fs.sort(resourceFactory.getFileResourceComparator());
 
     this.files = toMap(fs);
     //
