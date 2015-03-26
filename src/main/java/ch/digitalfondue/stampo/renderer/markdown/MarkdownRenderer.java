@@ -36,7 +36,7 @@ public class MarkdownRenderer implements Renderer {
     PegDownProcessor pegDownProcessor = new PegDownProcessor();
     return (params) -> {
       return new FileResourceProcessorOutput(pegDownProcessor.markdownToHtml(params.fileResource
-          .getContent()), params.fileResource.getPath(), "markdown", params.locale);
+          .getContent().orElseThrow(IllegalArgumentException::new)), params.fileResource.getPath(), "markdown", params.locale);
     };
   }
 

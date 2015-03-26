@@ -80,7 +80,7 @@ class FileResourceProcessor {
         .map(processors::get)
         .orElse(
             (x) -> {
-              return new FileResourceProcessorOutput(fileResource.getContent(), fileResource
+              return new FileResourceProcessorOutput(fileResource.getContent().orElseThrow(IllegalArgumentException::new), fileResource
                   .getPath(), "none", locale);
             }).apply(new FileResourceParameters(fileResource, locale, model));
   }

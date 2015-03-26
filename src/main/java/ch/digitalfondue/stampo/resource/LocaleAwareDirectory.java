@@ -50,7 +50,7 @@ public class LocaleAwareDirectory implements Directory {
               .anyMatch((x) -> x.equals(locale.toString())) : true;
 
       if (includeByMetadata.orElse(includeByFileExtension)) {
-        filtered.put(kv.getKey(), new FileResource(kv.getValue(), this));
+        filtered.put(kv.getKey(), new FileResourceWithMetadataSection(kv.getValue(), this));
       }
     }
     return filtered;

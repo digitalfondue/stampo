@@ -24,8 +24,8 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 
 import ch.digitalfondue.stampo.StampoGlobalConfiguration;
+import ch.digitalfondue.stampo.renderer.Renderer;
 import ch.digitalfondue.stampo.resource.Directory;
-import ch.digitalfondue.stampo.resource.FileResource;
 import freemarker.cache.TemplateLoader;
 
 class FreemarkerTemplateLoader implements TemplateLoader {
@@ -45,8 +45,8 @@ class FreemarkerTemplateLoader implements TemplateLoader {
   public Reader getReader(Object templateSource, String encoding) throws IOException {
     Path template = (Path) templateSource;
     if (template.startsWith(contentDir)) {// content
-      return new StringReader(FileResource.getContentFileResource(template, contentDir, root)
-          .getContent());
+      return new StringReader(Renderer.getContentFileResource(template, contentDir, root)
+          .getContent().orElseThrow(IllegalArgumentException::new));
     } else {// layout or others (import/include)
       return newBufferedReader(template, StandardCharsets.UTF_8);
     }

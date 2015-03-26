@@ -15,6 +15,8 @@
  */
 package ch.digitalfondue.stampo.renderer;
 
+import java.nio.file.Path;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.function.Function;
 
@@ -24,6 +26,7 @@ import ch.digitalfondue.stampo.processor.FileResourceProcessorOutput;
 import ch.digitalfondue.stampo.processor.LayoutParameters;
 import ch.digitalfondue.stampo.processor.LayoutProcessorOutput;
 import ch.digitalfondue.stampo.resource.Directory;
+import ch.digitalfondue.stampo.resource.FileResource;
 
 public interface Renderer {
 
@@ -35,4 +38,22 @@ public interface Renderer {
       StampoGlobalConfiguration configuration,
       Map<String, Function<FileResourceParameters, FileResourceProcessorOutput>> extensionProcessor,
       Map<String, String> extensionTransformMapping);
+  
+  
+  static FileResource getContentFileResource(Path template, Path contentDir, Directory root) {
+    if (!template.startsWith(contentDir)) {
+      throw new IllegalArgumentException();
+    }
+    Path relativeContent = contentDir.relativize(template);
+    Directory base = root;
+    for (Iterator<Path> d = relativeContent.iterator(); d.hasNext();) {
+      Path p = d.next();
+      if (d.hasNext()) {
+        base = base.getDirectories().get(p.toString());
+      } else {
+        return base.getFiles().get(p.toString());
+      }
+    }
+    throw new IllegalArgumentException("not found");
+  }
 }

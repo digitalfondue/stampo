@@ -51,7 +51,7 @@ public class PathOverrideAwareDirectory implements Directory {
       boolean hasOverride = kv.getValue().getMetadata().getOverrideOutputToPath().isPresent();
       if ((hasOverride && mode == Mode.SHOW_ONLY_PATH_OVERRIDE)
           || (!hasOverride && mode == Mode.HIDE)) {
-        filtered.put(kv.getKey(), new FileResource(kv.getValue(), this));
+        filtered.put(kv.getKey(), new FileResourceWithMetadataSection(kv.getValue(), this));
       }
     }
     return filtered;

@@ -45,7 +45,7 @@ public class RootResource implements Resource, Directory {
         if (Files.isDirectory(p)) {
           ds.add(new DirectoryResource(configuration, p, this, fileResourceComparator));
         } else if (!mustBeIgnored(p, configuration.getIgnorePatterns())) {
-          fs.add(new FileResource(configuration, p, this));
+          fs.add(new FileResourceWithMetadataSection(configuration, p, this));
         }
       });
     } catch (IOException e) {

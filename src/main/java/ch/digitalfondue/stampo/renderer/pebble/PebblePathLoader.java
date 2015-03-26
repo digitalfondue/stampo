@@ -23,8 +23,8 @@ import java.io.StringReader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 
+import ch.digitalfondue.stampo.renderer.Renderer;
 import ch.digitalfondue.stampo.resource.Directory;
-import ch.digitalfondue.stampo.resource.FileResource;
 
 import com.mitchellbosecke.pebble.error.LoaderException;
 import com.mitchellbosecke.pebble.loader.Loader;
@@ -47,7 +47,7 @@ class PebblePathLoader implements Loader {
 
     try {
       if (template.startsWith(contentDir)) {
-        return new StringReader(FileResource.getContentFileResource(template, contentDir, root).getContent());
+        return new StringReader(Renderer.getContentFileResource(template, contentDir, root).getContent().orElseThrow(IllegalArgumentException::new));
       } else {
         // it's a layout
         return newBufferedReader(template, StandardCharsets.UTF_8);

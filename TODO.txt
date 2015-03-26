@@ -2,6 +2,11 @@ TODO:
 
 - add a static "directory" view. With the files ordered using a "natural" order.
 
+- support
+	- "paginate-over-directory" 
+	- "paginate-over-metadata" 
+  metadata suport: this will generate multiple page given a single template. 
+
 - tests
 
 - check and fix any inconsistencies created by the override-output-to-path property
