@@ -16,6 +16,7 @@
 package ch.digitalfondue.stampo.resource;
 
 import java.io.IOException;
+import java.nio.file.DirectoryStream;
 import java.nio.file.FileSystem;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -30,33 +31,12 @@ import java.util.Set;
 public class RootResource implements Resource, Directory {
 
   private final Path path;
-  private final Map<String, Directory> directories;
-  private final Map<String, FileResource> files;
+  private final ResourceFactory resourceFactory;
+
 
   public RootResource(ResourceFactory resourceFactory, Path path) {
-    List<Directory> ds = new ArrayList<>();
-    List<FileResource> fs = new ArrayList<>();
-
     this.path = path;
-    try {
-      Files.newDirectoryStream(path).forEach((p) -> {
-        if (Files.isDirectory(p)) {
-          ds.add(resourceFactory.directory(p, this));
-        } else if (!mustBeIgnored(p, resourceFactory.getConfiguration().getIgnorePatterns())) {
-          fs.add(resourceFactory.fileResource(p, this));
-        }
-      });
-    } catch (IOException e) {
-      throw new IllegalStateException(e);
-    }
-
-    fs.sort(resourceFactory.getFileResourceComparator());
-
-    this.files = toMap(fs);
-    //
-    ds.sort(Comparator.comparing(Directory::getName));
-
-    this.directories = toMap(ds);
+    this.resourceFactory = resourceFactory;
   }
 
   private static boolean mustBeIgnored(Path p, Set<String> pathMatchers) {
@@ -73,11 +53,37 @@ public class RootResource implements Resource, Directory {
   }
 
   public Map<String, FileResource> getFiles() {
-    return files;
+    List<FileResource> fs = new ArrayList<>();
+    try (DirectoryStream<Path> dirs = Files.newDirectoryStream(path)) {
+      dirs.forEach((p) -> {
+        if (Files.isRegularFile(p) && !mustBeIgnored(p, resourceFactory.getConfiguration().getIgnorePatterns())) {
+          fs.add(resourceFactory.fileResource(p, this));
+        }
+      });
+    } catch (IOException e) {
+      throw new IllegalStateException(e);
+    }
+
+    fs.sort(resourceFactory.getFileResourceComparator());
+
+    return toMap(fs);
   }
 
   public Map<String, Directory> getDirectories() {
-    return directories;
+    List<Directory> ds = new ArrayList<>();
+    try (DirectoryStream<Path> dirs = Files.newDirectoryStream(path)) {
+      dirs.forEach((p) -> {
+        if (Files.isDirectory(p)) {
+          ds.add(resourceFactory.directory(p, this));
+        }
+      });
+    } catch (IOException e) {
+      throw new IllegalStateException(e);
+    }
+
+    ds.sort(Comparator.comparing(Directory::getName));
+
+    return toMap(ds);
   }
 
   @Override
