@@ -45,7 +45,7 @@ public class RootResource implements Resource, Directory {
   }
 
   private static <T extends Resource> Map<String, T> toMap(List<T> l) {
-    Map<String, T> m = new LinkedHashMap<>();
+    Map<String, T> m = new LinkedHashMap<>();//we care about insertion order
     for (T t : l) {
       m.put(t.getName(), t);
     }
@@ -54,11 +54,9 @@ public class RootResource implements Resource, Directory {
 
   public Map<String, FileResource> getFiles() {
     List<FileResource> fs = new ArrayList<>();
-    try (DirectoryStream<Path> dirs = Files.newDirectoryStream(path)) {
+    try (DirectoryStream<Path> dirs = Files.newDirectoryStream(path, (p) -> Files.isRegularFile(p) && !mustBeIgnored(p, resourceFactory.getConfiguration().getIgnorePatterns()))) {
       dirs.forEach((p) -> {
-        if (Files.isRegularFile(p) && !mustBeIgnored(p, resourceFactory.getConfiguration().getIgnorePatterns())) {
           fs.add(resourceFactory.fileResource(p, this));
-        }
       });
     } catch (IOException e) {
       throw new IllegalStateException(e);
@@ -71,11 +69,9 @@ public class RootResource implements Resource, Directory {
 
   public Map<String, Directory> getDirectories() {
     List<Directory> ds = new ArrayList<>();
-    try (DirectoryStream<Path> dirs = Files.newDirectoryStream(path)) {
+    try (DirectoryStream<Path> dirs = Files.newDirectoryStream(path, Files::isDirectory)) {
       dirs.forEach((p) -> {
-        if (Files.isDirectory(p)) {
           ds.add(resourceFactory.directory(p, this));
-        }
       });
     } catch (IOException e) {
       throw new IllegalStateException(e);
