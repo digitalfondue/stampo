@@ -20,13 +20,14 @@ import java.nio.file.DirectoryStream;
 import java.nio.file.FileSystem;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 public class RootResource implements Resource, Directory {
 
@@ -53,33 +54,33 @@ public class RootResource implements Resource, Directory {
   }
 
   public Map<String, FileResource> getFiles() {
-    List<FileResource> fs = new ArrayList<>();
     try (DirectoryStream<Path> dirs = Files.newDirectoryStream(path, (p) -> Files.isRegularFile(p) && !mustBeIgnored(p, resourceFactory.getConfiguration().getIgnorePatterns()))) {
-      dirs.forEach((p) -> {
-          fs.add(resourceFactory.fileResource(p, this));
-      });
+      
+      List<FileResource> fs = StreamSupport.stream(dirs.spliterator(), false)
+           .map(p -> resourceFactory.fileResource(p, this))
+           .sorted(resourceFactory.getFileResourceComparator())
+           .collect(Collectors.toList());
+      
+      return toMap(fs);
+      
     } catch (IOException e) {
       throw new IllegalStateException(e);
     }
-
-    fs.sort(resourceFactory.getFileResourceComparator());
-
-    return toMap(fs);
   }
 
   public Map<String, Directory> getDirectories() {
-    List<Directory> ds = new ArrayList<>();
     try (DirectoryStream<Path> dirs = Files.newDirectoryStream(path, Files::isDirectory)) {
-      dirs.forEach((p) -> {
-          ds.add(resourceFactory.directory(p, this));
-      });
+      
+      List<Directory> ds = StreamSupport.stream(dirs.spliterator(), false)
+          .map(p -> resourceFactory.directory(p, this))
+          .sorted(Comparator.comparing(Directory::getName))
+          .collect(Collectors.toList());
+      
+      return toMap(ds);
+      
     } catch (IOException e) {
       throw new IllegalStateException(e);
     }
-
-    ds.sort(Comparator.comparing(Directory::getName));
-
-    return toMap(ds);
   }
 
   @Override
