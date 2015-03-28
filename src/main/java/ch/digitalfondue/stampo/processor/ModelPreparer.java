@@ -50,7 +50,7 @@ public class ModelPreparer {
   }
   
   
-  private static final Optional<RootResource> staticResources(StampoGlobalConfiguration configuration) {
+  static final Optional<RootResource> staticResources(StampoGlobalConfiguration configuration) {
     if(Files.exists(configuration.getStaticDir())) {
       Comparator<FileResource> comparator = Comparator.comparing(FileResource::getName, new AlphaNumericStringComparator(Locale.ENGLISH));
       ResourceFactory resourceFactory = new ResourceFactory(DirectoryResource::new, StaticFileResource::new, comparator, configuration);
