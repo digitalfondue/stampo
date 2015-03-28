@@ -20,6 +20,7 @@ import static java.nio.file.Files.write;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.util.Arrays;
 
 import org.junit.Assert;
 import org.junit.Test;
@@ -32,36 +33,39 @@ public class StampoMultiLocalesTest {
   @Test
   public void testMultipleLocales() throws IOException {
     try (InputOutputDirs iod = TestUtils.get()) {
-      
+
       write(iod.inputDir.resolve("content/index.html.peb"),
           "<h1>Hello World {{locale}}</h1>".getBytes(StandardCharsets.UTF_8));
-      
+
       Files.createDirectories(iod.inputDir.resolve("content/post"));
-      
-      write(iod.inputDir.resolve("content/post/first.html"),
+
+      write(iod.inputDir.resolve("content/post/first.html.peb"),
           "<h1>First {{locale}}</h1>".getBytes(StandardCharsets.UTF_8));
-      
-      write(iod.inputDir.resolve("content/post/second.html"),
+
+      write(iod.inputDir.resolve("content/post/second.html.peb"),
           "<h1>Second {{locale}}</h1>".getBytes(StandardCharsets.UTF_8));
-      
-      write(iod.inputDir.resolve("configuration.yaml"), "locales: ['en', 'de','fr']".getBytes(StandardCharsets.UTF_8));
-      
+
+      write(iod.inputDir.resolve("configuration.yaml"),
+          "locales: ['en', 'de','fr']".getBytes(StandardCharsets.UTF_8));
+
       Stampo stampo = new Stampo(iod.inputDir, iod.outputDir);
-      
+
       stampo.build();
-      
-      Assert.assertTrue(Files.exists(iod.outputDir.resolve("en/index.html")));
-      Assert.assertTrue(Files.exists(iod.outputDir.resolve("de/index.html")));
-      Assert.assertTrue(Files.exists(iod.outputDir.resolve("fr/index.html")));
-      
-      Assert.assertTrue(Files.exists(iod.outputDir.resolve("en/post/first/index.html")));
-      Assert.assertTrue(Files.exists(iod.outputDir.resolve("de/post/first/index.html")));
-      Assert.assertTrue(Files.exists(iod.outputDir.resolve("fr/post/first/index.html")));
-      
-      
-      Assert.assertTrue(Files.exists(iod.outputDir.resolve("en/post/second/index.html")));
-      Assert.assertTrue(Files.exists(iod.outputDir.resolve("de/post/second/index.html")));
-      Assert.assertTrue(Files.exists(iod.outputDir.resolve("fr/post/second/index.html")));
+
+      for (String locale : Arrays.asList("en", "de", "fr")) {
+        Assert.assertTrue(Files.exists(iod.outputDir.resolve(locale + "/index.html")));
+        Assert.assertEquals("<h1>Hello World " + locale + "</h1>",
+            TestUtils.fileOutputAsString(iod, locale + "/index.html"));
+
+        Assert.assertTrue(Files.exists(iod.outputDir.resolve(locale + "/post/first/index.html")));
+        Assert.assertEquals("<h1>First " + locale + "</h1>",
+            TestUtils.fileOutputAsString(iod, locale + "/post/first/index.html"));
+
+        Assert.assertTrue(Files.exists(iod.outputDir.resolve(locale + "/post/second/index.html")));
+        Assert.assertEquals("<h1>Second " + locale + "</h1>",
+            TestUtils.fileOutputAsString(iod, locale + "/post/second/index.html"));
+      }
+
     }
   }
 }
