@@ -44,7 +44,7 @@ public class RootResource implements Resource, Directory {
     FileSystem fs = p.getFileSystem();
     return pathMatchers.stream().anyMatch(m -> fs.getPathMatcher(m).matches(p.getFileName()));
   }
-      
+
   private <T extends Resource> Map<String, T> fromDirectoryStream(Filter<Path> filter, Function<Path, T> mapper, Comparator<T> comparator) {
     
     //linkedhashmap as we want to preserve the insertion order

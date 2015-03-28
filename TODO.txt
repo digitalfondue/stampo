@@ -1,9 +1,8 @@
 TODO:
 
-- add a static "directory" view. With the files ordered using a "natural" order.
-
 - support
-	- "paginate-over-directory" 
+	- "paginate-over-content-directory" (for blogs)
+	- "paginate-over-static-directory" (for galleries) 
 	- "paginate-over-metadata" 
   metadata suport: this will generate multiple page given a single template. 
 
@@ -24,3 +23,5 @@ TODO:
 	- authors
 
 - add a global view of the generated structure as a model parameter for the sitemap generation usecase
+
+- the serve command should print the listening port + ip

@@ -1,6 +1,21 @@
+Content and layout models:
+==========================
+In the content, the following values are present in the template:
+
+ - resource      : the FileResource currently processed, an instance of FileResource
+ - metadata      : the metadata of the resource currently processed, it's equivalent of resource.getMetadata(). An instance of FileMetadata
+ - root          : the root directory, an instance of RootResource
+ - configuration : the configuration, an instance of StampoGlobalConfiguration
+ - locale        : the current locale, an instance of java.util.Locale
+ - static        : the content of the static directory, an instance of RootResource. This is not always present!
+ 
+For the layout, an additional value is present:
+
+ - content       : the processed content, a String.
+
+
 Templates:
 ==========
-
 For pebble template:
  	- _all_ the path of imported pebble templates must always be relative to 
  	  the root of the directories.
