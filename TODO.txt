@@ -2,8 +2,7 @@ TODO:
 
 - support
 	- "paginate-over-content-directory" (for blogs)
-	- "paginate-over-static-directory" (for galleries) 
-	- "paginate-over-metadata" 
+	- "paginate-over-static-directory" (for galleries)  
   metadata suport: this will generate multiple page given a single template. 
 
 - tests

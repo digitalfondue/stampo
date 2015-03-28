@@ -34,16 +34,7 @@ public class StampoMultiLocalesTest {
   public void testMultipleLocales() throws IOException {
     try (InputOutputDirs iod = TestUtils.get()) {
 
-      write(iod.inputDir.resolve("content/index.html.peb"),
-          "<h1>Hello World {{locale}}</h1>".getBytes(StandardCharsets.UTF_8));
-
-      Files.createDirectories(iod.inputDir.resolve("content/post"));
-
-      write(iod.inputDir.resolve("content/post/first.html.peb"),
-          "<h1>First {{locale}}</h1>".getBytes(StandardCharsets.UTF_8));
-
-      write(iod.inputDir.resolve("content/post/second.html.peb"),
-          "<h1>Second {{locale}}</h1>".getBytes(StandardCharsets.UTF_8));
+      createFiles(iod);
 
       write(iod.inputDir.resolve("configuration.yaml"),
           "locales: ['en', 'de','fr']".getBytes(StandardCharsets.UTF_8));
@@ -53,19 +44,70 @@ public class StampoMultiLocalesTest {
       stampo.build();
 
       for (String locale : Arrays.asList("en", "de", "fr")) {
-        Assert.assertTrue(Files.exists(iod.outputDir.resolve(locale + "/index.html")));
-        Assert.assertEquals("<h1>Hello World " + locale + "</h1>",
-            TestUtils.fileOutputAsString(iod, locale + "/index.html"));
+        checkForLocale(iod, locale);
+      }
+    }
+  }
 
-        Assert.assertTrue(Files.exists(iod.outputDir.resolve(locale + "/post/first/index.html")));
-        Assert.assertEquals("<h1>First " + locale + "</h1>",
-            TestUtils.fileOutputAsString(iod, locale + "/post/first/index.html"));
 
-        Assert.assertTrue(Files.exists(iod.outputDir.resolve(locale + "/post/second/index.html")));
-        Assert.assertEquals("<h1>Second " + locale + "</h1>",
-            TestUtils.fileOutputAsString(iod, locale + "/post/second/index.html"));
+
+  @Test
+  public void testMultipleLocalesWithDefaultLang() throws IOException {
+    try (InputOutputDirs iod = TestUtils.get()) {
+
+      createFiles(iod);
+
+      write(iod.inputDir.resolve("configuration.yaml"), ("locales: ['en', 'de','fr']\n"
+          + "default-locale: en").getBytes(StandardCharsets.UTF_8));
+
+      Stampo stampo = new Stampo(iod.inputDir, iod.outputDir);
+
+      stampo.build();
+
+      for (String locale : Arrays.asList("de", "fr")) {
+        checkForLocale(iod, locale);
       }
 
+      Assert.assertTrue(Files.exists(iod.outputDir.resolve("index.html")));
+      Assert.assertEquals("<h1>Hello World en</h1>",
+          TestUtils.fileOutputAsString(iod, "index.html"));
+
+
+      Assert.assertTrue(Files.exists(iod.outputDir.resolve("post/first/index.html")));
+      Assert.assertEquals("<h1>First en</h1>",
+          TestUtils.fileOutputAsString(iod, "post/first/index.html"));
+
+      Assert.assertTrue(Files.exists(iod.outputDir.resolve("post/second/index.html")));
+      Assert.assertEquals("<h1>Second en</h1>",
+          TestUtils.fileOutputAsString(iod, "post/second/index.html"));
     }
+  }
+
+
+  private void createFiles(InputOutputDirs iod) throws IOException {
+    write(iod.inputDir.resolve("content/index.html.peb"),
+        "<h1>Hello World {{locale}}</h1>".getBytes(StandardCharsets.UTF_8));
+
+    Files.createDirectories(iod.inputDir.resolve("content/post"));
+
+    write(iod.inputDir.resolve("content/post/first.html.peb"),
+        "<h1>First {{locale}}</h1>".getBytes(StandardCharsets.UTF_8));
+
+    write(iod.inputDir.resolve("content/post/second.html.peb"),
+        "<h1>Second {{locale}}</h1>".getBytes(StandardCharsets.UTF_8));
+  }
+
+  private void checkForLocale(InputOutputDirs iod, String locale) throws IOException {
+    Assert.assertTrue(Files.exists(iod.outputDir.resolve(locale + "/index.html")));
+    Assert.assertEquals("<h1>Hello World " + locale + "</h1>",
+        TestUtils.fileOutputAsString(iod, locale + "/index.html"));
+
+    Assert.assertTrue(Files.exists(iod.outputDir.resolve(locale + "/post/first/index.html")));
+    Assert.assertEquals("<h1>First " + locale + "</h1>",
+        TestUtils.fileOutputAsString(iod, locale + "/post/first/index.html"));
+
+    Assert.assertTrue(Files.exists(iod.outputDir.resolve(locale + "/post/second/index.html")));
+    Assert.assertEquals("<h1>Second " + locale + "</h1>",
+        TestUtils.fileOutputAsString(iod, locale + "/post/second/index.html"));
   }
 }

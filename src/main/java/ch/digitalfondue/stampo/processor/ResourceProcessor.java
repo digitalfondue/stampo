@@ -54,6 +54,8 @@ public class ResourceProcessor {
   public void process(FileResource resource, Locale locale, ProcessedInputHandler outputHandler) {
 
     FileMetadata metadata = resource.getMetadata();
+    
+    //TODO here for the handling of a paginated resource
 
     Locale finalLocale = metadata.getOverrideLocale().orElse(locale);
     Path outputPath =
