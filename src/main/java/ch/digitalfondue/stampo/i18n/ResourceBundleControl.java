@@ -19,6 +19,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.nio.file.attribute.FileTime;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
@@ -27,6 +29,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.ResourceBundle;
 import java.util.ResourceBundle.Control;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.parser.ParserException;
@@ -54,19 +57,38 @@ public class ResourceBundleControl extends Control {
   }
 
 
-
   private static class StampoResourceBundle extends ResourceBundle {
 
     private final Path propFile;
+    private final AtomicReference<FileTime> lastModified;
+    private final AtomicReference<Map<String, Object>> properties;
 
     public StampoResourceBundle(Path propFile) {
       this.propFile = propFile;
+      this.lastModified = new AtomicReference<>(fromPropFile());
+      this.properties = new AtomicReference<>(extractProperties(propFile));
     }
 
     @Override
     protected Object handleGetObject(String key) {
-      // TODO: add some kind of caching (store latest modification time)
-      return extractProperties(propFile).get(key);
+      
+      FileTime curTime = fromPropFile();
+      
+      if (!curTime.equals(lastModified.get()) || curTime.equals(FileTime.fromMillis(0))) {
+        properties.set(extractProperties(propFile));
+        lastModified.set(curTime);
+      }
+      
+      return properties.get().get(key);
+    }
+    
+    private FileTime fromPropFile() {
+      try {
+        BasicFileAttributes attrs = Files.readAttributes(propFile, BasicFileAttributes.class);
+        return attrs.lastModifiedTime();
+      } catch (IOException ioe) {
+        return FileTime.fromMillis(0);
+      }
     }
 
     @Override

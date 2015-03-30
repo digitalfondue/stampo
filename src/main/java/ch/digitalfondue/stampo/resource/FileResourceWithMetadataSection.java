@@ -43,7 +43,7 @@ public class FileResourceWithMetadataSection implements FileResource {
     this.configuration = configuration;
     this.path = path;
     this.parent = parent;
-    this.metadata = new FileMetadata(readContent().metadata);
+    this.metadata = new FileMetadata(readContent(ReadMode.ONLY_METADATA).metadata);
   }
 
   public FileResourceWithMetadataSection(FileResource fileResource, Resource parent) {
@@ -65,7 +65,7 @@ public class FileResourceWithMetadataSection implements FileResource {
 
   @Override
   public Optional<String> getContent() {
-    return Optional.ofNullable(readContent().textContent);
+    return Optional.ofNullable(readContent(ReadMode.ONLY_TEXT).textContent);
   }
 
   @Override
@@ -89,9 +89,12 @@ public class FileResourceWithMetadataSection implements FileResource {
   }
 
   @SuppressWarnings("unchecked")
-  private static Content readContent(String content) {
+  private static Content readContent(String content, ReadMode mode) {
 
     Pattern p = Pattern.compile("^---$", Pattern.MULTILINE);
+    
+    Map<String, Object> metadata = Collections.emptyMap();
+    String contentInFile = content;
 
     Matcher m = p.matcher(content);
     if (m.find()) {
@@ -103,23 +106,29 @@ public class FileResourceWithMetadataSection implements FileResource {
         int findStart2 = m.start();
         int findEnd2 = m.end();
 
-        // we remove the new line after the last "---"
-        String leftTrimmedContent = content.substring(findEnd2 + System.lineSeparator().length());
+        // we remove the new line after the last "---" TODO: this could be problematic! we should detect which line separator the file use
+        contentInFile = content.substring(findEnd2 + System.lineSeparator().length());
+        
+        if (mode == ReadMode.ONLY_METADATA) {
+          metadata =
+              Optional.ofNullable(
+                  new Yaml().loadAs(content.substring(findEnd1, findStart2), Map.class)).orElse(
+                  Collections.emptyMap());
+        }
+      } 
+    } 
 
-        return new Content(Optional.ofNullable(
-            new Yaml().loadAs(content.substring(findEnd1, findStart2), Map.class)).orElse(
-            Collections.emptyMap()), leftTrimmedContent);
-      }
-    }
 
-
-    return new Content(Collections.emptyMap(), content);
+    return new Content(metadata, contentInFile);
+  }
+  
+  private enum ReadMode {
+    ONLY_METADATA, ONLY_TEXT
   }
 
-  //TODO small optimization, add mode: only metadata, only content
-  private Content readContent() {
+  private Content readContent(ReadMode mode) {
     try {
-      return readContent(new String(Files.readAllBytes(path), StandardCharsets.UTF_8));
+      return readContent(new String(Files.readAllBytes(path), StandardCharsets.UTF_8), mode);
     } catch (IOException ioe) {
       throw new IllegalStateException(ioe);
     }
