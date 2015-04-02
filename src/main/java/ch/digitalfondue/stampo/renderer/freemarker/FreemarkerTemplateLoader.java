@@ -23,7 +23,6 @@ import java.io.StringReader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 
-import ch.digitalfondue.stampo.StampoGlobalConfiguration;
 import ch.digitalfondue.stampo.renderer.Renderer;
 import ch.digitalfondue.stampo.resource.Directory;
 import freemarker.cache.TemplateLoader;
@@ -31,13 +30,13 @@ import freemarker.cache.TemplateLoader;
 class FreemarkerTemplateLoader implements TemplateLoader {
 
 
-  private final StampoGlobalConfiguration configuration;
   private final Directory root;
   private final Path contentDir;
+  private final Path baseDir;
 
-  public FreemarkerTemplateLoader(StampoGlobalConfiguration configuration, Directory root) {
-    this.configuration = configuration;
-    this.contentDir = configuration.getContentDir();
+  public FreemarkerTemplateLoader(Path contentDir, Path baseDir, Directory root) {
+    this.contentDir = contentDir;
+    this.baseDir = baseDir;
     this.root = root;
   }
 
@@ -60,14 +59,14 @@ class FreemarkerTemplateLoader implements TemplateLoader {
   @Override
   public Object findTemplateSource(String name) throws IOException {
     //handle relative or absolute path names
-    Path orig = configuration.getContentDir().getFileSystem().getPath(name).normalize();
-    Path p = configuration.getContentDir().getFileSystem().getPath("/" + name).normalize();
-    if (p.startsWith(configuration.getBaseDirectory())) {
+    Path orig = contentDir.getFileSystem().getPath(name).normalize();
+    Path p = contentDir.getFileSystem().getPath("/" + name).normalize();
+    if (p.startsWith(baseDir)) {
       return p;
-    } else if (orig.startsWith(configuration.getBaseDirectory())) {
+    } else if (orig.startsWith(baseDir)) {
       return orig;
     } else {
-      return configuration.getBaseDirectory().resolve(name);
+      return baseDir.resolve(name);
     }
   }
 

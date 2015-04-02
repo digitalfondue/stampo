@@ -96,7 +96,7 @@ public class FreemarkerRenderer implements Renderer {
     Configuration c = new Configuration(Configuration.VERSION_2_3_22);
     c.setDefaultEncoding("UTF-8");
     c.setLocalizedLookup(false);
-    c.setTemplateLoader(new FreemarkerTemplateLoader(configuration, root));
+    c.setTemplateLoader(new FreemarkerTemplateLoader(configuration.getContentDir(), configuration.getBaseDirectory(), root));
     return c;
   }
 
