@@ -1,5 +1,15 @@
 TODO:
 
+- override for in config file:
+	- output dir
+	- content
+	- layout
+	- static
+	- locales
+	
+  they must be relative
+  
+
 - support
 	- "paginate-over-content-directory" (for blogs)
 	- "paginate-over-static-directory" (for galleries)  

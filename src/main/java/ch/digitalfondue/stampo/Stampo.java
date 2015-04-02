@@ -244,7 +244,7 @@ public class Stampo {
     @Override
     public void run() {
       String workingPath = workingPath();
-      System.out.println("working path is " + workingPath);
+      System.out.println("stampo working path is " + workingPath);
       try {
         runWithWorkingPath(workingPath);
       } catch (MissingDirectoryException | YamlParserException | TemplateException
@@ -258,17 +258,6 @@ public class Stampo {
     }
 
     public abstract void runWithWorkingPath(String workingPath);
-  }
-
-  @Parameters
-  private static class Clean extends Command {
-
-    @Override
-    public void runWithWorkingPath(String workingPath) {
-      new Stampo(workingPath).cleanupBuildDirectory();
-      System.out.println("cleanup done");
-    }
-
   }
 
   @Parameters
@@ -286,6 +275,7 @@ public class Stampo {
     public void runWithWorkingPath(String workingPath) {
       Runnable triggerBuild = getBuildRunnable(workingPath);
       triggerBuild.run();
+      System.out.println("stampo serving at " + hostname + ":" + port);
       new ServeAndWatch(hostname, port, rebuildOnChange, new Stampo(workingPath).getConfiguration())
           .serve(triggerBuild);
     }
@@ -342,6 +332,13 @@ public class Stampo {
 
   @Parameters
   private static class Build extends Command {
+    
+    Build() {
+    }
+    
+    Build(List<String> args) {
+      this.path = args;
+    }
 
     @Override
     public void runWithWorkingPath(String workingPath) {
@@ -362,19 +359,17 @@ public class Stampo {
 
   public static void main(String[] args) throws IOException {
 
-    Map<String, Command> commands = new HashMap<>();
+    Map<String, Runnable> commands = new HashMap<>();
 
     commands.put("serve", new Serve());
     commands.put("check", new Check());
     commands.put("build", new Build());
-    commands.put("clean", new Clean());
 
     JCommander jc = new JCommander();
     commands.forEach((k, v) -> jc.addCommand(k, v));
 
     jc.parseWithoutValidation(args);
-    String command = ofNullable(jc.getParsedCommand()).orElse("build");
-
-    commands.get(command).run();
+    
+    ofNullable(jc.getParsedCommand()).map(commands::get).orElse(new Build(Arrays.asList(args))).run();
   }
 }
