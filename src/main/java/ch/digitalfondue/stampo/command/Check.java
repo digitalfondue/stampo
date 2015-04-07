@@ -17,6 +17,7 @@ package ch.digitalfondue.stampo.command;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.FileSystem;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -32,9 +33,18 @@ public class Check extends Command {
 
   @Override
   void runWithWorkingPath(String workingPath) {
-    Path output = Jimfs.newFileSystem().getPath("output");
+    try (FileSystem fs = Jimfs.newFileSystem()) {
+      buildAndPrintResult(workingPath, fs);
+    } catch (IOException ioe) {
+      throw new IllegalStateException(ioe);
+    }
+  }
 
-    new Stampo(Paths.get(workingPath), output).build((file, layout) -> {
+  private void buildAndPrintResult(String workingPath, FileSystem fs) {
+    Path output = fs.getPath("output");
+    Stampo stampo = new Stampo(Paths.get(workingPath), output);
+    
+    stampo.build((file, layout) -> {
       return String.format(
           "  from file: %s\n" + //
               "  selected rendering engine: %s\n" + //
@@ -68,10 +78,11 @@ public class Check extends Command {
           }
         }
       });
+      
+      System.out.println();
+      System.out.println("Everything seems ok!");
     } catch (IOException ioe) {
       throw new IllegalStateException(ioe);
     }
-    System.out.println();
-    System.out.println("Everything seems ok!");
   }
 }
