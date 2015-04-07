@@ -15,25 +15,28 @@
  */
 package ch.digitalfondue.stampo;
 
-import static java.nio.file.Files.copy;
 import static java.nio.file.Files.exists;
 import static java.nio.file.Files.isDirectory;
 import static java.nio.file.Files.newDirectoryStream;
 import static java.nio.file.Files.probeContentType;
+import io.undertow.Undertow;
+import io.undertow.io.DefaultIoCallback;
+import io.undertow.io.Sender;
+import io.undertow.server.HttpServerExchange;
+import io.undertow.util.Headers;
 
 import java.io.IOException;
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
-import java.net.InetSocketAddress;
+import java.nio.channels.FileChannel;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.util.Collections;
 import java.util.concurrent.DelayQueue;
 import java.util.concurrent.Delayed;
 
-import com.sun.net.httpserver.HttpExchange;
-import com.sun.net.httpserver.HttpServer;
+import org.xnio.IoUtils;
+
 
 public class ServeAndWatch {
 
@@ -49,14 +52,6 @@ public class ServeAndWatch {
     this.hostname = hostname;
     this.rebuildOnChange = rebuildOnChange;
     this.port = port;
-  }
-
-  private static HttpServer createServer(String hostname, int port) {
-    try {
-      return HttpServer.create(new InetSocketAddress(hostname, port), 0);
-    } catch (IOException ioe) {
-      throw new IllegalStateException(ioe);
-    }
   }
 
   public void serve(Runnable triggerBuild) {
@@ -90,77 +85,89 @@ public class ServeAndWatch {
       }).start();
 
     }
-
-    HttpServer server = createServer(hostname, port);
-
-    server.createContext(
-        "/",
-        (ex) -> {
+    
+    Undertow server = Undertow.builder()
+        .addHttpListener(port, hostname)
+        .setHandler((ex) -> {
           System.out.println("requested url: " + ex.getRequestURI());
-
           String req = ex.getRequestURI().toString().substring(1);
-
           Path p = configuration.getBaseOutputDir().resolve(req);
-
           boolean isPathDirectory = isDirectory(p);
-
           if (isPathDirectory && req.length() > 0 && !req.endsWith("/")) {
             // redirect to req+"/"
-            setLocation(ex, "/" + req + "/");
-            ex.sendResponseHeaders(302, -1);
+            ex.getResponseHeaders().put(Headers.LOCATION, "/" + req + "/");
+            ex.setResponseCode(302);
             return;
           }
-
+          
           if (isPathDirectory && exists(p.resolve("index.html"))) {
             p = p.resolve("index.html");
           }
-
+          
           if (isDirectory(p)) {
             setContentTypeAndNoCache(ex, "text/html;charset=utf-8");
-            ex.sendResponseHeaders(200, 0);
-            try (OutputStream os = ex.getResponseBody();
-                OutputStreamWriter osw = new OutputStreamWriter(os, StandardCharsets.UTF_8);
-                DirectoryStream<Path> ds = newDirectoryStream(p)) {
-
-              osw.write("<li><a href=\"..\">go up</a>");
+            ex.setResponseCode(200);
+            
+            try (DirectoryStream<Path> ds = newDirectoryStream(p)) {
+              Sender sender = ex.getResponseSender();
+              
+              StringBuilder sb = new StringBuilder("<li><a href=\"..\">go up</a>");
               for (Path path : ds) {
 
                 String fileName = p.relativize(path).toString();
-                osw.write(String.format("<li><a href=\"%s\">%s</a>", fileName, fileName));
+                sb.append(String.format("<li><a href=\"%s\">%s</a>", fileName, fileName));
               }
+              
+              sender.send(sb.toString(), StandardCharsets.UTF_8);
             }
           } else if (exists(p)) {
 
             String contentType = probeContentType(p);
             setContentTypeAndNoCache(ex, contentType.equals("text/html") ? "text/html;charset=utf-8"
                 : contentType);
-            ex.sendResponseHeaders(200, 0);
+            ex.setResponseCode(200);
 
-
-            try (OutputStream os = ex.getResponseBody()) {
-              copy(p, os);
-            }
+            Sender sender = ex.getResponseSender();
+            FileChannel fc = FileChannel.open(p, StandardOpenOption.READ);
+            sender.transferFrom(fc, new CloseFileChannelIoCallback(fc));
+            
           } else {
             setContentTypeAndNoCache(ex, "text/html;charset=utf-8");
-            ex.sendResponseHeaders(404, 0);
-            try (OutputStream os = ex.getResponseBody()) {
-              os.write(("404 not found " + ex.getRequestURI().toString())
-                  .getBytes(StandardCharsets.UTF_8));
-            }
+            ex.setResponseCode(404);
+            ex.getResponseSender().send("404 not found " + ex.getRequestURI().toString(), StandardCharsets.UTF_8);
           }
-        });
-    server.setExecutor(null);
+          
+        }).build();
     server.start();
   }
-
-  private static void setLocation(HttpExchange ex, String location) {
-    ex.getResponseHeaders().set("Location", location);
+  
+  public static class CloseFileChannelIoCallback extends DefaultIoCallback {
+    
+    private final FileChannel fc;
+    
+    public CloseFileChannelIoCallback(FileChannel fc) {
+      this.fc = fc;
+    }
+    
+    @Override
+    public void onComplete(HttpServerExchange exchange, Sender sender) {
+      IoUtils.safeClose(fc);
+      super.onComplete(exchange, sender);
+    }
+    
+    @Override
+    public void onException(HttpServerExchange exchange, Sender sender, IOException exception) {
+      IoUtils.safeClose(fc);
+      super.onException(exchange, sender, exception);
+    }
   }
+  
+  
 
-  private static void setContentTypeAndNoCache(HttpExchange ex, String contentType) {
-    ex.getResponseHeaders().set("Content-Type", contentType);
-    ex.getResponseHeaders().set("Cache-Control", "no-cache, no-store, must-revalidate");
-    ex.getResponseHeaders().set("Pragma", "no-cache"); 
-    ex.getResponseHeaders().set("Expires", "0");
+  private static void setContentTypeAndNoCache(HttpServerExchange ex, String contentType) {
+    ex.getResponseHeaders().put(Headers.CONTENT_TYPE, contentType)
+    .put(Headers.CACHE_CONTROL, "no-cache, no-store, must-revalidate")
+    .put(Headers.PRAGMA, "no-cache")
+    .put(Headers.EXPIRES, "0");
   }
 }

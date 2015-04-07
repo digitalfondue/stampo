@@ -29,17 +29,14 @@ import static java.util.Optional.ofNullable;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -50,9 +47,7 @@ import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.ConstructorException;
 import org.yaml.snakeyaml.parser.ParserException;
 
-import ch.digitalfondue.stampo.exception.LayoutException;
 import ch.digitalfondue.stampo.exception.MissingDirectoryException;
-import ch.digitalfondue.stampo.exception.TemplateException;
 import ch.digitalfondue.stampo.exception.YamlParserException;
 import ch.digitalfondue.stampo.processor.ResourceProcessor;
 import ch.digitalfondue.stampo.renderer.Renderer;
@@ -68,11 +63,6 @@ import ch.digitalfondue.stampo.resource.PathOverrideAwareDirectory;
 import ch.digitalfondue.stampo.resource.PathOverrideAwareDirectory.Mode;
 import ch.digitalfondue.stampo.resource.ResourceFactory;
 import ch.digitalfondue.stampo.resource.RootResource;
-
-import com.beust.jcommander.JCommander;
-import com.beust.jcommander.Parameter;
-import com.beust.jcommander.Parameters;
-import com.google.common.jimfs.Jimfs;
 
 /**
  *
@@ -226,150 +216,5 @@ public class Stampo {
         throw new IllegalStateException(e);
       }
     }
-  }
-
-  @Parameters
-  private static abstract class Command implements Runnable {
-    @Parameter(description = "path", arity = 1)
-    List<String> path;
-
-    @Parameter(description = "print stack trace", names = "debug")
-    boolean printStackTrace = false;
-
-    private String workingPath() {
-      return Paths.get(ofNullable(this.path).flatMap((l) -> l.stream().findFirst()).orElse("."))
-          .toAbsolutePath().normalize().toString();
-    }
-
-    @Override
-    public void run() {
-      String workingPath = workingPath();
-      System.out.println("stampo working path is " + workingPath);
-      try {
-        runWithWorkingPath(workingPath);
-      } catch (MissingDirectoryException | YamlParserException | TemplateException
-          | LayoutException e) {
-        System.err.println(e.getMessage());
-        if (printStackTrace) {
-          Optional.ofNullable(e.getCause()).ifPresent(Throwable::printStackTrace);
-        }
-        System.exit(1);
-      }
-    }
-
-    public abstract void runWithWorkingPath(String workingPath);
-  }
-
-  @Parameters
-  private static class Serve extends Command {
-    @Parameter(description = "port", names = "--port")
-    int port = 8080;
-
-    @Parameter(description = "hostname", names = "--hostname")
-    String hostname = "localhost";
-
-    @Parameter(description = "rebuild on change", names = "--rebuild-on-change")
-    boolean rebuildOnChange = true;
-
-    @Override
-    public void runWithWorkingPath(String workingPath) {
-      Runnable triggerBuild = getBuildRunnable(workingPath);
-      triggerBuild.run();
-      System.out.println("stampo serving at " + hostname + ":" + port);
-      new ServeAndWatch(hostname, port, rebuildOnChange, new Stampo(workingPath).getConfiguration())
-          .serve(triggerBuild);
-    }
-  }
-
-  @Parameters
-  private static class Check extends Command {
-
-    @Override
-    public void runWithWorkingPath(String workingPath) {
-      Path output = Jimfs.newFileSystem().getPath("output");
-
-      new Stampo(Paths.get(workingPath), output).build((file, layout) -> {
-        return String.format(
-            "  from file: %s\n" + //
-                "  selected rendering engine: %s\n" + //
-                "  locale for resource: %s\n" + //
-                "  selected layout path: %s\n" + //
-                "  selected layout engine: %s\n" + //
-                "  locale for layout: %s\n\n",//
-            file.getPath(),
-            file.getProcessorEngine(),//
-            file.getLocale(), layout.getPath().map(Object::toString).orElse("no layout"),
-            layout.getLayoutEngine(), layout.getLocale());
-      }, (in, out) -> {
-        try {
-          Files.write(out, Arrays.asList("  from static input " + in), StandardCharsets.UTF_8);
-        } catch (IOException ioe) {
-          throw new IllegalStateException(ioe);
-        }
-      });
-
-      System.out.println();
-      System.out.println("The build will generate the following files:");
-      System.out.println();
-      try {
-        Files.walk(output).forEach((p) -> {
-          if (!Files.isDirectory(p)) {
-            System.out.println("- " + output.relativize(p));
-            try {
-              Files.readAllLines(p, StandardCharsets.UTF_8).forEach(System.out::println);
-            } catch (Exception e) {
-              throw new IllegalStateException(e);
-            }
-          }
-        });
-      } catch (IOException ioe) {
-        throw new IllegalStateException(ioe);
-      }
-      System.out.println();
-      System.out.println("Everything seems ok!");
-    }
-  }
-
-  @Parameters
-  private static class Build extends Command {
-    
-    Build() {
-    }
-    
-    Build(List<String> args) {
-      this.path = args;
-    }
-
-    @Override
-    public void runWithWorkingPath(String workingPath) {
-      getBuildRunnable(workingPath).run();
-    }
-  }
-
-  private static Runnable getBuildRunnable(String workingPath) {
-    return () -> {
-      long start = System.currentTimeMillis();
-      Stampo s = new Stampo(workingPath);
-      s.build();
-      long end = System.currentTimeMillis();
-      System.out.println("built in " + (end - start) + "ms, output in "
-          + s.getConfiguration().getBaseOutputDir());
-    };
-  }
-
-  public static void main(String[] args) throws IOException {
-
-    Map<String, Runnable> commands = new HashMap<>();
-
-    commands.put("serve", new Serve());
-    commands.put("check", new Check());
-    commands.put("build", new Build());
-
-    JCommander jc = new JCommander();
-    commands.forEach((k, v) -> jc.addCommand(k, v));
-
-    jc.parseWithoutValidation(args);
-    
-    ofNullable(jc.getParsedCommand()).map(commands::get).orElse(new Build(Arrays.asList(args))).run();
   }
 }
