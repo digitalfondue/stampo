@@ -15,27 +15,41 @@
  */
 package ch.digitalfondue.stampo;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.nio.file.Files.exists;
 import static java.nio.file.Files.isDirectory;
 import static java.nio.file.Files.newDirectoryStream;
 import static java.nio.file.Files.probeContentType;
+import io.undertow.Handlers;
 import io.undertow.Undertow;
 import io.undertow.io.DefaultIoCallback;
 import io.undertow.io.Sender;
+import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
 import io.undertow.util.Headers;
+import io.undertow.websockets.core.AbstractReceiveListener;
+import io.undertow.websockets.core.StreamSourceFrameChannel;
+import io.undertow.websockets.core.WebSocketChannel;
+import io.undertow.websockets.core.WebSockets;
+import io.undertow.websockets.spi.WebSocketHttpExchange;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.nio.channels.FileChannel;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.DirectoryStream;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.Collections;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.DelayQueue;
 import java.util.concurrent.Delayed;
 
 import org.xnio.IoUtils;
+
+import com.google.common.io.CharStreams;
 
 
 public class ServeAndWatch {
@@ -55,6 +69,8 @@ public class ServeAndWatch {
   }
 
   public void serve(Runnable triggerBuild) {
+    
+    Set<WebSocketChannel> activeChannels = Collections.newSetFromMap(new ConcurrentHashMap<>());
 
     DelayQueue<Delayed> delayQueue = new DelayQueue<Delayed>();
 
@@ -75,6 +91,7 @@ public class ServeAndWatch {
             if (delayQueue.isEmpty()) {
               try {
                 triggerBuild.run();
+                activeChannels.stream().filter(WebSocketChannel::isOpen).forEach((wsc) -> WebSockets.sendText("change", wsc, null));
               } catch (Throwable e) {
                 e.printStackTrace();
               }
@@ -88,57 +105,115 @@ public class ServeAndWatch {
     
     Undertow server = Undertow.builder()
         .addHttpListener(port, hostname)
-        .setHandler((ex) -> {
-          System.out.println("requested url: " + ex.getRequestURI());
-          String req = ex.getRequestURI().toString().substring(1);
-          Path p = configuration.getBaseOutputDir().resolve(req);
-          boolean isPathDirectory = isDirectory(p);
-          if (isPathDirectory && req.length() > 0 && !req.endsWith("/")) {
-            // redirect to req+"/"
-            ex.getResponseHeaders().put(Headers.LOCATION, "/" + req + "/");
-            ex.setResponseCode(302);
-            return;
-          }
-          
-          if (isPathDirectory && exists(p.resolve("index.html"))) {
-            p = p.resolve("index.html");
-          }
-          
-          if (isDirectory(p)) {
-            setContentTypeAndNoCache(ex, "text/html;charset=utf-8");
-            ex.setResponseCode(200);
-            
-            try (DirectoryStream<Path> ds = newDirectoryStream(p)) {
-              Sender sender = ex.getResponseSender();
-              
-              StringBuilder sb = new StringBuilder("<li><a href=\"..\">go up</a>");
-              for (Path path : ds) {
-
-                String fileName = p.relativize(path).toString();
-                sb.append(String.format("<li><a href=\"%s\">%s</a>", fileName, fileName));
-              }
-              
-              sender.send(sb.toString(), StandardCharsets.UTF_8);
-            }
-          } else if (exists(p)) {
-
-            String contentType = probeContentType(p);
-            setContentTypeAndNoCache(ex, contentType.equals("text/html") ? "text/html;charset=utf-8"
-                : contentType);
-            ex.setResponseCode(200);
-
-            Sender sender = ex.getResponseSender();
-            FileChannel fc = FileChannel.open(p, StandardOpenOption.READ);
-            sender.transferFrom(fc, new CloseFileChannelIoCallback(fc));
-            
-          } else {
-            setContentTypeAndNoCache(ex, "text/html;charset=utf-8");
-            ex.setResponseCode(404);
-            ex.getResponseSender().send("404 not found " + ex.getRequestURI().toString(), StandardCharsets.UTF_8);
-          }
-          
-        }).build();
+        .setHandler(Handlers.path().addExactPath("/stampo-reload", websocketHandler(activeChannels)).addPrefixPath("/", staticResourcesHandler(configuration))).build();
     server.start();
+  }
+  
+  private static class WebsocketReceiveListener extends AbstractReceiveListener{
+    
+    private final Set<WebSocketChannel> activeChannels;
+
+    public WebsocketReceiveListener(Set<WebSocketChannel> activeChannels) {
+      this.activeChannels = activeChannels;
+    }
+
+    @Override
+    protected void onClose(WebSocketChannel webSocketChannel, StreamSourceFrameChannel channel)
+        throws IOException {
+      activeChannels.remove(webSocketChannel);
+      super.onClose(webSocketChannel, channel);
+    }
+    
+    @Override
+    protected void onError(WebSocketChannel channel, Throwable error) {
+      activeChannels.remove(channel);
+      super.onError(channel, error);
+    }
+  }
+  
+  private static HttpHandler websocketHandler(Set<WebSocketChannel> activeChannels) {
+    return Handlers.websocket((WebSocketHttpExchange exchange, WebSocketChannel channel) -> {
+      activeChannels.add(channel);
+      channel.getReceiveSetter().set(new WebsocketReceiveListener(activeChannels));
+      channel.resumeReceives();
+    });
+  }
+  
+  private static String getReloadScript() {
+    try (InputStream is = ServeAndWatch.class.getClassLoader().getResourceAsStream("stampo-reload-script.js")) {
+      return CharStreams.toString(new InputStreamReader(is, UTF_8));
+    } catch (IOException e) {
+      throw new IllegalStateException("cannot read stampo-reload-script.js", e);
+    }
+  }
+  
+  private static String injectWebsocketScript(String s, String reloadScript) {
+    return s.replaceFirst("<head>", "<head><script>/* websocket script for auto reload */ " + reloadScript +"</script>");
+  }
+  
+  private static HttpHandler staticResourcesHandler(StampoGlobalConfiguration configuration) {
+    
+    String reloadScript = getReloadScript();
+    
+    
+    return (ex) -> {
+      System.out.println("requested url: " + ex.getRequestURI());
+      String req = ex.getRequestURI().toString().substring(1);
+      Path p = configuration.getBaseOutputDir().resolve(req);
+      boolean isPathDirectory = isDirectory(p);
+      if (isPathDirectory && req.length() > 0 && !req.endsWith("/")) {
+        // redirect to req+"/"
+        ex.getResponseHeaders().put(Headers.LOCATION, "/" + req + "/");
+        ex.setResponseCode(302);
+        return;
+      }
+      
+      if (isPathDirectory && exists(p.resolve("index.html"))) {
+        p = p.resolve("index.html");
+      }
+      
+      if (isDirectory(p)) {
+        setContentTypeAndNoCache(ex, "text/html;charset=utf-8");
+        ex.setResponseCode(200);
+        
+        try (DirectoryStream<Path> ds = newDirectoryStream(p)) {
+          Sender sender = ex.getResponseSender();
+          
+          StringBuilder sb = new StringBuilder("<!DOCTYPE html><html><head></head><body><li><a href=\"..\">go up</a>");
+          for (Path path : ds) {
+
+            String fileName = p.relativize(path).toString();
+            sb.append(String.format("<li><a href=\"%s\">%s</a>", fileName, fileName));
+          }
+          
+          sb.append("</body></html>");
+          
+          sender.send(injectWebsocketScript(sb.toString(), reloadScript), UTF_8);
+        }
+      } else if (exists(p)) {
+
+        String contentType = probeContentType(p);
+        
+        boolean isHtmlFile = contentType.equals("text/html");
+        setContentTypeAndNoCache(ex, isHtmlFile ? "text/html;charset=utf-8"
+            : contentType);
+        ex.setResponseCode(200);
+
+        Sender sender = ex.getResponseSender();
+        
+        if(!isHtmlFile) {
+          FileChannel fc = FileChannel.open(p, StandardOpenOption.READ);
+          sender.transferFrom(fc, new CloseFileChannelIoCallback(fc));
+        } else {
+          sender.send(injectWebsocketScript(new String(Files.readAllBytes(p), UTF_8), reloadScript), UTF_8);
+        }
+        
+      } else {
+        setContentTypeAndNoCache(ex, "text/html;charset=utf-8");
+        ex.setResponseCode(404);
+        ex.getResponseSender().send(injectWebsocketScript("<!DOCTYPE html><html><head></head><body>404 not found " + ex.getRequestURI().toString()+ "</body></html>", reloadScript), UTF_8);
+      }
+    };
   }
   
   public static class CloseFileChannelIoCallback extends DefaultIoCallback {

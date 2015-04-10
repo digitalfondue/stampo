@@ -1,5 +1,8 @@
 TODO:
 
+- autoreload:
+	- option for disable
+
 - override for in config file:
 	- output dir
 	- content
@@ -8,7 +11,9 @@ TODO:
 	- locales
 	
   they must be relative
-  
+
+- webserver:
+	- instead of the no cache directive, add etag support...
 
 - support
 	- "paginate-over-content-directory" (for blogs)
@@ -17,10 +22,12 @@ TODO:
 
 - tests
 
+- data directory in yaml format
+
 - check and fix any inconsistencies created by the override-output-to-path property
 
 - init command
-	
+
 - handle more common errors
 - add help :D
 - add documentation and examples 
