@@ -28,7 +28,7 @@ import ch.digitalfondue.stampo.Stampo;
 import com.beust.jcommander.Parameters;
 import com.google.common.jimfs.Jimfs;
 
-@Parameters
+@Parameters(separators = "=")
 public class Check extends Command {
 
   @Override

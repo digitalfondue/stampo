@@ -30,12 +30,12 @@ import ch.digitalfondue.stampo.exception.YamlParserException;
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
 
-@Parameters
+@Parameters(separators = "=")
 public abstract class Command implements Runnable {
   @Parameter(description = "path", arity = 1)
   protected List<String> path;
 
-  @Parameter(description = "print stack trace", names = "debug")
+  @Parameter(description = "print stack trace", names = "--debug")
   protected boolean printStackTrace = false;
 
   private String workingPath() {

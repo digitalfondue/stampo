@@ -21,7 +21,6 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.LogManager;
-import java.util.logging.Logger;
 
 import ch.digitalfondue.stampo.command.Build;
 import ch.digitalfondue.stampo.command.Check;
@@ -37,9 +36,6 @@ public class StampoMain {
     // disable logging
     LogManager.getLogManager().reset();
     //
-
-    Logger.getLogger(Stampo.class.getName()).info("hello");
-
     Map<String, Runnable> commands = new HashMap<>();
 
     commands.put("serve", new Serve());

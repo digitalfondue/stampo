@@ -58,13 +58,17 @@ public class ServeAndWatch {
   private final String hostname;
   private final int port;
   private final boolean rebuildOnChange;
+  private final boolean autoReload;
+  private final String reloadScript = getReloadScript();
 
 
-  public ServeAndWatch(String hostname, int port, boolean rebuildOnChange,
+  public ServeAndWatch(String hostname, int port, 
+      boolean rebuildOnChange, boolean autoReload,
       StampoGlobalConfiguration configuration) {
     this.configuration = configuration;
     this.hostname = hostname;
     this.rebuildOnChange = rebuildOnChange;
+    this.autoReload = autoReload;
     this.port = port;
   }
 
@@ -103,11 +107,22 @@ public class ServeAndWatch {
 
     }
     
+    prepareServer(activeChannels).start();
+  }
+
+  private Undertow prepareServer(Set<WebSocketChannel> activeChannels) {
+    
+    HttpHandler handler =
+        autoReload ? Handlers.path()
+            .addExactPath("/stampo-reload", websocketHandler(activeChannels))
+            .addPrefixPath("/", staticResourcesHandler()) : staticResourcesHandler();
+    
     Undertow server = Undertow.builder()
         .addHttpListener(port, hostname)
-        .setHandler(Handlers.path().addExactPath("/stampo-reload", websocketHandler(activeChannels)).addPrefixPath("/", staticResourcesHandler(configuration))).build();
-    server.start();
+        .setHandler(handler).build();
+    return server;
   }
+  
   
   private static class WebsocketReceiveListener extends AbstractReceiveListener{
     
@@ -147,15 +162,11 @@ public class ServeAndWatch {
     }
   }
   
-  private static String injectWebsocketScript(String s, String reloadScript) {
-    return s.replaceFirst("<head>", "<head><script>/* websocket script for auto reload */ " + reloadScript +"</script>");
+  private String injectWebsocketScript(String s) {
+    return autoReload ? s.replaceFirst("<head>", "<head><script>/* websocket script for auto reload */ " + reloadScript +"</script>") : s;
   }
   
-  private static HttpHandler staticResourcesHandler(StampoGlobalConfiguration configuration) {
-    
-    String reloadScript = getReloadScript();
-    
-    
+  private HttpHandler staticResourcesHandler() {
     return (ex) -> {
       System.out.println("requested url: " + ex.getRequestURI());
       String req = ex.getRequestURI().toString().substring(1);
@@ -188,7 +199,7 @@ public class ServeAndWatch {
           
           sb.append("</body></html>");
           
-          sender.send(injectWebsocketScript(sb.toString(), reloadScript), UTF_8);
+          sender.send(injectWebsocketScript(sb.toString()), UTF_8);
         }
       } else if (exists(p)) {
 
@@ -205,18 +216,18 @@ public class ServeAndWatch {
           FileChannel fc = FileChannel.open(p, StandardOpenOption.READ);
           sender.transferFrom(fc, new CloseFileChannelIoCallback(fc));
         } else {
-          sender.send(injectWebsocketScript(new String(Files.readAllBytes(p), UTF_8), reloadScript), UTF_8);
+          sender.send(injectWebsocketScript(new String(Files.readAllBytes(p), UTF_8)), UTF_8);
         }
         
       } else {
         setContentTypeAndNoCache(ex, "text/html;charset=utf-8");
         ex.setResponseCode(404);
-        ex.getResponseSender().send(injectWebsocketScript("<!DOCTYPE html><html><head></head><body>404 not found " + ex.getRequestURI().toString()+ "</body></html>", reloadScript), UTF_8);
+        ex.getResponseSender().send(injectWebsocketScript("<!DOCTYPE html><html><head></head><body>404 not found " + ex.getRequestURI().toString()+ "</body></html>"), UTF_8);
       }
     };
   }
   
-  public static class CloseFileChannelIoCallback extends DefaultIoCallback {
+  static class CloseFileChannelIoCallback extends DefaultIoCallback {
     
     private final FileChannel fc;
     

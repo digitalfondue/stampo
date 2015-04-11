@@ -17,7 +17,7 @@ package ch.digitalfondue.stampo.command;
 
 import com.beust.jcommander.Parameters;
 
-@Parameters
+@Parameters(separators = "=")
 public class Help implements Runnable {
 
   @Override

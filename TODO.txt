@@ -1,7 +1,9 @@
 TODO:
 
+- add "relativeRootPath" variable
+
 - autoreload:
-	- option for disable
+	- return list of changed files (for css only reload)
 
 - override for in config file:
 	- output dir
@@ -11,14 +13,16 @@ TODO:
 	- locales
 	
   they must be relative
+  
+- taxonomy support
 
 - webserver:
 	- instead of the no cache directive, add etag support...
 
 - support
 	- "paginate-over-content-directory" (for blogs)
-	- "paginate-over-static-directory" (for galleries)  
-  metadata suport: this will generate multiple page given a single template. 
+	- "paginate-over-static-directory" (for galleries)
+	- "paginate-over-taxonomy"
 
 - tests
 
@@ -31,11 +35,5 @@ TODO:
 - handle more common errors
 - add help :D
 - add documentation and examples 
-				
-- explicit support metadata for 
-	- date
-	- tags
-	- categories
-	- authors
 
 - add a global view of the generated structure as a model parameter for the sitemap generation usecase

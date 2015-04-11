@@ -21,7 +21,7 @@ import ch.digitalfondue.stampo.Stampo;
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
 
-@Parameters
+@Parameters(separators = "=")
 public class Serve extends Command {
   @Parameter(description = "port", names = "--port")
   int port = 8080;
@@ -29,15 +29,24 @@ public class Serve extends Command {
   @Parameter(description = "hostname", names = "--hostname")
   String hostname = "localhost";
 
-  @Parameter(description = "rebuild on change", names = "--rebuild-on-change")
-  boolean rebuildOnChange = true;
+  @Parameter(description = "disable rebuild on change", names = "--disable-rebuild-on-change")
+  boolean disableRebuildOnChange;
+  
+  @Parameter(description = "disable auto reload", names = "--disable-auto-reload")
+  boolean disableAutoReload;
 
   @Override
   void runWithWorkingPath(String workingPath) {
     Runnable triggerBuild = getBuildRunnable(workingPath);
     triggerBuild.run();
     System.out.println("stampo serving at " + hostname + ":" + port);
-    new ServeAndWatch(hostname, port, rebuildOnChange, new Stampo(workingPath).getConfiguration())
+    if (disableAutoReload) {
+      System.out.println("auto-reload is disabled");
+    }
+    if (disableRebuildOnChange) {
+      System.out.println("rebuild on change is disabled");
+    }
+    new ServeAndWatch(hostname, port, !disableRebuildOnChange, !disableAutoReload, new Stampo(workingPath).getConfiguration())
         .serve(triggerBuild);
   }
 }

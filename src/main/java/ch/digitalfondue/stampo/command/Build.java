@@ -19,7 +19,7 @@ import java.util.List;
 
 import com.beust.jcommander.Parameters;
 
-@Parameters
+@Parameters(separators = "=")
 public class Build extends Command {
   
   public Build() {
