@@ -30,12 +30,8 @@ import ch.digitalfondue.stampo.command.Serve;
 import com.beust.jcommander.JCommander;
 
 public class StampoMain {
-
-
-  public static void main(String[] args) {
-    // disable logging
-    LogManager.getLogManager().reset();
-    //
+  
+  static Runnable fromParameters(String[] args) {
     Map<String, Runnable> commands = new HashMap<>();
 
     commands.put("serve", new Serve());
@@ -48,7 +44,15 @@ public class StampoMain {
 
     jc.parseWithoutValidation(args);
 
-    ofNullable(jc.getParsedCommand()).map(commands::get).orElse(new Build(Arrays.asList(args)))
-        .run();
+    return ofNullable(jc.getParsedCommand()).map(commands::get).orElse(new Build(Arrays.asList(args)));
+  }
+
+
+  public static void main(String[] args) {
+    // disable logging
+    LogManager.getLogManager().reset();
+    System.err.println(Arrays.asList(args));
+    //
+    fromParameters(args).run();
   }
 }

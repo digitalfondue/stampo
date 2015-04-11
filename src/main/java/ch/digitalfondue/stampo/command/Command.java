@@ -15,9 +15,8 @@
  */
 package ch.digitalfondue.stampo.command;
 
-import static java.util.Optional.ofNullable;
-
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -32,14 +31,15 @@ import com.beust.jcommander.Parameters;
 
 @Parameters(separators = "=")
 public abstract class Command implements Runnable {
+  
   @Parameter(description = "path", arity = 1)
-  protected List<String> path;
+  protected List<String> path = new ArrayList<>();
 
   @Parameter(description = "print stack trace", names = "--debug")
   protected boolean printStackTrace = false;
 
   private String workingPath() {
-    return Paths.get(ofNullable(this.path).flatMap((l) -> l.stream().findFirst()).orElse("."))
+    return Paths.get(this.path.stream().findFirst().orElse("."))
         .toAbsolutePath().normalize().toString();
   }
 
@@ -71,5 +71,13 @@ public abstract class Command implements Runnable {
       System.out.println("built in " + (end - start) + "ms, output in "
           + s.getConfiguration().getBaseOutputDir());
     };
+  }
+
+  public List<String> getPath() {
+    return path;
+  }
+
+  public boolean isPrintStackTrace() {
+    return printStackTrace;
   }
 }

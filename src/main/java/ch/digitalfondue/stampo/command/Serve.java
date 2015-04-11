@@ -24,16 +24,16 @@ import com.beust.jcommander.Parameters;
 @Parameters(separators = "=")
 public class Serve extends Command {
   @Parameter(description = "port", names = "--port")
-  int port = 8080;
+  private int port = 8080;
 
   @Parameter(description = "hostname", names = "--hostname")
-  String hostname = "localhost";
+  private String hostname = "localhost";
 
   @Parameter(description = "disable rebuild on change", names = "--disable-rebuild-on-change")
-  boolean disableRebuildOnChange;
+  private boolean disableRebuildOnChange = false;
   
   @Parameter(description = "disable auto reload", names = "--disable-auto-reload")
-  boolean disableAutoReload;
+  private boolean disableAutoReload = false;
 
   @Override
   void runWithWorkingPath(String workingPath) {
@@ -48,5 +48,21 @@ public class Serve extends Command {
     }
     new ServeAndWatch(hostname, port, !disableRebuildOnChange, !disableAutoReload, new Stampo(workingPath).getConfiguration())
         .serve(triggerBuild);
+  }
+
+  public int getPort() {
+    return port;
+  }
+
+  public String getHostname() {
+    return hostname;
+  }
+
+  public boolean isDisableRebuildOnChange() {
+    return disableRebuildOnChange;
+  }
+
+  public boolean isDisableAutoReload() {
+    return disableAutoReload;
   }
 }
