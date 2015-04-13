@@ -98,8 +98,11 @@ public class Stampo {
 
 
   public Stampo(String baseDirectory) {
-    this(get(baseDirectory).normalize(), get(baseDirectory).normalize().resolve("output")
-        .normalize());
+    this(get(baseDirectory));
+  }
+  
+  public Stampo(Path baseDirectory) {
+    this(baseDirectory.normalize(), baseDirectory.resolve("output").normalize());
   }
 
   public StampoGlobalConfiguration getConfiguration() {

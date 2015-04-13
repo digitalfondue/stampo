@@ -43,15 +43,12 @@ class FileResourceProcessor {
 
   private final Path contentDir, outputDir;
   private final StampoGlobalConfiguration configuration;
-  private final Directory root;
-
 
   FileResourceProcessor(StampoGlobalConfiguration configuration, Path outputDir, Directory root) {
 
     this.contentDir = configuration.getContentDir();
     this.outputDir = outputDir;
     this.configuration = configuration;
-    this.root = root;
 
     Map<String, Function<FileResourceParameters, FileResourceProcessorOutput>> p = new HashMap<>();
     Map<String, String> r = new HashMap<>();
@@ -64,9 +61,7 @@ class FileResourceProcessor {
   }
 
 
-  FileResourceProcessorOutput applyProcessors(FileResource fileResource, Locale locale) {
-
-    Map<String, Object> model = ModelPreparer.prepare(root, configuration, locale, fileResource);
+  FileResourceProcessorOutput applyProcessors(FileResource fileResource, Locale locale, Map<String, Object> model) {
 
     Optional<String> extension = fileResource.getFileExtensions().stream().findFirst();
 

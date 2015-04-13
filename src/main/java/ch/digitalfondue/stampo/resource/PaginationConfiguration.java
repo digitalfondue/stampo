@@ -15,25 +15,18 @@
  */
 package ch.digitalfondue.stampo.resource;
 
-import java.nio.file.Path;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Optional;
 
-public interface Directory extends Resource {
+public abstract class PaginationConfiguration {
 
-  Map<String, FileResource> getFiles();
 
-  Map<String, Directory> getDirectories();
-  
-  default Optional<Directory> getDirectory(Path path) {
-    
-    Directory currentDir = this;
-    Iterator<Path> it = path.iterator();
-    while(it.hasNext() && currentDir != null) {
-      currentDir = currentDir.getDirectories().get(it.next().toString());
-    }
-    
-    return Optional.ofNullable(currentDir);
+  public PaginationConfiguration(int pageSize) {
+    this.pageSize = pageSize;
   }
+
+  private final int pageSize;
+
+  public int getPageSize() {
+    return pageSize;
+  }
+
 }

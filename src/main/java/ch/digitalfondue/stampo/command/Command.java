@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Optional;
 
 import ch.digitalfondue.stampo.Stampo;
+import ch.digitalfondue.stampo.exception.ConfigurationException;
 import ch.digitalfondue.stampo.exception.LayoutException;
 import ch.digitalfondue.stampo.exception.MissingDirectoryException;
 import ch.digitalfondue.stampo.exception.TemplateException;
@@ -50,7 +51,7 @@ public abstract class Command implements Runnable {
     try {
       runWithWorkingPath(workingPath);
     } catch (MissingDirectoryException | YamlParserException | TemplateException
-        | LayoutException e) {
+        | LayoutException| ConfigurationException e) {
       System.err.println(e.getMessage());
       if (printStackTrace) {
         Optional.ofNullable(e.getCause()).ifPresent(Throwable::printStackTrace);

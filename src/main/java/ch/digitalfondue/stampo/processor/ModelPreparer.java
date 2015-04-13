@@ -36,13 +36,15 @@ import ch.digitalfondue.stampo.resource.StaticFileResource;
 public class ModelPreparer {
 
   
-  public static Map<String, Object> prepare(Directory root, StampoGlobalConfiguration configuration, Locale locale, FileResource resource) {
+  public static Map<String, Object> prepare(Directory root, StampoGlobalConfiguration configuration, Locale locale, FileResource resource, Map<String, Object> additionalData) {
     Map<String, Object> model = new HashMap<>();
     model.put("root", root);
     model.put("configuration", configuration);
     model.put("locale", locale);
     model.put("resource", resource);
     model.put("metadata", resource.getMetadata());
+    
+    model.putAll(additionalData);
     
     staticResources(configuration).ifPresent((staticRootResource) -> model.put("static", staticRootResource));
     

@@ -1,6 +1,9 @@
 TODO:
 
 - add "relativeRootPath" variable
+	- ModelPreparer.prepare
+	- add relativeRootPath variable
+	- add outputPath variable
 
 - autoreload:
 	- return list of changed files (for css only reload)
@@ -15,14 +18,20 @@ TODO:
   they must be relative
   
 - taxonomy support
+	- must extract all taxonomies
+	- must apply a locale filter over the taxonomies tree if it's in a multi language context
 
 - webserver:
 	- instead of the no cache directive, add etag support...
 
 - support
-	- "paginate-over-content-directory" (for blogs)
-	- "paginate-over-static-directory" (for galleries)
-	- "paginate-over-taxonomy"
+	- "paginate-over-directory" (static dir, content dir) : 
+		- if directory is a content, it should be possible to have the rendered content available
+	- "paginate-over-taxonomy" : taxonomy name(s) ?
+	
+	- "paginate-match" : glob/regexp pattern? (list)
+	- "paginate-recursive": true/false
+	- "paginate-page-size"
 
 - tests
 

@@ -13,27 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ch.digitalfondue.stampo.resource;
+package ch.digitalfondue.stampo.exception;
 
 import java.nio.file.Path;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Optional;
 
-public interface Directory extends Resource {
+public class ConfigurationException extends RuntimeException {
 
-  Map<String, FileResource> getFiles();
+  private static final long serialVersionUID = -1879914971177706190L;
 
-  Map<String, Directory> getDirectories();
-  
-  default Optional<Directory> getDirectory(Path path) {
-    
-    Directory currentDir = this;
-    Iterator<Path> it = path.iterator();
-    while(it.hasNext() && currentDir != null) {
-      currentDir = currentDir.getDirectories().get(it.next().toString());
-    }
-    
-    return Optional.ofNullable(currentDir);
+  public ConfigurationException(Path path, String message) {
+    super(path + " has a configuration problem: " + message);
   }
+
 }

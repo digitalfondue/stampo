@@ -33,8 +33,16 @@ public class FileMetadata {
   public static final String METADATA_OVERRIDE_LOCALE = "override-locale";
   public static final String METADATA_OVERRIDE_LAYOUT = "override-layout";
   public static final String METADATA_OVERRIDE_USE_UGLY_URL = "override-use-ugly-url";
+  
+  public static final String METADATA_PAGINATE_OVER_DIRECTORY = "paginate-over-directory";
+  public static final String METADATA_PAGINATE_OVER_TAXONOMY = "paginate-over-taxonomy";
+  public static final String METADATA_PAGINATE_MATCH = "paginate-match";
+  public static final String METADATA_PAGINATE_RECURSIVE = "paginate-recursive";
+  public static final String METADATA_PAGINATE_PAGE_SIZE = "paginate-page-size";
 
   public static final String METADATA_DATE = "date";
+  
+  public static final int DEFAULT_PAGE_SIZE = 10;
 
   private final Map<String, Object> metadata;
 
@@ -81,5 +89,22 @@ public class FileMetadata {
 
   public Optional<Boolean> getOverrideUseUglyUrl() {
     return ofNullable(metadata.get(METADATA_OVERRIDE_USE_UGLY_URL)).map(Boolean.class::cast);
+  }
+  
+  public Optional<DirectoryPaginationConfiguration> getDirectoryPaginationConfiguration() {
+    return ofNullable(metadata.get(METADATA_PAGINATE_OVER_DIRECTORY)).map(Object::toString).map((dir) -> {
+      List<String> ignorePattern = ofNullable(metadata.get(METADATA_PAGINATE_MATCH)).map(TO_STRING_LIST).orElse(Collections.emptyList());
+      int pageSize = ofNullable(metadata.get(METADATA_PAGINATE_PAGE_SIZE)).map(Integer.class::cast).orElse(DEFAULT_PAGE_SIZE);
+      boolean recursive = ofNullable(metadata.get(METADATA_PAGINATE_RECURSIVE)).map(Boolean.class::cast).orElse(false);
+      return new DirectoryPaginationConfiguration(dir, ignorePattern, pageSize, recursive);
+    });
+  }
+  
+  public Optional<TaxonomyPaginationConfiguration> getTaxonomyPaginationConfiguration() {
+    return ofNullable(metadata.get(METADATA_PAGINATE_OVER_TAXONOMY)).map(TO_STRING_LIST).map(taxonomies -> {
+      int pageSize = ofNullable(metadata.get(METADATA_PAGINATE_PAGE_SIZE)).map(Integer.class::cast).orElse(DEFAULT_PAGE_SIZE);
+      return new TaxonomyPaginationConfiguration(taxonomies, pageSize);
+    });
+    
   }
 }

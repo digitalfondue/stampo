@@ -51,7 +51,6 @@ public class StampoMain {
   public static void main(String[] args) {
     // disable logging
     LogManager.getLogManager().reset();
-    System.err.println(Arrays.asList(args));
     //
     fromParameters(args).run();
   }
