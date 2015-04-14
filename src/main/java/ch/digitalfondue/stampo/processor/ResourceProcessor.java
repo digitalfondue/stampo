@@ -44,6 +44,7 @@ import ch.digitalfondue.stampo.resource.FileMetadata;
 import ch.digitalfondue.stampo.resource.FileResource;
 import ch.digitalfondue.stampo.resource.TaxonomyPaginationConfiguration;
 
+//TODO: cleanup and break up the class
 public class ResourceProcessor {
   
   private static final String PAGE_DIRECTORY_NAME = "page";
@@ -75,6 +76,31 @@ public class ResourceProcessor {
     }
   }
   
+  public static class PageContent {
+    private final FileResource resource;
+    private final String renderedResource;
+    private final String relativeUrlToContent;
+    
+    public PageContent(FileResource resource, String renderedResource, String relativeUrlToContent) {
+      this.resource = resource;
+      this.renderedResource = renderedResource;
+      this.relativeUrlToContent = relativeUrlToContent;
+    }
+
+    public FileResource getResource() {
+      return resource;
+    }
+
+    public String getRenderedResource() {
+      return renderedResource;
+    }
+
+    public String getRelativeUrlToContent() {
+      return relativeUrlToContent;
+    }
+
+  }
+  
   public static class Page {
     
     private final long currentPage;
@@ -82,15 +108,15 @@ public class ResourceProcessor {
     private final long pageCount;
     private final long totalItemCount;
     private final BiFunction<Long, Long, String> pageNameGenerator;
+    private final List<PageContent> pageContent;
     
-    //list (File, content, relativeUrlToContent)
-    
-    public Page(long currentPage, long pageSize, long pageCount, long totalItemCount, BiFunction<Long, Long, String> pageNameGenerator) {
+    public Page(long currentPage, long pageSize, long pageCount, long totalItemCount, BiFunction<Long, Long, String> pageNameGenerator, List<PageContent> pageContent) {
       this.currentPage = currentPage;
       this.pageSize = pageSize;
       this.pageCount = pageCount;
       this.totalItemCount = totalItemCount;
       this.pageNameGenerator = pageNameGenerator;
+      this.pageContent = pageContent;
     }
     
     public long getCurrentPage() {
@@ -124,6 +150,10 @@ public class ResourceProcessor {
     public String getNextPageRelativeLink() {
       return pageNameGenerator.apply(currentPage, currentPage + 1);
     }
+
+    public List<PageContent> getPageContent() {
+      return pageContent;
+    }
   }
 
 
@@ -141,24 +171,30 @@ public class ResourceProcessor {
           + FileMetadata.METADATA_PAGINATE_OVER_DIRECTORY + " and "
           + FileMetadata.METADATA_PAGINATE_OVER_TAXONOMY + " attribute");
     }
-    //FIXME: it cannot contain only path, but path and a model!
     List<PathAndModelSupplier> outputPaths;
     
     
-    Path defaultOutputPath = metadata.getOverrideOutputToPath().map(outputDir::resolve)
-        .orElse(fileResourceProcessor.normalizeOutputPath(resource));
+    Path defaultOutputPath = extractOutputPath(resource);
     
     //TODO: this pagination strategy could be moved inside the FileResource (?)
     if (dirPagination.isPresent()) {
       outputPaths = handleDirPagination(resource, locale, dirPagination.get(), defaultOutputPath);
     } else if (taxonomyPagination.isPresent()) {
-      outputPaths = Collections.emptyList();
+      throw new UnsupportedOperationException("pagination over taxonomy not supported at the moment");
     } else {
       outputPaths = Collections.singletonList(new PathAndModelSupplier(defaultOutputPath, Collections::emptyMap));
     }
     //
     outputPaths.forEach(outputPathAndModel -> processToPath(resource, outputHandler, finalLocale, outputPathAndModel.outputPath, outputPathAndModel.modelSupplier));
     
+  }
+
+
+  private Path extractOutputPath(FileResource resource) {
+    FileMetadata metadata = resource.getMetadata();
+    Path defaultOutputPath = metadata.getOverrideOutputToPath().map(outputDir::resolve)
+        .orElse(fileResourceProcessor.normalizeOutputPath(resource));
+    return defaultOutputPath;
   }
   
 
@@ -182,42 +218,68 @@ public class ResourceProcessor {
         List<FileResource> files = dir.getFiles().values().stream()
             .filter(f-> {
               FileMetadata m = f.getMetadata();
+              //filter out the files with pagination
               return !m.getTaxonomyPaginationConfiguration().isPresent() && !m.getDirectoryPaginationConfiguration().isPresent();
-            }).collect(Collectors.toList()); //filter out the files with pagination
+            }).collect(Collectors.toList()); 
         
         long count = files.size();
         long pageSize = directoryPaginationConfiguration.getPageSize();
         
-        
-        
         //we already have the "index page"
         long additionalPages = Math.max((count / pageSize + (count % pageSize > 0 ? 1 : 0)) - 1, 0);
         
-        
-        outpuPaths.add(new PathAndModelSupplier(defaultOutputPath, buildModelForPage(1, pageSize, additionalPages, files, defaultOutputPath, resource)));//fixme model
+        Supplier<Map<String, Object>> indexPageModelSupplier = buildModelForPage(1, pageSize, additionalPages, files, defaultOutputPath, defaultOutputPath, resource, locale);
+        outpuPaths.add(new PathAndModelSupplier(defaultOutputPath, indexPageModelSupplier));//fixme model
         
         for(int i = 0; i < additionalPages; i++) {
-          outpuPaths.add(new PathAndModelSupplier(basePageDir.resolve(pageName(i + 2, resource)), buildModelForPage(i + 2, pageSize, additionalPages, files, defaultOutputPath, resource)));
+          Path pageOutputPath = basePageDir.resolve(pageName(i + 2, resource));
+          Supplier<Map<String, Object>> pageModelSupplier = buildModelForPage(i + 2, pageSize, additionalPages, files, defaultOutputPath, pageOutputPath, resource, locale);
+          outpuPaths.add(new PathAndModelSupplier(pageOutputPath, pageModelSupplier));
         }
       });
     } else {
-      
+      //static / content / other
+      //FIXME
+      throw new UnsupportedOperationException("pagination over 'not content' dir not supported at the moment");
     }
     
-    //static / content / other
     
     return outpuPaths;
   }
   
   private Supplier<Map<String, Object>> buildModelForPage(long page, long pageSize,
-      long additionalPages, List<FileResource> files, Path defaultOutputPath,
-      FileResource fileResource) {
+      long additionalPages, List<FileResource> files, Path defaultOutputPath, Path pagePath,
+      FileResource fileResource, Locale locale) {
     return () -> {
       Map<String, Object> model = new HashMap<>();
-      model.put("pagination", new Page(page, pageSize, additionalPages + 1, files.size(),
-          urlPaginationGenerator(defaultOutputPath, fileResource)));
+      List<PageContent> pageContent = files.stream().skip((page - 1) * pageSize).limit(pageSize).map(f -> toPageContent(f, locale, pagePath)).collect(Collectors.toList());
+      BiFunction<Long, Long, String> paginationFunction = urlPaginationGenerator(defaultOutputPath, fileResource);
+      model.put("pagination", new Page(page, pageSize, additionalPages + 1, files.size(), paginationFunction, pageContent));
       return model;
     };
+  }
+  
+  private PageContent toPageContent(FileResource fileResource, Locale locale, Path pagePath) {
+    
+    Map<String, Object> model =
+        ModelPreparer.prepare(root, configuration, locale, fileResource, Collections.emptyMap());
+
+    FileResourceProcessorOutput processed =
+        fileResourceProcessor.applyProcessors(fileResource, locale, model);
+    
+    Path outputPath = extractOutputPath(fileResource);
+    
+    //
+    if("index.html".equals(outputPath.getFileName().toString())) {
+      outputPath = outputPath.getParent();
+    }
+    
+    if("index.html".equals(pagePath.getFileName().toString())) {
+      pagePath = pagePath.getParent();
+    }
+    //
+    
+    return new PageContent(fileResource, processed.getContent(), pagePath.relativize(outputPath).toString());
   }
   
   private BiFunction<Long, Long, String> urlPaginationGenerator(Path defaultOutputPath,
@@ -267,11 +329,7 @@ public class ResourceProcessor {
   }
   
   private static String leftTrimSlash(String s) {
-    if(s.startsWith("/")) {
-      return s.substring(1); 
-    } else {
-      return s;
-    }
+    return s.startsWith("/") ? s.substring(1) : s;  
   }
 
 
