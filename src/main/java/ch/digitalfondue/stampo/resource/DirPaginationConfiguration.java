@@ -17,13 +17,13 @@ package ch.digitalfondue.stampo.resource;
 
 import java.util.List;
 
-public class DirectoryPaginationConfiguration extends PaginationConfiguration {
+public class DirPaginationConfiguration extends PaginationConfiguration {
 
   private final List<String> matchPattern;
   private final String baseDirectory;
   private final boolean recursive;
 
-  public DirectoryPaginationConfiguration(String baseDirectory, List<String> matchPattern,
+  public DirPaginationConfiguration(String baseDirectory, List<String> matchPattern,
       int pageSize, boolean recursive) {
     super(pageSize);
     this.baseDirectory = baseDirectory;

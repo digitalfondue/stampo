@@ -91,12 +91,12 @@ public class FileMetadata {
     return ofNullable(metadata.get(METADATA_OVERRIDE_USE_UGLY_URL)).map(Boolean.class::cast);
   }
   
-  public Optional<DirectoryPaginationConfiguration> getDirectoryPaginationConfiguration() {
+  public Optional<DirPaginationConfiguration> getDirectoryPaginationConfiguration() {
     return ofNullable(metadata.get(METADATA_PAGINATE_OVER_DIRECTORY)).map(Object::toString).map((dir) -> {
       List<String> ignorePattern = ofNullable(metadata.get(METADATA_PAGINATE_MATCH)).map(TO_STRING_LIST).orElse(Collections.emptyList());
       int pageSize = ofNullable(metadata.get(METADATA_PAGINATE_PAGE_SIZE)).map(Integer.class::cast).orElse(DEFAULT_PAGE_SIZE);
       boolean recursive = ofNullable(metadata.get(METADATA_PAGINATE_RECURSIVE)).map(Boolean.class::cast).orElse(false);
-      return new DirectoryPaginationConfiguration(dir, ignorePattern, pageSize, recursive);
+      return new DirPaginationConfiguration(dir, ignorePattern, pageSize, recursive);
     });
   }
   

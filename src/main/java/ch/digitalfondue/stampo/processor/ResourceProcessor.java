@@ -29,14 +29,13 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
-import java.util.function.BiFunction;
 import java.util.function.Supplier;
 
 import ch.digitalfondue.stampo.ProcessedInputHandler;
 import ch.digitalfondue.stampo.StampoGlobalConfiguration;
 import ch.digitalfondue.stampo.exception.ConfigurationException;
 import ch.digitalfondue.stampo.resource.Directory;
-import ch.digitalfondue.stampo.resource.DirectoryPaginationConfiguration;
+import ch.digitalfondue.stampo.resource.DirPaginationConfiguration;
 import ch.digitalfondue.stampo.resource.FileMetadata;
 import ch.digitalfondue.stampo.resource.FileResource;
 import ch.digitalfondue.stampo.resource.TaxonomyPaginationConfiguration;
@@ -65,97 +64,6 @@ public class ResourceProcessor {
             (locale) -> (f, m) -> fileResourceProcessor.applyProcessors(f, locale, m));
   }
 
-  public static class PathAndModelSupplier {
-
-    final Path outputPath;
-    final Supplier<Map<String, Object>> modelSupplier;
-
-    PathAndModelSupplier(Path outputPath, Supplier<Map<String, Object>> model) {
-      this.outputPath = outputPath;
-      this.modelSupplier = model;
-    }
-  }
-
-  public static class PageContent {
-    private final FileResource resource;
-    private final String renderedResource;
-    private final String relativeUrlToContent;
-
-    public PageContent(FileResource resource, String renderedResource, String relativeUrlToContent) {
-      this.resource = resource;
-      this.renderedResource = renderedResource;
-      this.relativeUrlToContent = relativeUrlToContent;
-    }
-
-    public FileResource getResource() {
-      return resource;
-    }
-
-    public String getRenderedResource() {
-      return renderedResource;
-    }
-
-    public String getRelativeUrlToContent() {
-      return relativeUrlToContent;
-    }
-
-  }
-
-  public static class Page<T> {
-
-    private final long currentPage;
-    private final long pageSize;
-    private final long pageCount;
-    private final long totalItemCount;
-    private final BiFunction<Long, Long, String> pageNameGenerator;
-    private final List<T> pageContent;
-
-    public Page(long currentPage, long pageSize, long pageCount, long totalItemCount,
-        BiFunction<Long, Long, String> pageNameGenerator, List<T> pageContent) {
-      this.currentPage = currentPage;
-      this.pageSize = pageSize;
-      this.pageCount = pageCount;
-      this.totalItemCount = totalItemCount;
-      this.pageNameGenerator = pageNameGenerator;
-      this.pageContent = pageContent;
-    }
-
-    public long getCurrentPage() {
-      return currentPage;
-    }
-
-    public long getPageSize() {
-      return pageSize;
-    }
-
-    public long getPageCount() {
-      return pageCount;
-    }
-
-    public long getTotalItemCount() {
-      return totalItemCount;
-    }
-
-    public boolean isFirstPage() {
-      return currentPage == 1;
-    }
-
-    public boolean isLastPage() {
-      return currentPage == pageCount;
-    }
-
-    public String getPreviousPageRelativeLink() {
-      return pageNameGenerator.apply(currentPage, currentPage - 1);
-    }
-
-    public String getNextPageRelativeLink() {
-      return pageNameGenerator.apply(currentPage, currentPage + 1);
-    }
-
-    public List<T> getPageContent() {
-      return pageContent;
-    }
-  }
 
 
   public void process(FileResource resource, Locale locale, ProcessedInputHandler outputHandler) {
@@ -164,7 +72,7 @@ public class ResourceProcessor {
 
     Locale finalLocale = metadata.getOverrideLocale().orElse(locale);
 
-    Optional<DirectoryPaginationConfiguration> dirPagination =
+    Optional<DirPaginationConfiguration> dirPagination =
         metadata.getDirectoryPaginationConfiguration();
     Optional<TaxonomyPaginationConfiguration> taxonomyPagination =
         metadata.getTaxonomyPaginationConfiguration();
@@ -191,7 +99,7 @@ public class ResourceProcessor {
     }
     //
     outputPaths.forEach(outputPathAndModel -> processToPath(resource, outputHandler, finalLocale,
-        outputPathAndModel.outputPath, outputPathAndModel.modelSupplier));
+        outputPathAndModel.getOutputPath(), outputPathAndModel.getModelSupplier()));
 
   }
 
