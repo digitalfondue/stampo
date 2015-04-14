@@ -116,6 +116,9 @@
 						<include>**/*.java</include>
 						<include>**/*.js</include>
 					</includes>
+					<excludes>
+						<exclude>**/AlphaNumericStringComparator.java</exclude>
+					</excludes>
 					<properties>
 						<owner>digitalfondue</owner>
 						<email>info@digitalfondue.ch</email>

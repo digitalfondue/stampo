@@ -22,6 +22,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -71,8 +72,6 @@ public class DirPaginator {
     DirectoryPaginationConfiguration dirPaginationConf = resource.getMetadata()//
         .getDirectoryPaginationConfiguration().get();
 
-    Path basePageDir = defaultOutputPath.getParent().resolve(PAGE_DIRECTORY_NAME);
-
     Path targetDirPath = configuration.getBaseDirectory()//
         .resolve(leftTrimSlash(dirPaginationConf.getBaseDirectory()));
 
@@ -96,7 +95,7 @@ public class DirPaginator {
 
 
             outpuPaths.addAll(registerPaths(files, defaultOutputPath,
-                dirPaginationConf.getPageSize(), basePageDir, resource,
+                dirPaginationConf.getPageSize(), resource,
                 path -> (f -> toPageContent(f, locale, path))));
 
           });
@@ -104,19 +103,24 @@ public class DirPaginator {
 
       try {
         // TODO: apply filter
-        List<Path> files =
-            Files.walk(targetDirPath, dirPaginationConf.isRecursive() ? Integer.MAX_VALUE : 1)
-                .filter(Files::isRegularFile).collect(toList());
 
-        // outpuPaths.addAll(registerPaths(files, defaultOutputPath,
-        // dirPaginationConf.getPageSize(), basePageDir, resource, mapper));
+        Comparator<Path> comparator = Comparator.comparing((Path p) -> p.getFileName().toString(),//
+            new AlphaNumericStringComparator(Locale.ENGLISH)).reversed();
+
+        int depth = dirPaginationConf.isRecursive() ? Integer.MAX_VALUE : 1;
+        
+        Path baseOutputDir = configuration.getBaseOutputDir();
+        Path staticDir = configuration.getStaticDir();
+
+        List<Path> files = Files.walk(targetDirPath, depth).filter(Files::isRegularFile)//
+            .sorted(comparator).map(file -> baseOutputDir.resolve(staticDir.relativize(file).toString()))
+            .collect(toList());
+
+        outpuPaths.addAll(registerPaths(files, defaultOutputPath, dirPaginationConf.getPageSize(), resource, path -> (f -> toRelativeUrlToContent(f, path))));
 
       } catch (IOException ioe) {
         throw new IllegalStateException(ioe);
       }
-
-      // throw new
-      // UnsupportedOperationException("pagination over 'not content' dir not supported at the moment");
     } else {
       throw new ConfigurationException(resource.getPath(),
           "cannot paginate outside static or content directory, directory used is " + targetDirPath);
@@ -126,7 +130,9 @@ public class DirPaginator {
 
 
   private <T, R> List<PathAndModelSupplier> registerPaths(List<T> files, Path defaultOutputPath,
-      long pageSize, Path basePageDir, FileResource resource, Function<Path, Function<T, R>> mapper) {
+      long pageSize, FileResource resource, Function<Path, Function<T, R>> mapper) {
+
+    Path basePageDir = defaultOutputPath.getParent().resolve(PAGE_DIRECTORY_NAME);
 
     List<PathAndModelSupplier> outpuPaths = new ArrayList<>();
     long count = files.size();
@@ -215,6 +221,18 @@ public class DirPaginator {
       return removeIndexHtml(url);
     };
   }
+  
+  private String toRelativeUrlToContent(Path contentPath, Path pagePath) {
+    if ("index.html".equals(contentPath.getFileName().toString())) {
+      contentPath = contentPath.getParent();
+    }
+
+    if ("index.html".equals(pagePath.getFileName().toString())) {
+      pagePath = pagePath.getParent();
+    }
+    
+    return pagePath.relativize(contentPath).toString();
+  }
 
   private PageContent toPageContent(FileResource fileResource, Locale locale, Path pagePath) {
 
@@ -236,8 +254,7 @@ public class DirPaginator {
     }
     //
 
-    return new PageContent(fileResource, processed.getContent(), pagePath.relativize(outputPath)
-        .toString());
+    return new PageContent(fileResource, processed.getContent(), toRelativeUrlToContent(outputPath, pagePath));
   }
 
 

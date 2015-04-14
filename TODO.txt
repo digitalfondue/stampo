@@ -25,13 +25,13 @@ TODO:
 	- instead of the no cache directive, add etag support...
 
 - support
-	- "paginate-over-directory" (static dir, content dir) : 
-		- if directory is a content, it should be possible to have the rendered content available
-	- "paginate-over-taxonomy" : taxonomy name(s) ?
-	
+	- "paginate-over-taxonomy" : taxonomy name(s) ?	
 	- "paginate-match" : glob/regexp pattern? (list)
-	- "paginate-recursive": true/false
-	- "paginate-page-size"
+	- "paginate-recursive": true/false [static dir ok, content dir TBD]
+	
+	- iterate-over-static-directory: a special case for paginate with a page size of 1 for static dir
+		- page name is generated from the static file name
+		- useful for generating gallery, where the user will paginate over the thumbnails (using a filter), and the iterate will generate the page containing the image
 
 - tests
 

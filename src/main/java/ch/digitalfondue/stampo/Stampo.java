@@ -180,14 +180,16 @@ public class Stampo {
   }
 
   private void copyStaticDirectory(BiConsumer<Path, Path> staticDirectoryAction) {
+    
+    Path baseOutputDir = configuration.getBaseOutputDir();
+    Path staticDir = configuration.getStaticDir();
+    
     if (exists(configuration.getStaticDir()) && isDirectory(configuration.getStaticDir())) {
       try {
         walkFileTree(configuration.getStaticDir(), new SimpleFileVisitor<Path>() {
           @Override
           public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
-            Path outputPath =
-                configuration.getBaseOutputDir().resolve(
-                    configuration.getStaticDir().relativize(file).toString());
+            Path outputPath = baseOutputDir.resolve(staticDir.relativize(file).toString());
             createDirectories(outputPath.getParent());
             staticDirectoryAction.accept(file, outputPath);
             return FileVisitResult.CONTINUE;
