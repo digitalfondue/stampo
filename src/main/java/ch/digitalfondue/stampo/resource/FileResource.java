@@ -33,10 +33,7 @@ public interface FileResource extends Resource {
   Optional<String> getContent();
 
   default boolean containLocaleInFileExtensions() {
-    return getFileExtensions()
-        .stream()
-        .anyMatch(
-            getConfiguration().getLocales().stream().map(Object::toString).collect(Collectors.toList())::contains);
+    return getFileExtensions().stream().anyMatch(getConfiguration().getLocalesAsString()::contains);
   }
   
   /**
@@ -54,8 +51,7 @@ public interface FileResource extends Resource {
    * */
   default List<String> getFileExtensions() {
     String fileName = getPath().getFileName().toString();
-    int idx = fileName.indexOf('.');
-    String extensions = idx == -1 ? "" : fileName.substring(idx);
+    String extensions = fileName.substring(getFileNameWithoutExtensions().length());
     List<String> exts = Arrays.stream(extensions.split("\\.")).filter(s->s.length() > 0).collect(Collectors.toCollection(ArrayList::new));
     Collections.reverse(exts);
     return Collections.unmodifiableList(exts);

@@ -119,17 +119,17 @@ public class StampoMultiLocalesTest {
         TestUtils.fileOutputAsString(iod, locale + "/post/second/index.html"));
     
     if("en".equals(locale)) {
-      Assert.assertTrue(Files.exists(iod.outputDir.resolve(locale + "/post/third.peb")));
+      Assert.assertTrue(Files.exists(iod.outputDir.resolve(locale + "/post/third")));
       Assert.assertEquals("<h1>Third " + locale + "</h1>",
-          TestUtils.fileOutputAsString(iod, locale + "/post/third.peb"));
+          TestUtils.fileOutputAsString(iod, locale + "/post/third"));
       
-      Assert.assertFalse(Files.exists(iod.outputDir.resolve(locale + "/post/fourth.peb")));
+      Assert.assertFalse(Files.exists(iod.outputDir.resolve(locale + "/post/fourth")));
     } else {
-      Assert.assertFalse(Files.exists(iod.outputDir.resolve(locale + "/post/third.peb")));
+      Assert.assertFalse(Files.exists(iod.outputDir.resolve(locale + "/post/third")));
       
-      Assert.assertTrue(Files.exists(iod.outputDir.resolve(locale + "/post/fourth.peb")));
+      Assert.assertTrue(Files.exists(iod.outputDir.resolve(locale + "/post/fourth")));
       Assert.assertEquals("<h1>Fourth " + locale + "</h1>",
-          TestUtils.fileOutputAsString(iod, locale + "/post/fourth.peb"));
+          TestUtils.fileOutputAsString(iod, locale + "/post/fourth"));
     }
   }
 }

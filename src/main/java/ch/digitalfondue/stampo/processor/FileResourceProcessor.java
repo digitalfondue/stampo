@@ -15,8 +15,6 @@
  */
 package ch.digitalfondue.stampo.processor;
 
-import static java.util.stream.Stream.concat;
-
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -25,18 +23,13 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Predicate;
-import java.util.stream.Collector;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import ch.digitalfondue.stampo.StampoGlobalConfiguration;
 import ch.digitalfondue.stampo.resource.Directory;
 import ch.digitalfondue.stampo.resource.FileResource;
-
-import com.google.common.collect.Lists;
 
 class FileResourceProcessor {
 
@@ -82,61 +75,36 @@ class FileResourceProcessor {
    * 
    * Generate the final file name output.
    * 
-   * As a rule:
+   * The file extension is decomposed in the following sections:
    * 
-   * - if the file has a processor attached and the processor has a extension output:
-   *    - e.g. markdown: content/test-markdown.md will generate a file in /output/test-markdown.html
+   * [rest][locales][maybeFileExtension][processorRelatedExts]
    * 
-   * - if the file has a processor attached but the processor has no extension output and the user has added a second extension:
-   *    - e.g. pebble: /content/test-pebble-html.html.peb will generate a file /output/test-pebble-html.html
-   *    
-   * - fallback scenario 
-   *   - e.g. /content/test.txt will generate a file in /output/test.txt
-   *   - e.g. /content/test-pebble.peb will generate a file /output/test-pebble.peb
+   * the file extensions are decomposed and read from the back to the front. E.g:
    * 
+   * test.bla.en.fr.html.peb
+   * 
+   * - [peb]   as a processorRelatedExt
+   * - [html]  as a maybeFileExtension
+   * - [fr,en] as a locale if they are registered in the global configuration
+   * - [bla]   as a rest 
+   * 
+   * All the components are optionals.
+   * 
+   * For composing the final extension, rest is concatenated with :
+   * 
+   *  - if the first processor has a override name it will be used (for example, markdown will always generate html)
+   *  - or else if maybeFileExtension is present it will be used.
    * </pre>
    * 
    * @param fileResource
    * @return
    */
   String finalOutputName(FileResource fileResource) {
-    //TODO: refactor, this is a trainwreck
-    String fileNameWithoutExt = fileResource.getFileNameWithoutExtensions();
-    List<String> exts = fileResource.getFileExtensions();
     
-    if (exts.isEmpty()) {
-      return fileNameWithoutExt;
-    }
-
-    Optional<String> ext1 = exts.stream().findFirst();
-    Optional<String> ext2 = exts.stream().skip(1).findFirst();
-
-    boolean hasProcessor = ext1.map(processors::get).isPresent();
-    boolean hasProcessedFileExtension = ext1.map(resultingProcessedFileExtensions::get).isPresent();
-
-    Stream<String> s;
-
-    if (hasProcessor && hasProcessedFileExtension) {
-      s =
-          concat(exts.stream().skip(1).collect(reverse()).stream(),
-              streamOpt(ext1.map(resultingProcessedFileExtensions::get)));
-    } else if (hasProcessor && !hasProcessedFileExtension && ext2.isPresent()) {
-      s = concat(exts.stream().skip(2).collect(reverse()).stream(), streamOpt(ext2));
-    } else {
-      s = exts.stream().collect(reverse()).stream();
-    }
-
-    // remove locales in the extensions
-    Set<String> configuredLocales = configuration.getLocales().stream().map(Object::toString).collect(Collectors.toSet());
-    Predicate<String> pred = configuredLocales::contains;
-    s = s.filter(pred.negate());
-
-
-    // handle the case filename.LOCALE.peb -> expected result must be filename.peb
-    String extension = s.collect(Collectors.joining(".", ".", ""));
-    if (extension.equals(".")) {
-      extension = extension + ext1.orElse("");
-    }
+    ClassifiedFileExtension fileExt = classifyExtension(fileResource);
+    
+    String fileNameWithoutExt = fileResource.getFileNameWithoutExtensions();
+    String extension = fileExt.getFinalFileExtension();
     
     boolean useUglyUrl = fileResource.getMetadata().getOverrideUseUglyUrl().orElseGet(configuration::useUglyUrl);
 
@@ -147,16 +115,67 @@ class FileResourceProcessor {
       return fileNameWithoutExt + extension;// "ugly url"
     }
   }
-
-  private static <T> Collector<T, List<T>, List<T>> reverse() {
-    return Collector.of(ArrayList::new, (l, t) -> l.add(t), (l, r) -> {
-      l.addAll(r);
-      return l;
-    }, Lists::<T>reverse);
+  
+  @SuppressWarnings("unused")
+  private static class ClassifiedFileExtension {
+    
+    final List<String> processorRelatedExts;
+    final Optional<String> processorFileExtensionOverride;
+    final Optional<String> maybeFileExtension;
+    final List<String> locales;
+    final String rest;
+    
+    
+    ClassifiedFileExtension(List<String> processorRelatedExts,
+        Optional<String> processorFileExtensionOverride,
+        Optional<String> maybeFileExtension, List<String> locales, List<String> rest) {
+      this.processorRelatedExts = processorRelatedExts;
+      this.processorFileExtensionOverride = processorFileExtensionOverride;
+      this.maybeFileExtension = maybeFileExtension;
+      this.locales = locales;
+      this.rest = rest.stream().collect(Collectors.joining("."));
+    }
+    
+    String getFinalFileExtension() {
+      String finalExt = processorFileExtensionOverride.orElseGet(() -> maybeFileExtension.orElse(""));
+      return (rest.length() > 0 ? "." : "") + rest + (finalExt.length() > 0 ? "." : "") + finalExt;
+    }
   }
 
-  private static <T> Stream<T> streamOpt(Optional<T> opt) {
-    return opt.isPresent() ? Stream.of(opt.get()) : Stream.empty();
+  // TODO: check possible inconsistency with FileResource.containLocaleInFileExtensions 
+  /* given a list of extensions, return a structured view */
+  private ClassifiedFileExtension classifyExtension(FileResource fileResource) {
+    List<String> exts = fileResource.getFileExtensions();
+    //
+    
+    List<String> processorRelated = takeWhile(exts, processors::containsKey);
+    
+    //e.g. : md -> html mapping is present 
+    Optional<String> processorFileExtensionOverride = processorRelated.stream().findFirst().map(resultingProcessedFileExtensions::get);
+    
+    List<String> afterProcessorRelated = exts.subList(processorRelated.size(), exts.size());
+    
+    // if the next token does not match a locale, it's possibly a file extension
+    Optional<String> maybeFileExtension = afterProcessorRelated.stream().findFirst().filter(ext -> !configuration.getLocalesAsString().contains(ext));
+    
+    List<String> afterMaybeFileExtension = afterProcessorRelated.subList(maybeFileExtension.isPresent() ? 1 : 0, afterProcessorRelated.size());
+    List<String> locales = takeWhile(afterMaybeFileExtension, (ext -> configuration.getLocalesAsString().contains(ext)));
+    List<String> afterLocales = new ArrayList<>(afterMaybeFileExtension.subList(locales.size(), afterMaybeFileExtension.size()));
+    Collections.reverse(afterLocales);
+    
+    return new ClassifiedFileExtension(processorRelated, processorFileExtensionOverride, maybeFileExtension, locales, afterLocales);
+  }
+
+  private static <T> List<T> takeWhile(List<T> l, Predicate<T> pred) {
+    List<T> r = new ArrayList<>(l.size());
+    for (T i : l) {
+      if(pred.test(i)) {
+        r.add(i);
+      } else {
+        return r;
+      }
+    }
+    return r;
   }
 
   /**

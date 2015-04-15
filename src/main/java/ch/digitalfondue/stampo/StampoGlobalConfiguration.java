@@ -51,6 +51,7 @@ public class StampoGlobalConfiguration {
 
   private final Map<String, Object> configuration;
   private final List<Locale> locales;
+  private final Set<String> localesAsString;
   private final Optional<Locale> defaultLocale;
   private final Set<String> ignorePatterns;
   private final List<Renderer> renderers;
@@ -72,6 +73,7 @@ public class StampoGlobalConfiguration {
     this.configuration = configuration;
     this.renderers = renderers;
     this.locales = extractLocales(configuration);
+    this.localesAsString = Collections.unmodifiableSet(locales.stream().map(Object::toString).collect(Collectors.toSet()));
     this.defaultLocale = defaultLocale(configuration);
     this.ignorePatterns = extractIgnorePatterns(configuration);
 
@@ -91,12 +93,13 @@ public class StampoGlobalConfiguration {
   // http://docs.oracle.com/javase/7/docs/api/java/nio/file/FileSystem.html#getPathMatcher%28java.lang.String%29
   @SuppressWarnings("unchecked")
   private Set<String> extractIgnorePatterns(Map<String, Object> configuration) {
-    return unmodifiableSet(new HashSet<>((List<String>) configuration.getOrDefault(
-        "ignore-patterns",//
-        asList("glob:.*",// hidden files
-            "glob:*~", "glob:#*#", "glob:.#*", // emacs
-            "glob:*~", "glob:[._]*.s[a-w][a-z]", "glob:[._]s[a-w][a-z]", "glob:*.un~" // vim
-        ))));
+    List<String> patterns = asList("glob:.*",// hidden files
+        "glob:*~", "glob:#*#", "glob:.#*", // emacs
+        "glob:*~", "glob:[._]*.s[a-w][a-z]", "glob:[._]s[a-w][a-z]", "glob:*.un~" // vim
+    );
+    Set<String> s = new HashSet<>((List<String>) configuration.getOrDefault("ignore-patterns",patterns));
+    s.addAll(patterns);
+    return unmodifiableSet(s);
   }
 
   @SuppressWarnings("unchecked")
@@ -221,5 +224,9 @@ public class StampoGlobalConfiguration {
 
   public Map<String, Object> getData() {
     return data;
+  }
+
+  public Set<String> getLocalesAsString() {
+    return localesAsString;
   }
 }
