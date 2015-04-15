@@ -1,11 +1,5 @@
 TODO:
 
-- add multiple template engine pass.
-	- .peb.md -> apply peb -> apply markdown
-	- .ftl.peb.md ->apply freemarker -> pebble -> markdown etc,
-	
-	- useful for applying substitution in markdown files
-
 - support
 	- "paginate-over-taxonomy" : taxonomy name(s) ?	
 		- taxonomy support

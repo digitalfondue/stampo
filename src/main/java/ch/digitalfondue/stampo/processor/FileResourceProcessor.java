@@ -29,7 +29,9 @@ import java.util.stream.Collectors;
 
 import ch.digitalfondue.stampo.StampoGlobalConfiguration;
 import ch.digitalfondue.stampo.resource.Directory;
+import ch.digitalfondue.stampo.resource.FileMetadata;
 import ch.digitalfondue.stampo.resource.FileResource;
+import ch.digitalfondue.stampo.resource.Resource;
 
 class FileResourceProcessor {
 
@@ -54,19 +56,68 @@ class FileResourceProcessor {
     processors = Collections.unmodifiableMap(p);
     resultingProcessedFileExtensions = Collections.unmodifiableMap(r);
   }
+  
+  private static class ProcessedFileResource implements FileResource {
+    
+
+    private final FileResource fileResource;
+    private final Optional<String> content;
+    
+    ProcessedFileResource(FileResource fileResource, Optional<String> content) {
+      this.fileResource = fileResource;
+      this.content = content;
+    }
+
+    @Override
+    public Resource getParent() {
+      return fileResource.getParent();
+    }
+
+    @Override
+    public Path getPath() {
+      return fileResource.getPath();
+    }
+
+    @Override
+    public StampoGlobalConfiguration getConfiguration() {
+      return fileResource.getConfiguration();
+    }
+
+    @Override
+    public FileMetadata getMetadata() {
+      return fileResource.getMetadata();
+    }
+
+    @Override
+    public Optional<String> getContent() {
+      return content;
+    }
+    
+  }
 
 
   FileResourceProcessorOutput applyProcessors(FileResource fileResource, Locale locale, Map<String, Object> model) {
 
-    Optional<String> extension = fileResource.getFileExtensions().stream().findFirst();
-
-    return extension
-        .map(processors::get)
-        .orElse(
-            (x) -> {
-              return new FileResourceProcessorOutput(fileResource.getContent().orElseThrow(IllegalArgumentException::new), fileResource
-                  .getPath(), "none", locale);
-            }).apply(new FileResourceParameters(fileResource, locale, model));
+    ClassifiedFileExtension ext = classifyExtension(fileResource);
+    
+    List<String> processorsExt = new ArrayList<>(ext.processorRelatedExts);
+    Collections.reverse(processorsExt);
+    
+    List<Function<FileResourceParameters, FileResourceProcessorOutput>> processorsToApply = processorsExt.stream().map(processors::get).collect(Collectors.toList());
+    if(processorsToApply.isEmpty()) {
+      processorsToApply = Collections.singletonList((x) -> {
+        return new FileResourceProcessorOutput(fileResource.getContent().orElseThrow(IllegalArgumentException::new), fileResource.getPath(), "none", locale);
+      });
+    }
+    
+    //TODO can be converted in a reduce operation
+    FileResourceParameters param = new FileResourceParameters(fileResource, locale, model);
+    FileResourceProcessorOutput output = null;
+    for(Function<FileResourceParameters, FileResourceProcessorOutput> toApply : processorsToApply) {
+      output = toApply.apply(param);
+      param = new FileResourceParameters(new ProcessedFileResource(fileResource, Optional.ofNullable(output.getContent())), locale, model);
+    }
+    return output;
   }
 
   /**
