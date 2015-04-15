@@ -18,8 +18,10 @@ package ch.digitalfondue.stampo.processor;
 import static java.util.stream.Collectors.toList;
 
 import java.io.IOException;
+import java.nio.file.FileSystem;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.PathMatcher;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -29,13 +31,15 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.function.BiFunction;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 import ch.digitalfondue.stampo.PathUtils;
 import ch.digitalfondue.stampo.StampoGlobalConfiguration;
 import ch.digitalfondue.stampo.exception.ConfigurationException;
-import ch.digitalfondue.stampo.resource.Directory;
 import ch.digitalfondue.stampo.resource.DirPaginationConfiguration;
+import ch.digitalfondue.stampo.resource.Directory;
 import ch.digitalfondue.stampo.resource.FileMetadata;
 import ch.digitalfondue.stampo.resource.FileResource;
 
@@ -81,7 +85,6 @@ public class DirPaginator {
 
     } else if (targetDirPath.startsWith(configuration.getStaticDir())) {
       try {
-        
         outpuPaths.addAll(handleStaticDir(resource, defaultOutputPath, dirPaginationConf, targetDirPath));
       } catch (IOException ioe) {
         throw new IllegalStateException(ioe);
@@ -92,9 +95,20 @@ public class DirPaginator {
     }
     return outpuPaths;
   }
+  
+  private Predicate<Path> matchPattern(DirPaginationConfiguration dirPaginationConf) {
+    FileSystem inputFs = configuration.getBaseDirectory().getFileSystem();
+    
+    List<PathMatcher> matchers = dirPaginationConf.getMatchPattern().stream().map(inputFs::getPathMatcher).collect(Collectors.toList());
+    
+    Path baseDir = configuration.getBaseDirectory();
+    
+    return matchers.isEmpty() ? (Path p) -> true : (Path p) -> matchers.stream().anyMatch(
+        (matcher) -> matcher.matches(baseDir.relativize(p)));
+  }
 
 
-  // TODO: apply filter, apply recursive
+  // TODO: apply recursive
   private List<PathAndModelSupplier> handleContentDir(FileResource resource, Locale locale,
       Path defaultOutputPath, DirPaginationConfiguration dirPaginationConf, Path targetDirPath) {
     
@@ -102,6 +116,8 @@ public class DirPaginator {
         root.getDirectory(configuration.getContentDir().relativize(targetDirPath)).orElseThrow(
             () -> new ConfigurationException(resource.getPath(), "cannot find the directory '"
                 + targetDirPath + "' to paginate over"));
+    
+    Predicate<Path> patternFilter = matchPattern(dirPaginationConf);
     
     List<FileResource> files =
         dir.getFiles()
@@ -112,7 +128,7 @@ public class DirPaginator {
               // filter out the files with pagination
                 return !m.getTaxonomyPaginationConfiguration().isPresent()
                     && !m.getDirectoryPaginationConfiguration().isPresent();
-              }).collect(toList());
+              }).filter((f) -> patternFilter.test(f.getPath())).collect(toList());
 
     List<PathAndModelSupplier> toAdd =
         registerPaths(files, defaultOutputPath, dirPaginationConf.getPageSize(), resource,
@@ -130,9 +146,11 @@ public class DirPaginator {
 
     Path baseOutputDir = configuration.getBaseOutputDir();
     Path staticDir = configuration.getStaticDir();
+    
+    Predicate<Path> patternFilter = matchPattern(dirPaginationConf);
 
     List<Path> files =
-        Files.walk(targetDirPath, depth).filter(Files::isRegularFile).sorted(comparator)
+        Files.walk(targetDirPath, depth).filter(Files::isRegularFile).filter(patternFilter).sorted(comparator)
             .map(file -> baseOutputDir.resolve(staticDir.relativize(file).toString()))
             .collect(toList());
 

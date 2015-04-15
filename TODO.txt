@@ -5,7 +5,7 @@ TODO:
 		- taxonomy support
 		- must extract all taxonomy
 		- must apply a locale filter over the taxonomy tree if it's in a multi language context
-	- "paginate-match" : glob/regexp pattern? (list)
+	- "paginate-match" : glob/regexp pattern? (static dir ok, content dir ok)
 	- "paginate-recursive": true/false [static dir ok, content dir TBD]
 	
 	- iterate-over-static-directory: a special case for paginate with a page size of 1 for static dir
@@ -44,7 +44,7 @@ TODO:
 
 - add a global view of the generated structure as a model parameter for the sitemap generation usecase
 
-- for images, add metadata extraction support with iterate-over-static-directory (?):
+- for images, add metadata extraction support with iterate-over-static-directory (?) + thumbnail generation?:
 
 <dependency>
     <groupId>com.drewnoakes</groupId>
