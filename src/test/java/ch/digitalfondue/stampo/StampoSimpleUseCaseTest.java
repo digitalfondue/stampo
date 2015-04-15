@@ -19,6 +19,7 @@ import static java.nio.file.Files.write;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 
 import org.junit.Assert;
 import org.junit.Test;
@@ -64,6 +65,23 @@ public class StampoSimpleUseCaseTest {
       stampo.build();
 
       Assert.assertEquals("<h1>The answer is 42</h1>", TestUtils.fileOutputAsString(iod, "index.html"));
+    }
+  }
+  
+  @Test
+  public void simpleContentWithMetadataAndPebbleTemplateWithOverridePath() throws IOException {
+    try (InputOutputDirs iod = TestUtils.get()) {
+      String content = "---\n" + //
+          "answer: 42\n" + //
+          "override-output-to-path: index2.html\n" + //
+          "---\n" + //
+          "<h1>The answer is {{metadata.rawMap.answer}}</h1>";
+      write(iod.inputDir.resolve("content/index.html.peb"), content.getBytes(StandardCharsets.UTF_8));
+      Stampo stampo = new Stampo(iod.inputDir, iod.outputDir);
+      stampo.build();
+
+      Assert.assertFalse(Files.exists(iod.outputDir.resolve("index.html")));
+      Assert.assertEquals("<h1>The answer is 42</h1>", TestUtils.fileOutputAsString(iod, "index2.html"));
     }
   }
   

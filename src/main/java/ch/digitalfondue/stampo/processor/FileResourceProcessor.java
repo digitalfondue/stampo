@@ -25,7 +25,9 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -85,7 +87,7 @@ class FileResourceProcessor {
    * - if the file has a processor attached and the processor has a extension output:
    *    - e.g. markdown: content/test-markdown.md will generate a file in /output/test-markdown.html
    * 
-   * - if the file has a processor attached but the processor has no extension output _but_ the user has added a second extension:
+   * - if the file has a processor attached but the processor has no extension output and the user has added a second extension:
    *    - e.g. pebble: /content/test-pebble-html.html.peb will generate a file /output/test-pebble-html.html
    *    
    * - fallback scenario 
@@ -98,6 +100,7 @@ class FileResourceProcessor {
    * @return
    */
   String finalOutputName(FileResource fileResource) {
+    //TODO: refactor, this is a trainwreck
     String fileNameWithoutExt = fileResource.getFileNameWithoutExtensions();
     List<String> exts = fileResource.getFileExtensions();
 
@@ -120,9 +123,9 @@ class FileResourceProcessor {
     }
 
     // remove locales in the extensions
-    s =
-        s.filter((ext) -> !configuration.getLocales().stream().map(Object::toString)
-            .collect(Collectors.toList()).contains(ext));
+    Set<String> configuredLocales = configuration.getLocales().stream().map(Object::toString).collect(Collectors.toSet());
+    Predicate<String> pred = configuredLocales::contains;
+    s = s.filter(pred.negate());
 
 
     // handle the case filename.LOCALE.peb -> expected result must be filename.peb

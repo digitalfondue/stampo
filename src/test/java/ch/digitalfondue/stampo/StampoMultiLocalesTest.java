@@ -95,6 +95,14 @@ public class StampoMultiLocalesTest {
 
     write(iod.inputDir.resolve("content/post/second.html.peb"),
         "<h1>Second {{locale}}</h1>".getBytes(StandardCharsets.UTF_8));
+    
+    //this file will generate a third.peb and will only be present for the english locale
+    write(iod.inputDir.resolve("content/post/third.en.peb"),
+        "<h1>Third {{locale}}</h1>".getBytes(StandardCharsets.UTF_8));
+    
+    
+    write(iod.inputDir.resolve("content/post/fourth.fr.de.peb"),
+        "<h1>Fourth {{locale}}</h1>".getBytes(StandardCharsets.UTF_8));
   }
 
   private void checkForLocale(InputOutputDirs iod, String locale) throws IOException {
@@ -109,5 +117,19 @@ public class StampoMultiLocalesTest {
     Assert.assertTrue(Files.exists(iod.outputDir.resolve(locale + "/post/second/index.html")));
     Assert.assertEquals("<h1>Second " + locale + "</h1>",
         TestUtils.fileOutputAsString(iod, locale + "/post/second/index.html"));
+    
+    if("en".equals(locale)) {
+      Assert.assertTrue(Files.exists(iod.outputDir.resolve(locale + "/post/third.peb")));
+      Assert.assertEquals("<h1>Third " + locale + "</h1>",
+          TestUtils.fileOutputAsString(iod, locale + "/post/third.peb"));
+      
+      Assert.assertFalse(Files.exists(iod.outputDir.resolve(locale + "/post/fourth.peb")));
+    } else {
+      Assert.assertFalse(Files.exists(iod.outputDir.resolve(locale + "/post/third.peb")));
+      
+      Assert.assertTrue(Files.exists(iod.outputDir.resolve(locale + "/post/fourth.peb")));
+      Assert.assertEquals("<h1>Fourth " + locale + "</h1>",
+          TestUtils.fileOutputAsString(iod, locale + "/post/fourth.peb"));
+    }
   }
 }

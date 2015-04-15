@@ -4,10 +4,13 @@ TODO:
 	- .peb.md -> apply peb -> apply markdown
 	- .ftl.peb.md ->apply freemarker -> pebble -> markdown etc,
 	
-	- useful for applying sobstitution in markdown files
+	- useful for applying substitution in markdown files
 
 - support
 	- "paginate-over-taxonomy" : taxonomy name(s) ?	
+		- taxonomy support
+		- must extract all taxonomy
+		- must apply a locale filter over the taxonomy tree if it's in a multi language context
 	- "paginate-match" : glob/regexp pattern? (list)
 	- "paginate-recursive": true/false [static dir ok, content dir TBD]
 	
@@ -30,10 +33,6 @@ TODO:
 	
   they must be relative
   
-- taxonomy support
-	- must extract all taxonomies
-	- must apply a locale filter over the taxonomies tree if it's in a multi language context
-
 - webserver:
 	- instead of the no cache directive, add etag support
 
