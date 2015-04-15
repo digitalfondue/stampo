@@ -1,5 +1,7 @@
 TODO:
 
+- rewrite FileResourceProcessor.finalOutputName
+
 - add multiple template engine pass.
 	- .peb.md -> apply peb -> apply markdown
 	- .ftl.peb.md ->apply freemarker -> pebble -> markdown etc,

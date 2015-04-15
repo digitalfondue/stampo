@@ -39,6 +39,18 @@ public class StampoSimpleUseCaseTest {
       Assert.assertEquals("<h1>Hello World</h1>", TestUtils.fileOutputAsString(iod, "index.html"));
     }
   }
+  
+  @Test
+  public void simpleContentWithoutExtension() throws IOException {
+    try (InputOutputDirs iod = TestUtils.get()) {
+      write(iod.inputDir.resolve("content/index"),
+          "<h1>Hello World</h1>".getBytes(StandardCharsets.UTF_8));
+      Stampo stampo = new Stampo(iod.inputDir, iod.outputDir);
+      stampo.build();
+
+      Assert.assertEquals("<h1>Hello World</h1>", TestUtils.fileOutputAsString(iod, "index"));
+    }
+  }
 
 
   @Test

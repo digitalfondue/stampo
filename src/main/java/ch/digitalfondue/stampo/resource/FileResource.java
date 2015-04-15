@@ -15,10 +15,9 @@
  */
 package ch.digitalfondue.stampo.resource;
 
-import static com.google.common.io.Files.getFileExtension;
-import static com.google.common.io.Files.getNameWithoutExtension;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
@@ -54,19 +53,18 @@ public interface FileResource extends Resource {
    * 
    * */
   default List<String> getFileExtensions() {
-    List<String> e = new ArrayList<String>(3);
-    String p = getPath().toString();
-    while (!"".equals(getFileExtension(p))) {
-      e.add(getFileExtension(p));
-      p = getNameWithoutExtension(p);
-    }
-    return Collections.unmodifiableList(e);
+    String fileName = getPath().getFileName().toString();
+    int idx = fileName.indexOf('.');
+    String extensions = idx == -1 ? "" : fileName.substring(idx);
+    List<String> exts = Arrays.stream(extensions.split("\\.")).filter(s->s.length() > 0).collect(Collectors.toCollection(ArrayList::new));
+    Collections.reverse(exts);
+    return Collections.unmodifiableList(exts);
   }
   
   default String getFileNameWithoutExtensions() {
-    String extension = getFileExtensions().stream().collect(Collectors.joining(".", ".", ""));
-    return getNameWithoutExtension(getPath().toString().substring(0,
-        getPath().toString().length() - extension.length()));
+    String fileName = getPath().getFileName().toString();
+    int idx = fileName.indexOf('.');
+    return idx == -1 ? fileName : fileName.substring(0, idx);
   }
   
   default long getCreationTime() {

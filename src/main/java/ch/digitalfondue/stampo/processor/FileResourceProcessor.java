@@ -103,6 +103,10 @@ class FileResourceProcessor {
     //TODO: refactor, this is a trainwreck
     String fileNameWithoutExt = fileResource.getFileNameWithoutExtensions();
     List<String> exts = fileResource.getFileExtensions();
+    
+    if (exts.isEmpty()) {
+      return fileNameWithoutExt;
+    }
 
     Optional<String> ext1 = exts.stream().findFirst();
     Optional<String> ext2 = exts.stream().skip(1).findFirst();
