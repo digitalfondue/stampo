@@ -44,8 +44,7 @@ import java.util.Optional;
 import java.util.function.BiConsumer;
 
 import org.yaml.snakeyaml.Yaml;
-import org.yaml.snakeyaml.constructor.ConstructorException;
-import org.yaml.snakeyaml.parser.ParserException;
+import org.yaml.snakeyaml.error.YAMLException;
 
 import ch.digitalfondue.stampo.exception.MissingDirectoryException;
 import ch.digitalfondue.stampo.exception.YamlParserException;
@@ -71,15 +70,11 @@ public class Stampo {
 
   private final StampoGlobalConfiguration configuration;
 
-
+  
   @SuppressWarnings("unchecked")
-  public Stampo(Path baseInputDir, Path outputDir) {
-
+  public Stampo(Path baseInputDir, Path outputDir, List<Renderer> renderers) {
     Path configFile = baseInputDir.resolve("configuration.yaml");
-
-    List<Renderer> renderers =
-        Arrays.asList(new PebbleRenderer(), new MarkdownRenderer(), new FreemarkerRenderer());
-
+    
     if (exists(configFile)) {
       Yaml yaml = new Yaml();
       try (InputStream is = newInputStream(configFile)) {
@@ -87,13 +82,18 @@ public class Stampo {
         this.configuration = new StampoGlobalConfiguration(c, baseInputDir, outputDir, renderers);
       } catch (IOException ioe) {
         throw new IllegalArgumentException(ioe);
-      } catch (ConstructorException | ParserException pe) {
+      } catch (YAMLException pe) {
         throw new YamlParserException(configFile, pe);
       }
     } else {
       this.configuration =
           new StampoGlobalConfiguration(emptyMap(), baseInputDir, outputDir, renderers);
     }
+  }
+
+  
+  public Stampo(Path baseInputDir, Path outputDir) {
+    this(baseInputDir, outputDir, Arrays.asList(new PebbleRenderer(), new MarkdownRenderer(), new FreemarkerRenderer()));
   }
 
 

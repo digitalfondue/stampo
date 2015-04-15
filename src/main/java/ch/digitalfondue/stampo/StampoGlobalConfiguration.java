@@ -15,20 +15,30 @@
  */
 package ch.digitalfondue.stampo;
 
+import static java.nio.file.Files.newInputStream;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static java.util.Collections.unmodifiableSet;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.toList;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.ResourceBundle.Control;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 import java.util.Set;
+
+import org.yaml.snakeyaml.Yaml;
 
 import ch.digitalfondue.stampo.i18n.ResourceBundleControl;
 import ch.digitalfondue.stampo.renderer.Renderer;
@@ -52,7 +62,9 @@ public class StampoGlobalConfiguration {
   private final Path layoutDir;
   private final Path staticDir;
   private final Path localesDir;
+  private final Path dataDir;
 
+  private final Map<String, Object> data;
 
 
   public StampoGlobalConfiguration(Map<String, Object> configuration, Path baseDirectory,
@@ -70,6 +82,9 @@ public class StampoGlobalConfiguration {
     this.layoutDir = baseDirectory.resolve("layout").normalize();
     this.staticDir = baseDirectory.resolve("static").normalize();
     this.localesDir = baseDirectory.resolve("locales").normalize();
+    this.dataDir = baseDirectory.resolve("data").normalize();
+    
+    this.data = extractData();
   }
 
   // patterns follow
@@ -98,6 +113,48 @@ public class StampoGlobalConfiguration {
     }
 
     return l.stream().map(Locale::forLanguageTag).collect(toList());
+  }
+  
+  
+  private static class KeyValue {
+    private final String key;
+    private final Object value;
+    
+    KeyValue(String key, Object value) {
+      this.key = key;
+      this.value = value;
+    }
+
+    public String getKey() {
+      return key;
+    }
+
+    public Object getValue() {
+      return value;
+    }
+  }
+  
+  private Map<String, Object> extractData() {
+    Path dataDir = getDataDir();
+    if(Files.exists(dataDir)) {
+      try {
+        return Files.walk(dataDir).filter(p -> {
+          String fileName = p.getFileName().toString();
+          return Files.isRegularFile(p) && (fileName.endsWith(".yaml") || fileName.endsWith(".yml"));
+        }).map((p) -> {
+          String keyName = PathUtils.relativePathTo(p, dataDir).replace('/', '.').replaceFirst("\\.ya{0,1}ml$", "");
+          try (InputStream is = newInputStream(p)) {
+            List<Object> o = StreamSupport.stream(new Yaml().loadAll(is).spliterator(), false).filter(Objects::nonNull).collect(Collectors.toList());
+            return new KeyValue(keyName, o.size() == 0 ? null : o.size() == 1 ? o.get(0) : o);
+          } catch (IOException e) {
+            throw new IllegalStateException(e);
+          }
+        }).collect(Collectors.toMap(KeyValue::getKey, KeyValue::getValue));
+      } catch (IOException ioe) {
+        throw new IllegalStateException(ioe);
+      }
+    }
+    return Collections.emptyMap();
   }
 
   private static Optional<Locale> defaultLocale(Map<String, Object> configuration) {
@@ -156,5 +213,13 @@ public class StampoGlobalConfiguration {
 
   public List<Renderer> getRenderers() {
     return renderers;
+  }
+
+  public Path getDataDir() {
+    return dataDir;
+  }
+
+  public Map<String, Object> getData() {
+    return data;
   }
 }

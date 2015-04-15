@@ -1,9 +1,22 @@
 TODO:
 
-- add "relativeRootPath" variable
-	- ModelPreparer.prepare
-	- add relativeRootPath variable
-	- add outputPath variable
+- add multiple template engine pass.
+	- .peb.md -> apply peb -> apply markdown
+	- .ftl.peb.md ->apply freemarker -> pebble -> markdown etc,
+	
+	- useful for applying sobstitution in markdown files
+
+- support
+	- "paginate-over-taxonomy" : taxonomy name(s) ?	
+	- "paginate-match" : glob/regexp pattern? (list)
+	- "paginate-recursive": true/false [static dir ok, content dir TBD]
+	
+	- iterate-over-static-directory: a special case for paginate with a page size of 1 for static dir
+		- page name is generated from the static file name
+		- useful for generating gallery, where the user will paginate over the thumbnails (using a filter), and the iterate will generate the page containing the image
+
+
+- check non thread safety of pegdown
 
 - autoreload:
 	- return list of changed files (for css only reload)
@@ -22,20 +35,11 @@ TODO:
 	- must apply a locale filter over the taxonomies tree if it's in a multi language context
 
 - webserver:
-	- instead of the no cache directive, add etag support...
+	- instead of the no cache directive, add etag support
 
-- support
-	- "paginate-over-taxonomy" : taxonomy name(s) ?	
-	- "paginate-match" : glob/regexp pattern? (list)
-	- "paginate-recursive": true/false [static dir ok, content dir TBD]
-	
-	- iterate-over-static-directory: a special case for paginate with a page size of 1 for static dir
-		- page name is generated from the static file name
-		- useful for generating gallery, where the user will paginate over the thumbnails (using a filter), and the iterate will generate the page containing the image
+
 
 - tests
-
-- data directory in yaml format
 
 - check and fix any inconsistencies created by the override-output-to-path property
 
@@ -46,3 +50,11 @@ TODO:
 - add documentation and examples 
 
 - add a global view of the generated structure as a model parameter for the sitemap generation usecase
+
+- for images, add metadata extraction support with iterate-over-static-directory (?):
+
+<dependency>
+    <groupId>com.drewnoakes</groupId>
+    <artifactId>metadata-extractor</artifactId>
+    <version>2.8.0</version>
+</dependency>

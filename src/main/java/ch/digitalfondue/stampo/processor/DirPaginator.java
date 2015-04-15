@@ -31,6 +31,7 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
+import ch.digitalfondue.stampo.PathUtils;
 import ch.digitalfondue.stampo.StampoGlobalConfiguration;
 import ch.digitalfondue.stampo.exception.ConfigurationException;
 import ch.digitalfondue.stampo.resource.Directory;
@@ -137,7 +138,7 @@ public class DirPaginator {
 
     List<PathAndModelSupplier> toAdd =
         registerPaths(files, defaultOutputPath, dirPaginationConf.getPageSize(), resource,
-            path -> (f -> toRelativeUrlToContent(f, path)));
+            path -> (f -> PathUtils.relativePathTo(f, path)));
     return toAdd;
   }
 
@@ -235,22 +236,11 @@ public class DirPaginator {
     };
   }
 
-  private String toRelativeUrlToContent(Path contentPath, Path pagePath) {
-    if ("index.html".equals(contentPath.getFileName().toString())) {
-      contentPath = contentPath.getParent();
-    }
-
-    if ("index.html".equals(pagePath.getFileName().toString())) {
-      pagePath = pagePath.getParent();
-    }
-
-    return pagePath.relativize(contentPath).toString();
-  }
 
   private PageContent toPageContent(FileResource fileResource, Locale locale, Path pagePath) {
 
     Map<String, Object> model =
-        ModelPreparer.prepare(root, configuration, locale, fileResource, Collections.emptyMap());
+        ModelPreparer.prepare(root, configuration, locale, fileResource, pagePath, Collections.emptyMap());
 
     FileResourceProcessorOutput processed =
         resourceProcessor.apply(locale).apply(fileResource, model);
@@ -267,7 +257,7 @@ public class DirPaginator {
     }
     //
 
-    return new PageContent(fileResource, processed.getContent(), toRelativeUrlToContent(outputPath,
+    return new PageContent(fileResource, processed.getContent(), PathUtils.relativePathTo(outputPath,
         pagePath));
   }
 

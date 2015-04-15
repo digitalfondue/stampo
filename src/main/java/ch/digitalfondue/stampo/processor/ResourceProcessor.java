@@ -132,7 +132,7 @@ public class ResourceProcessor {
     }
 
     Map<String, Object> model =
-        ModelPreparer.prepare(root, configuration, finalLocale, resource, additionalData.get());
+        ModelPreparer.prepare(root, configuration, finalLocale, resource, outputPath, additionalData.get());
 
     FileResourceProcessorOutput processed =
         fileResourceProcessor.applyProcessors(resource, finalLocale, model);

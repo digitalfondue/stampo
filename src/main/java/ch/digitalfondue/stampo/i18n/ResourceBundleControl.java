@@ -32,7 +32,7 @@ import java.util.ResourceBundle.Control;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.yaml.snakeyaml.Yaml;
-import org.yaml.snakeyaml.parser.ParserException;
+import org.yaml.snakeyaml.error.YAMLException;
 
 import ch.digitalfondue.stampo.exception.YamlParserException;
 
@@ -105,7 +105,7 @@ public class ResourceBundleControl extends Control {
               Collections.unmodifiableMap(Optional.ofNullable(
                   (Map<String, Object>) new Yaml().loadAs(is, Map.class)).orElse(
                   Collections.emptyMap()));
-        } catch (ParserException pe) {
+        } catch (YAMLException pe) {
           YamlParserException ype = new YamlParserException(propFile, pe);
           System.err.println(ype.getMessage());
           throw ype;
