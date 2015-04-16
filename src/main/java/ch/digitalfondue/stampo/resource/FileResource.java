@@ -18,7 +18,6 @@ package ch.digitalfondue.stampo.resource;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
@@ -34,24 +33,22 @@ public interface FileResource extends Resource {
   StructuredFileExtension getStructuredFileExtension();
 
   /**
-   * File extensions, ordered last to first.
+   * File extensions
    * 
    * E.g.
    * 
    * <pre>
    * - test -> []
    * - test.txt -> [txt]
-   * - test.txt.peb -> [peb, txt]
-   * - test.en.txt.peb -> [peb, txt, en]
+   * - test.txt.peb -> [txt, peb]
+   * - test.en.txt.peb -> [en, txt, peb]
    * </pre>
    * 
    * */
   default List<String> getFileExtensions() {
     String fileName = getPath().getFileName().toString();
     String extensions = fileName.substring(getFileNameWithoutExtensions().length());
-    List<String> exts = Arrays.stream(extensions.split("\\.")).filter(s->s.length() > 0).collect(Collectors.toCollection(ArrayList::new));
-    Collections.reverse(exts);
-    return Collections.unmodifiableList(exts);
+    return Arrays.stream(extensions.split("\\.")).filter(s->s.length() > 0).collect(Collectors.toCollection(ArrayList::new));
   }
   
   default String getFileNameWithoutExtensions() {

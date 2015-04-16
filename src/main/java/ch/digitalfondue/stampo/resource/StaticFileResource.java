@@ -32,7 +32,6 @@ public class StaticFileResource implements FileResource {
     this.configuration = configuration;
     this.path = path;
     this.parent = parent;
-    //TODO: check if order of the rest list is correct
     this.structuredFileExtension = new StructuredFileExtension(Collections.emptyList(), Optional.empty(), Optional.empty(), Collections.emptySet(), getFileExtensions());
   }
 

@@ -140,11 +140,11 @@ public class FileResourceWithMetadataSection implements FileResource {
       throw new IllegalStateException(ioe);
     }
   }
-
-  // TODO: check possible inconsistency with FileResource.containLocaleInFileExtensions 
+ 
   /* given a list of extensions, return a structured view */
   private StructuredFileExtension classifyFileExtension(Path filePath) {
     List<String> exts = getFileExtensions();
+    Collections.reverse(exts);
     //
     
     List<String> processorRelated = takeWhile(exts, configuration.getProcessorResourceExtensions()::contains);

@@ -153,7 +153,6 @@ public class DirPaginator {
     return toAdd;
   }
   
-  //TODO: apply filter
   private List<PathAndModelSupplier> handleStaticDir(FileResource resource, Path defaultOutputPath,
       DirPaginationConfiguration dirPaginationConf, Path targetDirPath) throws IOException {
     Comparator<Path> comparator = Comparator.comparing((Path p) -> p.getFileName().toString(),//
