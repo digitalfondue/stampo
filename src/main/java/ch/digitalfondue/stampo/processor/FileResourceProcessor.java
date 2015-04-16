@@ -241,7 +241,7 @@ class FileResourceProcessor {
     Path resourcePath = resource.getPath();
 
     Path rel = Optional.ofNullable((contentDir.relativize(resourcePath)).getParent())//
-        .orElse(resourcePath.getFileSystem().getPath(""));
+        .orElseGet(() -> resourcePath.getFileSystem().getPath(""));
 
     String finalOutput = rel.resolve(finalOutputName(resource)).toString();
 

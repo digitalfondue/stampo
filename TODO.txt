@@ -5,13 +5,9 @@ TODO:
 		- taxonomy support
 		- must extract all taxonomy
 		- must apply a locale filter over the taxonomy tree if it's in a multi language context
-	- "paginate-match" : glob/regexp pattern? (static dir ok, content dir ok)
-	- "paginate-recursive": true/false [static dir ok, content dir TBD]
-	
 	- iterate-over-static-directory: a special case for paginate with a page size of 1 for static dir
 		- page name is generated from the static file name
 		- useful for generating gallery, where the user will paginate over the thumbnails (using a filter), and the iterate will generate the page containing the image
-
 
 - check non thread safety of pegdown
 
@@ -31,6 +27,8 @@ TODO:
 	- instead of the no cache directive, add etag support
 
 
+- cleanup:
+	- LayoutBasePath.exist
 
 - tests
 

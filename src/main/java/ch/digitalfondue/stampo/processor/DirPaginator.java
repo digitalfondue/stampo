@@ -23,6 +23,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.PathMatcher;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -48,6 +49,8 @@ public class DirPaginator {
 
   private static final String PAGE_DIRECTORY_NAME = "page";
 
+  private static final Comparator<FileResource> NEW_FILE_FIRST = Comparator.comparingLong(FileResource::getCreationTime).reversed();
+  
   private final Directory root;
   private final StampoGlobalConfiguration configuration;
   private final Function<FileResource, Path> outputPathExtractor;
@@ -106,9 +109,26 @@ public class DirPaginator {
     return matchers.isEmpty() ? (Path p) -> true : (Path p) -> matchers.stream().anyMatch(
         (matcher) -> matcher.matches(baseDir.relativize(p)));
   }
+  
+  private static void recurAddFileResources(Directory dir, List<FileResource> fr) {
+    fr.addAll(dir.getFiles().values());
+    for(Directory childDir : dir.getDirectories().values()) {
+      recurAddFileResources(childDir, fr);
+    }
+  }
+  
+  private static Collection<FileResource> extractFilesFrom(Directory dir, DirPaginationConfiguration dirPaginationConf) {
+    if (dirPaginationConf.isRecursive()) {
+      List<FileResource> fr = new ArrayList<>();
+      recurAddFileResources(dir, fr);
+      fr.sort(NEW_FILE_FIRST);
+      return fr;
+    } else {
+      return dir.getFiles().values();
+    }
+  }
 
 
-  // TODO: apply recursive
   private List<PathAndModelSupplier> handleContentDir(FileResource resource, Locale locale,
       Path defaultOutputPath, DirPaginationConfiguration dirPaginationConf, Path targetDirPath) {
     
@@ -119,10 +139,7 @@ public class DirPaginator {
     
     Predicate<Path> patternFilter = matchPattern(dirPaginationConf);
     
-    List<FileResource> files =
-        dir.getFiles()
-            .values()
-            .stream()
+    List<FileResource> files = extractFilesFrom(dir, dirPaginationConf).stream()
             .filter(f -> {
               FileMetadata m = f.getMetadata();
               // filter out the files with pagination

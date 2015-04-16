@@ -108,7 +108,7 @@ public class ResourceProcessor {
     FileMetadata metadata = resource.getMetadata();
     Path defaultOutputPath =
         metadata.getOverrideOutputToPath().map(outputDir::resolve)
-            .orElse(fileResourceProcessor.normalizeOutputPath(resource));
+            .orElseGet(() -> fileResourceProcessor.normalizeOutputPath(resource));
     return defaultOutputPath;
   }
 

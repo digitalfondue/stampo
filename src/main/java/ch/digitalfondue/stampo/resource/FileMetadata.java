@@ -45,9 +45,26 @@ public class FileMetadata {
   public static final int DEFAULT_PAGE_SIZE = 10;
 
   private final Map<String, Object> metadata;
+  //
+  private final Optional<Date> date;
+  private final Optional<List<Locale>> onlyForLocales;
+  private final Optional<String> overrideOutputToPath;
+  private final Optional<Locale> overrideLocale;
+  private final Optional<String> overrideLayout;
+  private final Optional<Boolean> overrideUseUglyUrl;
+  //
 
   public FileMetadata(Map<String, Object> metadata) {
     this.metadata = metadata;
+    //
+    this.date = ofNullable(metadata.get(METADATA_DATE)).map(Date.class::cast);
+    this.onlyForLocales = ofNullable(metadata.get(METADATA_ONLY_FOR_LOCALES)).map(TO_STRING_LIST).map(
+        (l) -> l.stream().map(Locale::forLanguageTag).collect(Collectors.toList()));
+    this.overrideOutputToPath = ofNullable(metadata.get(METADATA_OVERRIDE_OUTPUT_TO_PATH)).map(Object::toString);
+    this.overrideLocale = ofNullable(metadata.get(METADATA_OVERRIDE_LOCALE)).map(Object::toString).map(Locale::forLanguageTag);
+    this.overrideLayout = ofNullable(metadata.get(METADATA_OVERRIDE_LAYOUT)).map(Object::toString);
+    this.overrideUseUglyUrl = ofNullable(metadata.get(METADATA_OVERRIDE_USE_UGLY_URL)).map(Boolean.class::cast);
+    //
   }
 
   public Map<String, Object> getRawMap() {
@@ -66,29 +83,27 @@ public class FileMetadata {
   };
 
   public Optional<Date> getDate() {
-    return ofNullable(metadata.get(METADATA_DATE)).map(Date.class::cast);
+    return date;
   }
 
   public Optional<List<Locale>> getOnlyForLocales() {
-    return ofNullable(metadata.get(METADATA_ONLY_FOR_LOCALES)).map(TO_STRING_LIST).map(
-        (l) -> l.stream().map(Locale::forLanguageTag).collect(Collectors.toList()));
+    return onlyForLocales;
   }
 
   public Optional<String> getOverrideOutputToPath() {
-    return ofNullable(metadata.get(METADATA_OVERRIDE_OUTPUT_TO_PATH)).map(Object::toString);
+    return overrideOutputToPath;
   }
 
   public Optional<Locale> getOverrideLocale() {
-    return ofNullable(metadata.get(METADATA_OVERRIDE_LOCALE)).map(Object::toString).map(
-        Locale::forLanguageTag);
+    return overrideLocale;
   }
 
   public Optional<String> getOverrideLayout() {
-    return ofNullable(metadata.get(METADATA_OVERRIDE_LAYOUT)).map(Object::toString);
+    return overrideLayout;
   }
 
   public Optional<Boolean> getOverrideUseUglyUrl() {
-    return ofNullable(metadata.get(METADATA_OVERRIDE_USE_UGLY_URL)).map(Boolean.class::cast);
+    return overrideUseUglyUrl;
   }
   
   public Optional<DirPaginationConfiguration> getDirectoryPaginationConfiguration() {
