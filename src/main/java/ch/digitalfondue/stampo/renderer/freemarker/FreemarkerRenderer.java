@@ -16,6 +16,8 @@
 package ch.digitalfondue.stampo.renderer.freemarker;
 
 import java.io.StringWriter;
+import java.util.Collections;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.ResourceBundle;
@@ -66,8 +68,7 @@ public class FreemarkerRenderer implements Renderer {
   public void registerResourceRenderer(
       Directory root,
       StampoGlobalConfiguration configuration,
-      Map<String, Function<FileResourceParameters, FileResourceProcessorOutput>> extensionProcessor,
-      Map<String, String> extensionTransformMapping) {
+      Map<String, Function<FileResourceParameters, FileResourceProcessorOutput>> extensionProcessor) {
 
     Configuration c = getConfiguration(root, configuration);
 
@@ -98,6 +99,16 @@ public class FreemarkerRenderer implements Renderer {
     c.setLocalizedLookup(false);
     c.setTemplateLoader(new FreemarkerTemplateLoader(configuration.getContentDir(), configuration.getBaseDirectory(), root));
     return c;
+  }
+
+  @Override
+  public List<String> resourceExtensions() {
+    return Collections.singletonList("ftl");
+  }
+
+  @Override
+  public Map<String, String> extensionTransformMapping() {
+    return Collections.emptyMap();
   }
 
 }

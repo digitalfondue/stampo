@@ -26,11 +26,14 @@ public class StaticFileResource implements FileResource {
   private final StampoGlobalConfiguration configuration;
   private final Path path;
   private final Resource parent;
+  private final StructuredFileExtension structuredFileExtension;
 
   public StaticFileResource(StampoGlobalConfiguration configuration, Path path, Resource parent) {
     this.configuration = configuration;
     this.path = path;
     this.parent = parent;
+    //TODO: check if order of the rest list is correct
+    this.structuredFileExtension = new StructuredFileExtension(Collections.emptyList(), Optional.empty(), Optional.empty(), Collections.emptySet(), getFileExtensions());
   }
 
   @Override
@@ -56,6 +59,11 @@ public class StaticFileResource implements FileResource {
   @Override
   public Optional<String> getContent() {
     return Optional.empty();
+  }
+
+  @Override
+  public StructuredFileExtension getStructuredFileExtension() {
+    return structuredFileExtension;
   }
 
 }

@@ -20,6 +20,7 @@ import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.Optional;
 
@@ -47,10 +48,12 @@ public class LocaleAwareDirectory implements Directory {
 
       Optional<Boolean> includeByMetadata = metadata.getOnlyForLocales()//
           .map((l) -> l.contains(locale));
+      
+      String formattedLocale = locale.toString();
+      
+      Set<String> localesInFileExt = file.getStructuredFileExtension().getLocales();
 
-      boolean includeByFileExtension =
-          file.containLocaleInFileExtensions() ? file.getFileExtensions().stream()
-              .anyMatch((x) -> x.equals(locale.toString())) : true;
+      boolean includeByFileExtension = !localesInFileExt.isEmpty() ? file.getStructuredFileExtension().getLocales().contains(formattedLocale) : true;
 
       if (includeByMetadata.orElse(includeByFileExtension)) {
         filtered.put(kv.getKey(), fileResourceWrapper.apply(kv.getValue(), this));

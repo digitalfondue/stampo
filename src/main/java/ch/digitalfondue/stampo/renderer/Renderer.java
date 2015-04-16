@@ -17,6 +17,7 @@ package ch.digitalfondue.stampo.renderer;
 
 import java.nio.file.Path;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 
@@ -36,9 +37,11 @@ public interface Renderer {
   void registerResourceRenderer(
       Directory root,
       StampoGlobalConfiguration configuration,
-      Map<String, Function<FileResourceParameters, FileResourceProcessorOutput>> extensionProcessor,
-      Map<String, String> extensionTransformMapping);
+      Map<String, Function<FileResourceParameters, FileResourceProcessorOutput>> extensionProcessor);
   
+  
+  List<String> resourceExtensions();
+  Map<String, String> extensionTransformMapping();
   
   static FileResource getContentFileResource(Path template, Path contentDir, Directory root) {
     if (!template.startsWith(contentDir)) {

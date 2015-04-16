@@ -19,9 +19,13 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -35,6 +39,7 @@ public class FileResourceWithMetadataSection implements FileResource {
   private final Path path;
   private final Resource parent;
   private final StampoGlobalConfiguration configuration;
+  private final StructuredFileExtension structuredFileExtension;
 
   // caching the metadata, as this section is small
   private final FileMetadata metadata;
@@ -44,6 +49,7 @@ public class FileResourceWithMetadataSection implements FileResource {
     this.path = path;
     this.parent = parent;
     this.metadata = new FileMetadata(readContent(ReadMode.ONLY_METADATA).metadata);
+    this.structuredFileExtension = classifyFileExtension(path);
   }
 
   public FileResourceWithMetadataSection(FileResource fileResource, Resource parent) {
@@ -51,6 +57,7 @@ public class FileResourceWithMetadataSection implements FileResource {
     this.path = fileResource.getPath();
     this.parent = parent;
     this.metadata = fileResource.getMetadata();
+    this.structuredFileExtension = fileResource.getStructuredFileExtension();
   }
 
   @Override
@@ -132,5 +139,46 @@ public class FileResourceWithMetadataSection implements FileResource {
     } catch (IOException ioe) {
       throw new IllegalStateException(ioe);
     }
+  }
+
+  // TODO: check possible inconsistency with FileResource.containLocaleInFileExtensions 
+  /* given a list of extensions, return a structured view */
+  private StructuredFileExtension classifyFileExtension(Path filePath) {
+    List<String> exts = getFileExtensions();
+    //
+    
+    List<String> processorRelated = takeWhile(exts, configuration.getProcessorResourceExtensions()::contains);
+    
+    //e.g. : md -> html mapping is present 
+    Optional<String> processorFileExtensionOverride = processorRelated.stream().findFirst().map(configuration.getProcessorExtensionTransformMapping()::get);
+    
+    List<String> afterProcessorRelated = exts.subList(processorRelated.size(), exts.size());
+    
+    // if the next token does not match a locale, it's possibly a file extension
+    Optional<String> maybeFileExtension = afterProcessorRelated.stream().findFirst().filter(ext -> !configuration.getLocalesAsString().contains(ext));
+    
+    List<String> afterMaybeFileExtension = afterProcessorRelated.subList(maybeFileExtension.isPresent() ? 1 : 0, afterProcessorRelated.size());
+    List<String> locales = takeWhile(afterMaybeFileExtension, (ext -> configuration.getLocalesAsString().contains(ext)));
+    List<String> afterLocales = new ArrayList<>(afterMaybeFileExtension.subList(locales.size(), afterMaybeFileExtension.size()));
+    Collections.reverse(afterLocales);
+    
+    return new StructuredFileExtension(processorRelated, processorFileExtensionOverride, maybeFileExtension, new HashSet<>(locales), afterLocales);
+  }
+
+  private static <T> List<T> takeWhile(List<T> l, Predicate<T> pred) {
+    List<T> r = new ArrayList<>(l.size());
+    for (T i : l) {
+      if(pred.test(i)) {
+        r.add(i);
+      } else {
+        return r;
+      }
+    }
+    return r;
+  }
+
+  @Override
+  public StructuredFileExtension getStructuredFileExtension() {
+    return structuredFileExtension;
   }
 }

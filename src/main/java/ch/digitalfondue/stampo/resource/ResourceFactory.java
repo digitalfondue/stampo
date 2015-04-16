@@ -42,6 +42,7 @@ public class ResourceFactory {
   }
 
   public FileResource fileResource(Path path, Resource parent) {
+    
     return fileResourceSupplier.get(configuration, path, parent);
   }
 

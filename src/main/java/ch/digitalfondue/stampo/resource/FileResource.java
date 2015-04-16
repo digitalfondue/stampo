@@ -31,11 +31,8 @@ public interface FileResource extends Resource {
   StampoGlobalConfiguration getConfiguration();
   FileMetadata getMetadata();
   Optional<String> getContent();
+  StructuredFileExtension getStructuredFileExtension();
 
-  default boolean containLocaleInFileExtensions() {
-    return getFileExtensions().stream().anyMatch(getConfiguration().getLocalesAsString()::contains);
-  }
-  
   /**
    * File extensions, ordered last to first.
    * 

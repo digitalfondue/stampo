@@ -18,6 +18,8 @@ package ch.digitalfondue.stampo.renderer.pebble;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.io.Writer;
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 
@@ -69,8 +71,7 @@ public class PebbleRenderer implements Renderer {
   public void registerResourceRenderer(
       Directory root,
       StampoGlobalConfiguration configuration,
-      Map<String, Function<FileResourceParameters, FileResourceProcessorOutput>> extensionProcessor,
-      Map<String, String> extensionTransformMapping) {
+      Map<String, Function<FileResourceParameters, FileResourceProcessorOutput>> extensionProcessor) {
     PebbleEngine pebble = build(root, configuration);
     extensionProcessor.put("peb", (params) -> {
       try {
@@ -83,5 +84,19 @@ public class PebbleRenderer implements Renderer {
         throw new TemplateException(params.fileResource.getPath(), e);
       }
     });
+  }
+
+
+
+  @Override
+  public List<String> resourceExtensions() {
+    return Collections.singletonList("peb");
+  }
+
+
+
+  @Override
+  public Map<String, String> extensionTransformMapping() {
+    return Collections.emptyMap();
   }
 }

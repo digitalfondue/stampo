@@ -27,6 +27,7 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
@@ -66,7 +67,11 @@ public class StampoGlobalConfiguration {
   private final Path dataDir;
 
   private final Map<String, Object> data;
-
+  
+  //
+  private final Set<String> processorResourceExtensions;
+  private final Map<String, String> processorExtensionTransformMapping;
+  //
 
   public StampoGlobalConfiguration(Map<String, Object> configuration, Path baseDirectory,
       Path baseOutputDir, List<Renderer> renderers) {
@@ -87,6 +92,17 @@ public class StampoGlobalConfiguration {
     this.dataDir = baseDirectory.resolve("data").normalize();
     
     this.data = extractData();
+    
+    
+    Set<String> resProcExt = new HashSet<>();
+    Map<String, String> resProcMapping = new HashMap<>();
+    for (Renderer renderer : renderers) {
+      resProcExt.addAll(renderer.resourceExtensions());
+      resProcMapping.putAll(renderer.extensionTransformMapping());
+    }
+    
+    processorResourceExtensions = Collections.unmodifiableSet(resProcExt);
+    processorExtensionTransformMapping = Collections.unmodifiableMap(resProcMapping);
   }
 
   // patterns follow
@@ -228,5 +244,13 @@ public class StampoGlobalConfiguration {
 
   public Set<String> getLocalesAsString() {
     return localesAsString;
+  }
+
+  public Set<String> getProcessorResourceExtensions() {
+    return processorResourceExtensions;
+  }
+
+  public Map<String, String> getProcessorExtensionTransformMapping() {
+    return processorExtensionTransformMapping;
   }
 }

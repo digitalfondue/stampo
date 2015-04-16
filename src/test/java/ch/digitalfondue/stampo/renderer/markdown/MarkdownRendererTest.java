@@ -49,11 +49,8 @@ public class MarkdownRendererTest {
 
 		
 		Map<String, Function<FileResourceParameters, FileResourceProcessorOutput>> extensionProcessorResource = new HashMap<>();
-		Map<String, String> extensionTransformMapping = new HashMap<>();
-		renderer.registerResourceRenderer(root, configuration,
-				extensionProcessorResource, extensionTransformMapping);
+		renderer.registerResourceRenderer(root, configuration, extensionProcessorResource);
 		
 		assertEquals(5, extensionProcessorResource.size()); //5 extensions .md, .mkdown, ....
-		assertEquals(5, extensionTransformMapping.size()); // .md -> .html * 5
 	}
 }

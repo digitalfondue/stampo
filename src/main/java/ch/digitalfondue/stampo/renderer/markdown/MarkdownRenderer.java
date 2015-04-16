@@ -16,8 +16,10 @@
 package ch.digitalfondue.stampo.renderer.markdown;
 
 import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import org.pegdown.PegDownProcessor;
 
@@ -30,6 +32,8 @@ import ch.digitalfondue.stampo.renderer.Renderer;
 import ch.digitalfondue.stampo.resource.Directory;
 
 public class MarkdownRenderer implements Renderer {
+  
+  private static final List<String> EXTENSIONS = Arrays.asList("markdown", "mdown", "mkdn", "mkd", "md");
 
   private static Function<FileResourceParameters, FileResourceProcessorOutput> fileResourceProcessor() {
 
@@ -48,16 +52,24 @@ public class MarkdownRenderer implements Renderer {
   public void registerResourceRenderer(
       Directory root,
       StampoGlobalConfiguration configuration,
-      Map<String, Function<FileResourceParameters, FileResourceProcessorOutput>> extensionProcessor,
-      Map<String, String> extensionTransformMapping) {
+      Map<String, Function<FileResourceParameters, FileResourceProcessorOutput>> extensionProcessor) {
 
     Function<FileResourceParameters, FileResourceProcessorOutput> processor =
         fileResourceProcessor();
 
-    for (String extension : Arrays.asList("markdown", "mdown", "mkdn", "mkd", "md")) {
+    for (String extension : EXTENSIONS) {
       extensionProcessor.put(extension, processor);
-      extensionTransformMapping.put(extension, "html");
     }
+  }
+
+  @Override
+  public List<String> resourceExtensions() {
+    return EXTENSIONS;
+  }
+
+  @Override
+  public Map<String, String> extensionTransformMapping() {
+    return EXTENSIONS.stream().collect(Collectors.toMap(Function.identity(), (_ignore) -> "html"));
   }
 
 }

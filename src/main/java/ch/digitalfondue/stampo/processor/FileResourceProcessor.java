@@ -24,7 +24,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import ch.digitalfondue.stampo.StampoGlobalConfiguration;
@@ -32,11 +31,11 @@ import ch.digitalfondue.stampo.resource.Directory;
 import ch.digitalfondue.stampo.resource.FileMetadata;
 import ch.digitalfondue.stampo.resource.FileResource;
 import ch.digitalfondue.stampo.resource.Resource;
+import ch.digitalfondue.stampo.resource.StructuredFileExtension;
 
 class FileResourceProcessor {
 
   private final Map<String, Function<FileResourceParameters, FileResourceProcessorOutput>> processors;
-  private final Map<String, String> resultingProcessedFileExtensions;
 
   private final Path contentDir, outputDir;
   private final StampoGlobalConfiguration configuration;
@@ -48,13 +47,11 @@ class FileResourceProcessor {
     this.configuration = configuration;
 
     Map<String, Function<FileResourceParameters, FileResourceProcessorOutput>> p = new HashMap<>();
-    Map<String, String> r = new HashMap<>();
 
     configuration.getRenderers().forEach(
-        (renderer) -> renderer.registerResourceRenderer(root, configuration, p, r));
+        (renderer) -> renderer.registerResourceRenderer(root, configuration, p));
 
     processors = Collections.unmodifiableMap(p);
-    resultingProcessedFileExtensions = Collections.unmodifiableMap(r);
   }
   
   private static class ProcessedFileResource implements FileResource {
@@ -92,15 +89,20 @@ class FileResourceProcessor {
     public Optional<String> getContent() {
       return content;
     }
+
+    @Override
+    public StructuredFileExtension getStructuredFileExtension() {
+      return fileResource.getStructuredFileExtension();
+    }
     
   }
 
 
   FileResourceProcessorOutput applyProcessors(FileResource fileResource, Locale locale, Map<String, Object> model) {
 
-    ClassifiedFileExtension ext = classifyExtension(fileResource);
+    StructuredFileExtension ext = fileResource.getStructuredFileExtension();
     
-    List<String> processorsExt = new ArrayList<>(ext.processorRelatedExts);
+    List<String> processorsExt = new ArrayList<>(ext.getProcessorRelatedExts());
     Collections.reverse(processorsExt);
     
     List<Function<FileResourceParameters, FileResourceProcessorOutput>> processorsToApply = processorsExt.stream().map(processors::get).collect(Collectors.toList());
@@ -152,7 +154,7 @@ class FileResourceProcessor {
    */
   String finalOutputName(FileResource fileResource) {
     
-    ClassifiedFileExtension fileExt = classifyExtension(fileResource);
+    StructuredFileExtension fileExt = fileResource.getStructuredFileExtension();
     
     String fileNameWithoutExt = fileResource.getFileNameWithoutExtensions();
     String extension = fileExt.getFinalFileExtension();
@@ -167,67 +169,10 @@ class FileResourceProcessor {
     }
   }
   
-  @SuppressWarnings("unused")
-  private static class ClassifiedFileExtension {
-    
-    final List<String> processorRelatedExts;
-    final Optional<String> processorFileExtensionOverride;
-    final Optional<String> maybeFileExtension;
-    final List<String> locales;
-    final String rest;
-    
-    
-    ClassifiedFileExtension(List<String> processorRelatedExts,
-        Optional<String> processorFileExtensionOverride,
-        Optional<String> maybeFileExtension, List<String> locales, List<String> rest) {
-      this.processorRelatedExts = processorRelatedExts;
-      this.processorFileExtensionOverride = processorFileExtensionOverride;
-      this.maybeFileExtension = maybeFileExtension;
-      this.locales = locales;
-      this.rest = rest.stream().collect(Collectors.joining("."));
-    }
-    
-    String getFinalFileExtension() {
-      String finalExt = processorFileExtensionOverride.orElseGet(() -> maybeFileExtension.orElse(""));
-      return (rest.length() > 0 ? "." : "") + rest + (finalExt.length() > 0 ? "." : "") + finalExt;
-    }
-  }
+  
+  
+  
 
-  // TODO: check possible inconsistency with FileResource.containLocaleInFileExtensions 
-  /* given a list of extensions, return a structured view */
-  private ClassifiedFileExtension classifyExtension(FileResource fileResource) {
-    List<String> exts = fileResource.getFileExtensions();
-    //
-    
-    List<String> processorRelated = takeWhile(exts, processors::containsKey);
-    
-    //e.g. : md -> html mapping is present 
-    Optional<String> processorFileExtensionOverride = processorRelated.stream().findFirst().map(resultingProcessedFileExtensions::get);
-    
-    List<String> afterProcessorRelated = exts.subList(processorRelated.size(), exts.size());
-    
-    // if the next token does not match a locale, it's possibly a file extension
-    Optional<String> maybeFileExtension = afterProcessorRelated.stream().findFirst().filter(ext -> !configuration.getLocalesAsString().contains(ext));
-    
-    List<String> afterMaybeFileExtension = afterProcessorRelated.subList(maybeFileExtension.isPresent() ? 1 : 0, afterProcessorRelated.size());
-    List<String> locales = takeWhile(afterMaybeFileExtension, (ext -> configuration.getLocalesAsString().contains(ext)));
-    List<String> afterLocales = new ArrayList<>(afterMaybeFileExtension.subList(locales.size(), afterMaybeFileExtension.size()));
-    Collections.reverse(afterLocales);
-    
-    return new ClassifiedFileExtension(processorRelated, processorFileExtensionOverride, maybeFileExtension, locales, afterLocales);
-  }
-
-  private static <T> List<T> takeWhile(List<T> l, Predicate<T> pred) {
-    List<T> r = new ArrayList<>(l.size());
-    for (T i : l) {
-      if(pred.test(i)) {
-        r.add(i);
-      } else {
-        return r;
-      }
-    }
-    return r;
-  }
 
   /**
    * Generate the output path given the resource and the output dir.
