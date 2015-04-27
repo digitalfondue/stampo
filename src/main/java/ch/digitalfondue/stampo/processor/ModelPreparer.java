@@ -31,11 +31,12 @@ import ch.digitalfondue.stampo.resource.FileResource;
 import ch.digitalfondue.stampo.resource.ResourceFactory;
 import ch.digitalfondue.stampo.resource.RootResource;
 import ch.digitalfondue.stampo.resource.StaticFileResource;
+import ch.digitalfondue.stampo.taxonomy.Taxonomy;
 
 public class ModelPreparer {
 
   
-  public static Map<String, Object> prepare(Directory root, StampoGlobalConfiguration configuration, Locale locale, FileResource resource, Path outputPath, Map<String, Object> additionalData) {
+  public static Map<String, Object> prepare(Directory root, StampoGlobalConfiguration configuration, Locale locale, FileResource resource, Path outputPath, Taxonomy taxonomy, Map<String, Object> additionalData) {
     Map<String, Object> model = new HashMap<>();
     model.put("root", root);
     model.put("configuration", configuration);
@@ -44,6 +45,7 @@ public class ModelPreparer {
     model.put("metadata", resource.getMetadata());
     model.put("relativeRootPath", PathUtils.relativePathTo(configuration.getBaseOutputDir(), outputPath));
     model.put("outputPath", PathUtils.relativePathTo(outputPath, configuration.getBaseOutputDir()));
+    model.put("taxonomy", taxonomy);
     
     model.put("data", configuration.getData());
     

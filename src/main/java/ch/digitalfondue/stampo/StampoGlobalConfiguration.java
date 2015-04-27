@@ -17,6 +17,7 @@ package ch.digitalfondue.stampo;
 
 import static java.nio.file.Files.newInputStream;
 import static java.util.Arrays.asList;
+import static java.util.Collections.singleton;
 import static java.util.Collections.singletonList;
 import static java.util.Collections.unmodifiableSet;
 import static java.util.Optional.ofNullable;
@@ -26,9 +27,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -49,6 +52,7 @@ public class StampoGlobalConfiguration {
   public static final String CONF_LOCALES = "locales";
   public static final String CONF_DEFAULT_LOCALES = "default-locale";
   public static final String CONF_USE_UGLY_URL = "use-ugly-url";
+  public static final String CONF_TAXONOMIES = "taxonomies";
 
   private final Map<String, Object> configuration;
   private final List<Locale> locales;
@@ -72,6 +76,7 @@ public class StampoGlobalConfiguration {
   private final Set<String> processorResourceExtensions;
   private final Map<String, String> processorExtensionTransformMapping;
   //
+  private final Set<String> taxonomies;
 
   public StampoGlobalConfiguration(Map<String, Object> configuration, Path baseDirectory,
       Path baseOutputDir, List<Renderer> renderers) {
@@ -81,6 +86,7 @@ public class StampoGlobalConfiguration {
     this.localesAsString = Collections.unmodifiableSet(locales.stream().map(Object::toString).collect(Collectors.toSet()));
     this.defaultLocale = defaultLocale(configuration);
     this.ignorePatterns = extractIgnorePatterns(configuration);
+    this.taxonomies = extractTaxonomies(configuration);
 
     this.baseDirectory = baseDirectory;
     this.baseOutputDir = baseOutputDir;
@@ -134,6 +140,20 @@ public class StampoGlobalConfiguration {
     return l.stream().map(Locale::forLanguageTag).collect(toList());
   }
   
+  @SuppressWarnings("unchecked")
+  private static Set<String> extractTaxonomies(Map<String, Object> configuration) {
+    Optional<Object> maybeTaxonomies = ofNullable(configuration.get(CONF_TAXONOMIES));
+    return maybeTaxonomies.map((taxonomies) -> {
+      if(taxonomies instanceof String) {
+        return singleton(taxonomies.toString());
+      } else if (taxonomies instanceof Collection) {
+        return ((Collection<Object>) taxonomies).stream().map(Object::toString).collect(Collectors.toCollection(LinkedHashSet::new));
+      } else {
+        throw new IllegalArgumentException("wrong type for taxonomies: " + taxonomies);
+      }
+    }).orElse(Collections.emptySet());
+  }
+  
   
   private static class KeyValue {
     private final String key;
@@ -174,6 +194,10 @@ public class StampoGlobalConfiguration {
       }
     }
     return Collections.emptyMap();
+  }
+  
+  public Set<String> getTaxonomyGroups() {
+    return taxonomies;
   }
 
   private static Optional<Locale> defaultLocale(Map<String, Object> configuration) {

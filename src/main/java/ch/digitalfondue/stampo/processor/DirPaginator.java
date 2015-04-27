@@ -43,6 +43,7 @@ import ch.digitalfondue.stampo.resource.DirPaginationConfiguration;
 import ch.digitalfondue.stampo.resource.Directory;
 import ch.digitalfondue.stampo.resource.FileMetadata;
 import ch.digitalfondue.stampo.resource.FileResource;
+import ch.digitalfondue.stampo.taxonomy.Taxonomy;
 
 // TODO: refactor!
 public class DirPaginator {
@@ -55,16 +56,19 @@ public class DirPaginator {
   private final StampoGlobalConfiguration configuration;
   private final Function<FileResource, Path> outputPathExtractor;
   private final Function<Locale, BiFunction<FileResource, Map<String, Object>, FileResourceProcessorOutput>> resourceProcessor;
+  private final Taxonomy taxonomy;
 
   public DirPaginator(
       Directory root,
       StampoGlobalConfiguration configuration,
       Function<FileResource, Path> outputPathExtractor,
-      Function<Locale, BiFunction<FileResource, Map<String, Object>, FileResourceProcessorOutput>> resourceProcessor) {
+      Function<Locale, BiFunction<FileResource, Map<String, Object>, FileResourceProcessorOutput>> resourceProcessor,
+      Taxonomy taxonomy) {
     this.root = root;
     this.configuration = configuration;
     this.outputPathExtractor = outputPathExtractor;
     this.resourceProcessor = resourceProcessor;
+    this.taxonomy = taxonomy;
   }
 
 
@@ -274,7 +278,7 @@ public class DirPaginator {
   private PageContent toPageContent(FileResource fileResource, Locale locale, Path pagePath) {
 
     Map<String, Object> model =
-        ModelPreparer.prepare(root, configuration, locale, fileResource, pagePath, Collections.emptyMap());
+        ModelPreparer.prepare(root, configuration, locale, fileResource, pagePath, taxonomy, Collections.emptyMap());
 
     FileResourceProcessorOutput processed =
         resourceProcessor.apply(locale).apply(fileResource, model);

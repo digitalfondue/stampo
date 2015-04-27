@@ -39,6 +39,7 @@ import ch.digitalfondue.stampo.resource.DirPaginationConfiguration;
 import ch.digitalfondue.stampo.resource.FileMetadata;
 import ch.digitalfondue.stampo.resource.FileResource;
 import ch.digitalfondue.stampo.resource.TaxonomyPaginationConfiguration;
+import ch.digitalfondue.stampo.taxonomy.Taxonomy;
 
 // TODO: cleanup and break up the class
 public class ResourceProcessor {
@@ -49,19 +50,21 @@ public class ResourceProcessor {
   private final StampoGlobalConfiguration configuration;
   private final Path outputDir;
   private final DirPaginator dirPaginator;
+  private final Taxonomy taxonomy;
 
-  public ResourceProcessor(Path outputDir, Directory root, StampoGlobalConfiguration configuration) {
+  public ResourceProcessor(Path outputDir, Directory root, StampoGlobalConfiguration configuration, Taxonomy taxonomy) {
 
     this.root = root;
     this.configuration = configuration;
     this.outputDir = outputDir;
+    this.taxonomy = taxonomy;
 
     this.fileResourceProcessor = new FileResourceProcessor(configuration, outputDir, root);
     this.layoutProcessor = new LayoutProcessor(configuration, root, fileResourceProcessor);
 
     this.dirPaginator =
         new DirPaginator(root, configuration, this::extractOutputPath,
-            (locale) -> (f, m) -> fileResourceProcessor.applyProcessors(f, locale, m));
+            (locale) -> (f, m) -> fileResourceProcessor.applyProcessors(f, locale, m), taxonomy);
   }
 
 
@@ -132,7 +135,7 @@ public class ResourceProcessor {
     }
 
     Map<String, Object> model =
-        ModelPreparer.prepare(root, configuration, finalLocale, resource, outputPath, additionalData.get());
+        ModelPreparer.prepare(root, configuration, finalLocale, resource, outputPath, taxonomy, additionalData.get());
 
     FileResourceProcessorOutput processed =
         fileResourceProcessor.applyProcessors(resource, finalLocale, model);

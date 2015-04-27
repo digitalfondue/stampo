@@ -62,6 +62,7 @@ import ch.digitalfondue.stampo.resource.PathOverrideAwareDirectory;
 import ch.digitalfondue.stampo.resource.PathOverrideAwareDirectory.Mode;
 import ch.digitalfondue.stampo.resource.ResourceFactory;
 import ch.digitalfondue.stampo.resource.RootResource;
+import ch.digitalfondue.stampo.taxonomy.Taxonomy;
 
 /**
  *
@@ -139,6 +140,8 @@ public class Stampo {
     Directory rootWithOverrideHidden = new PathOverrideAwareDirectory(Mode.HIDE, root, FileResourceWithMetadataSection::new);
     Directory rootWithOnlyOverride =
         new PathOverrideAwareDirectory(Mode.SHOW_ONLY_PATH_OVERRIDE, root, FileResourceWithMetadataSection::new);
+    
+    
 
     if (locales.size() > 1) {
 
@@ -147,6 +150,10 @@ public class Stampo {
       for (Locale locale : locales) {
 
         Directory localeAwareRoot = new LocaleAwareDirectory(locale, rootWithOverrideHidden, FileResourceWithMetadataSection::new);
+        
+        Taxonomy taxonomy = new Taxonomy(configuration.getTaxonomyGroups(), newFileFirst);    
+        taxonomy.add(localeAwareRoot);
+        
 
         Path finalOutputDir =
             defaultLocale.flatMap(
@@ -155,17 +162,25 @@ public class Stampo {
 
 
         render(localeAwareRoot, new ResourceProcessor(finalOutputDir, localeAwareRoot,
-            configuration), locale, outputHandler);
+            configuration, taxonomy), locale, outputHandler);
       }
+      
+      Taxonomy taxonomy = new Taxonomy(configuration.getTaxonomyGroups(), newFileFirst);    
+      taxonomy.add(rootWithOnlyOverride);
 
       render(rootWithOnlyOverride, new ResourceProcessor(configuration.getBaseOutputDir(),
-          rootWithOnlyOverride, configuration), defaultLocale.orElse(Locale.ENGLISH), outputHandler);
+          rootWithOnlyOverride, configuration, taxonomy), defaultLocale.orElse(Locale.ENGLISH), outputHandler);
     } else {
+      
+      Taxonomy taxonomy = new Taxonomy(configuration.getTaxonomyGroups(), newFileFirst);
+      taxonomy.add(rootWithOnlyOverride);    
+      taxonomy.add(rootWithOverrideHidden);
+      
       render(rootWithOverrideHidden, new ResourceProcessor(configuration.getBaseOutputDir(),
-          rootWithOverrideHidden, configuration), locales.get(0), outputHandler);
+          rootWithOverrideHidden, configuration, taxonomy), locales.get(0), outputHandler);
 
       render(rootWithOnlyOverride, new ResourceProcessor(configuration.getBaseOutputDir(),
-          rootWithOnlyOverride, configuration), locales.get(0), outputHandler);
+          rootWithOnlyOverride, configuration, taxonomy), locales.get(0), outputHandler);
     }
 
     copyStaticDirectory(staticDirectoryAction);

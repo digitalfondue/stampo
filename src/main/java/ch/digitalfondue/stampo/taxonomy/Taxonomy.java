@@ -23,22 +23,28 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 
 import ch.digitalfondue.stampo.resource.Directory;
 import ch.digitalfondue.stampo.resource.FileResource;
 
 public class Taxonomy {
 
-  private final Map<String, List<FileResource>> groups = new HashMap<>();
+  private final Map<String, Map<String, List<FileResource>>> groups;
   private final Set<String> groupingProperties;
+  private final Comparator<FileResource> fileSorter;
 
-  public Taxonomy(Set<String> groupingProperties, Directory directory,
-      Comparator<FileResource> fileSorter) {
+  public Taxonomy(Set<String> groupingProperties, Comparator<FileResource> fileSorter) {
+    this.groups = new HashMap<>();
     this.groupingProperties = groupingProperties;
+    this.fileSorter = fileSorter;
+    
+    groupingProperties.forEach((group) -> groups.put(group, new TreeMap<String, List<FileResource>>()));
+  }
+
+  public void add(Directory directory) {
     generateGroups(directory);
-    groups.forEach((k, l) -> {
-      Collections.sort(l, fileSorter);
-    });
+    groups.forEach((k, m) -> m.forEach((_ignore, l) ->  Collections.sort(l, fileSorter)));
   }
 
   private void generateGroups(Directory dir) {
@@ -62,10 +68,10 @@ public class Taxonomy {
 
         for (Object v : vals) {
           String key = v.toString();
-          if (!groups.containsKey(key)) {
-            groups.put(key, new ArrayList<FileResource>());
+          if(!groups.get(prop).containsKey(key)) {
+            groups.get(prop).put(key, new ArrayList<>());
           }
-          groups.get(key).add(file);
+          groups.get(prop).get(key).add(file);
         }
       }
     }
