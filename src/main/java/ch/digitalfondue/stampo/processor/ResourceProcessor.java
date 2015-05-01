@@ -50,6 +50,7 @@ public class ResourceProcessor {
   private final StampoGlobalConfiguration configuration;
   private final Path outputDir;
   private final DirPaginator dirPaginator;
+  private final TaxonomyPaginator taxonomyPaginator;
   private final Taxonomy taxonomy;
 
   public ResourceProcessor(Path outputDir, Directory root, StampoGlobalConfiguration configuration, Taxonomy taxonomy) {
@@ -65,6 +66,8 @@ public class ResourceProcessor {
     this.dirPaginator =
         new DirPaginator(root, configuration, this::extractOutputPath,
             (locale) -> (f, m) -> fileResourceProcessor.applyProcessors(f, locale, m), taxonomy);
+    this.taxonomyPaginator = new TaxonomyPaginator(root, configuration, this::extractOutputPath,
+        (locale) -> (f, m) -> fileResourceProcessor.applyProcessors(f, locale, m), taxonomy);
   }
 
 
@@ -91,10 +94,9 @@ public class ResourceProcessor {
     Path defaultOutputPath = extractOutputPath(resource);
 
     if (dirPagination.isPresent()) {
-      outputPaths = dirPaginator.handleDirPagination(resource, finalLocale, defaultOutputPath);
+      outputPaths = dirPaginator.handlePagination(resource, finalLocale, defaultOutputPath);
     } else if (taxonomyPagination.isPresent()) {
-      throw new UnsupportedOperationException(
-          "pagination over taxonomy not supported at the moment");
+      outputPaths = taxonomyPaginator.handlePagination(resource, finalLocale, defaultOutputPath);
     } else {
       outputPaths =
           Collections.singletonList(new PathAndModelSupplier(defaultOutputPath,

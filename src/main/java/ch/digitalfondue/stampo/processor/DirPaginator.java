@@ -24,16 +24,13 @@ import java.nio.file.Path;
 import java.nio.file.PathMatcher;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Predicate;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import ch.digitalfondue.stampo.PathUtils;
@@ -46,17 +43,11 @@ import ch.digitalfondue.stampo.resource.FileResource;
 import ch.digitalfondue.stampo.taxonomy.Taxonomy;
 
 // TODO: refactor!
-public class DirPaginator {
+public class DirPaginator extends Paginator {
 
-  private static final String PAGE_DIRECTORY_NAME = "page";
+  private static final Comparator<FileResource> NEW_FILE_FIRST = Comparator.comparingLong(
+      FileResource::getCreationTime).reversed();
 
-  private static final Comparator<FileResource> NEW_FILE_FIRST = Comparator.comparingLong(FileResource::getCreationTime).reversed();
-  
-  private final Directory root;
-  private final StampoGlobalConfiguration configuration;
-  private final Function<FileResource, Path> outputPathExtractor;
-  private final Function<Locale, BiFunction<FileResource, Map<String, Object>, FileResourceProcessorOutput>> resourceProcessor;
-  private final Taxonomy taxonomy;
 
   public DirPaginator(
       Directory root,
@@ -64,16 +55,12 @@ public class DirPaginator {
       Function<FileResource, Path> outputPathExtractor,
       Function<Locale, BiFunction<FileResource, Map<String, Object>, FileResourceProcessorOutput>> resourceProcessor,
       Taxonomy taxonomy) {
-    this.root = root;
-    this.configuration = configuration;
-    this.outputPathExtractor = outputPathExtractor;
-    this.resourceProcessor = resourceProcessor;
-    this.taxonomy = taxonomy;
+    super(root, configuration, outputPathExtractor, resourceProcessor, taxonomy);
   }
 
 
 
-  public List<PathAndModelSupplier> handleDirPagination(FileResource resource, Locale locale,
+  public List<PathAndModelSupplier> handlePagination(FileResource resource, Locale locale,
       Path defaultOutputPath) {
 
     List<PathAndModelSupplier> outpuPaths = new ArrayList<PathAndModelSupplier>();
@@ -87,12 +74,14 @@ public class DirPaginator {
     checkTargetDirectory(resource, dirPaginationConf, targetDirPath);
 
     if (targetDirPath.startsWith(configuration.getContentDir())) {
-      
-      outpuPaths.addAll(handleContentDir(resource, locale, defaultOutputPath, dirPaginationConf, targetDirPath));
+
+      outpuPaths.addAll(handleContentDir(resource, locale, defaultOutputPath, dirPaginationConf,
+          targetDirPath));
 
     } else if (targetDirPath.startsWith(configuration.getStaticDir())) {
       try {
-        outpuPaths.addAll(handleStaticDir(resource, defaultOutputPath, dirPaginationConf, targetDirPath));
+        outpuPaths.addAll(handleStaticDir(resource, defaultOutputPath, dirPaginationConf,
+            targetDirPath));
       } catch (IOException ioe) {
         throw new IllegalStateException(ioe);
       }
@@ -103,144 +92,10 @@ public class DirPaginator {
     return outpuPaths;
   }
   
-  private Predicate<Path> matchPattern(DirPaginationConfiguration dirPaginationConf) {
-    FileSystem inputFs = configuration.getBaseDirectory().getFileSystem();
-    
-    List<PathMatcher> matchers = dirPaginationConf.getMatchPattern().stream().map(inputFs::getPathMatcher).collect(Collectors.toList());
-    
-    Path baseDir = configuration.getBaseDirectory();
-    
-    return matchers.isEmpty() ? (Path p) -> true : (Path p) -> matchers.stream().anyMatch(
-        (matcher) -> matcher.matches(baseDir.relativize(p)));
+  private static String leftTrimSlash(String s) {
+    return s.startsWith("/") ? s.substring(1) : s;
   }
   
-  private static void recurAddFileResources(Directory dir, List<FileResource> fr) {
-    fr.addAll(dir.getFiles().values());
-    for(Directory childDir : dir.getDirectories().values()) {
-      recurAddFileResources(childDir, fr);
-    }
-  }
-  
-  private static Collection<FileResource> extractFilesFrom(Directory dir, DirPaginationConfiguration dirPaginationConf) {
-    if (dirPaginationConf.isRecursive()) {
-      List<FileResource> fr = new ArrayList<>();
-      recurAddFileResources(dir, fr);
-      fr.sort(NEW_FILE_FIRST);
-      return fr;
-    } else {
-      return dir.getFiles().values();
-    }
-  }
-
-
-  private List<PathAndModelSupplier> handleContentDir(FileResource resource, Locale locale,
-      Path defaultOutputPath, DirPaginationConfiguration dirPaginationConf, Path targetDirPath) {
-    
-    Directory dir =
-        root.getDirectory(configuration.getContentDir().relativize(targetDirPath)).orElseThrow(
-            () -> new ConfigurationException(resource.getPath(), "cannot find the directory '"
-                + targetDirPath + "' to paginate over"));
-    
-    Predicate<Path> patternFilter = matchPattern(dirPaginationConf);
-    
-    List<FileResource> files = extractFilesFrom(dir, dirPaginationConf).stream()
-            .filter(f -> {
-              FileMetadata m = f.getMetadata();
-              // filter out the files with pagination
-                return !m.getTaxonomyPaginationConfiguration().isPresent()
-                    && !m.getDirectoryPaginationConfiguration().isPresent();
-              }).filter((f) -> patternFilter.test(f.getPath())).collect(toList());
-
-    List<PathAndModelSupplier> toAdd =
-        registerPaths(files, defaultOutputPath, dirPaginationConf.getPageSize(), resource,
-            path -> (f -> toPageContent(f, locale, path)));
-    return toAdd;
-  }
-  
-  private List<PathAndModelSupplier> handleStaticDir(FileResource resource, Path defaultOutputPath,
-      DirPaginationConfiguration dirPaginationConf, Path targetDirPath) throws IOException {
-    Comparator<Path> comparator = Comparator.comparing((Path p) -> p.getFileName().toString(),//
-        new AlphaNumericStringComparator(Locale.ENGLISH)).reversed();
-
-    int depth = dirPaginationConf.isRecursive() ? Integer.MAX_VALUE : 1;
-
-    Path baseOutputDir = configuration.getBaseOutputDir();
-    Path staticDir = configuration.getStaticDir();
-    
-    Predicate<Path> patternFilter = matchPattern(dirPaginationConf);
-
-    List<Path> files =
-        Files.walk(targetDirPath, depth).filter(Files::isRegularFile).filter(patternFilter).sorted(comparator)
-            .map(file -> baseOutputDir.resolve(staticDir.relativize(file).toString()))
-            .collect(toList());
-
-    List<PathAndModelSupplier> toAdd =
-        registerPaths(files, defaultOutputPath, dirPaginationConf.getPageSize(), resource,
-            path -> (f -> PathUtils.relativePathTo(f, path)));
-    return toAdd;
-  }
-
-
-  private <T, R> List<PathAndModelSupplier> registerPaths(List<T> files, Path defaultOutputPath,
-      long pageSize, FileResource resource, Function<Path, Function<T, R>> contentMapper) {
-
-    Path basePageDir = defaultOutputPath.getParent().resolve(PAGE_DIRECTORY_NAME);
-
-    List<PathAndModelSupplier> outpuPaths = new ArrayList<>();
-    long count = files.size();
-
-    // -1, as we don't count the base page
-    long additionalPages = Math.max((count / pageSize + (count % pageSize > 0 ? 1 : 0)) - 1, 0);
-
-    Supplier<Map<String, Object>> indexPageModelSupplier =
-        prepareModelSupplier(1, pageSize, additionalPages, files, defaultOutputPath, resource,
-            contentMapper.apply(defaultOutputPath));
-    outpuPaths.add(new PathAndModelSupplier(defaultOutputPath, indexPageModelSupplier));
-
-    for (int i = 0; i < additionalPages; i++) {
-      Path pageOutputPath = basePageDir.resolve(pageName(i + 2, resource));
-      Supplier<Map<String, Object>> pageModelSupplier =
-          prepareModelSupplier(i + 2, pageSize, additionalPages, files, defaultOutputPath,
-              resource, contentMapper.apply(pageOutputPath));
-      outpuPaths.add(new PathAndModelSupplier(pageOutputPath, pageModelSupplier));
-    }
-
-    return outpuPaths;
-  }
-
-  private <T, T1> Supplier<Map<String, Object>> prepareModelSupplier(long currentPage,
-      long pageSize, long additionalPagesCount, List<T> content, Path defaultOutputPath,
-      FileResource fileResource, Function<T, T1> contentMapper) {
-    return () -> {
-      Map<String, Object> model = new HashMap<>();
-      List<T1> pageContent = content.stream().skip((currentPage - 1) * pageSize)//
-          .limit(pageSize).map(contentMapper).collect(toList());
-      BiFunction<Long, Long, String> paginationFunction =
-          urlPaginationGenerator(defaultOutputPath, fileResource);
-      model.put("pagination",
-          new Page<>(currentPage, pageSize, additionalPagesCount + 1, content.size(),
-              paginationFunction, pageContent));
-      return model;
-    };
-  }
-
-  private static String removeIndexHtml(String s) {
-    return s.replaceFirst("/index\\.html$", "/");
-  }
-
-  private boolean useUglyUrl(FileResource fileResource) {
-    return fileResource.getMetadata().getOverrideUseUglyUrl().orElse(configuration.useUglyUrl());
-  }
-
-  private String pageName(long pageNumber, FileResource fileResource) {
-    if (useUglyUrl(fileResource)) {
-      return pageNumber + ".html";
-    } else {
-      return pageNumber + "/index.html";
-    }
-  }
-
-
   private void checkTargetDirectory(FileResource resource,
       DirPaginationConfiguration dirPaginationConfiguration, Path targetDir) {
     if (!targetDir.startsWith(configuration.getBaseDirectory())) {
@@ -254,50 +109,87 @@ public class DirPaginator {
     }
   }
 
-  private static String leftTrimSlash(String s) {
-    return s.startsWith("/") ? s.substring(1) : s;
+  private Predicate<Path> matchPattern(DirPaginationConfiguration dirPaginationConf) {
+    FileSystem inputFs = configuration.getBaseDirectory().getFileSystem();
+
+    List<PathMatcher> matchers =
+        dirPaginationConf.getMatchPattern().stream().map(inputFs::getPathMatcher)
+            .collect(Collectors.toList());
+
+    Path baseDir = configuration.getBaseDirectory();
+
+    return matchers.isEmpty() ? (Path p) -> true : (Path p) -> matchers.stream().anyMatch(
+        (matcher) -> matcher.matches(baseDir.relativize(p)));
   }
 
-  private BiFunction<Long, Long, String> urlPaginationGenerator(Path defaultOutputPath,
-      FileResource fileResource) {
-    return (currentPage, nextPageToLink) -> {
-      // handle override + ugly url
-      String url;
-      if (currentPage == 1) {
-        url = PAGE_DIRECTORY_NAME + "/" + pageName(nextPageToLink, fileResource);
-      } else if (currentPage == 2 && nextPageToLink == 1) {
-        url = (useUglyUrl(fileResource) ? "" : "../") + "../" + (defaultOutputPath.getFileName());
-      } else {
-        url = (useUglyUrl(fileResource) ? "" : "../") + pageName(nextPageToLink, fileResource);
-      }
-      return removeIndexHtml(url);
-    };
-  }
-
-
-  private PageContent toPageContent(FileResource fileResource, Locale locale, Path pagePath) {
-
-    Map<String, Object> model =
-        ModelPreparer.prepare(root, configuration, locale, fileResource, pagePath, taxonomy, Collections.emptyMap());
-
-    FileResourceProcessorOutput processed =
-        resourceProcessor.apply(locale).apply(fileResource, model);
-
-    Path outputPath = outputPathExtractor.apply(fileResource);
-
-    //
-    if ("index.html".equals(outputPath.getFileName().toString())) {
-      outputPath = outputPath.getParent();
+  private static void recurAddFileResources(Directory dir, List<FileResource> fr) {
+    fr.addAll(dir.getFiles().values());
+    for (Directory childDir : dir.getDirectories().values()) {
+      recurAddFileResources(childDir, fr);
     }
-
-    if ("index.html".equals(pagePath.getFileName().toString())) {
-      pagePath = pagePath.getParent();
-    }
-    //
-
-    return new PageContent(fileResource, processed.getContent(), PathUtils.relativePathTo(outputPath,
-        pagePath));
   }
+
+  private static Collection<FileResource> extractFilesFrom(Directory dir,
+      DirPaginationConfiguration dirPaginationConf) {
+    if (dirPaginationConf.isRecursive()) {
+      List<FileResource> fr = new ArrayList<>();
+      recurAddFileResources(dir, fr);
+      fr.sort(NEW_FILE_FIRST);
+      return fr;
+    } else {
+      return dir.getFiles().values();
+    }
+  }
+
+
+  private List<PathAndModelSupplier> handleContentDir(FileResource resource, Locale locale,
+      Path defaultOutputPath, DirPaginationConfiguration dirPaginationConf, Path targetDirPath) {
+
+    Directory dir =
+        root.getDirectory(configuration.getContentDir().relativize(targetDirPath)).orElseThrow(
+            () -> new ConfigurationException(resource.getPath(), "cannot find the directory '"
+                + targetDirPath + "' to paginate over"));
+
+    Predicate<Path> patternFilter = matchPattern(dirPaginationConf);
+
+    List<FileResource> files =
+        extractFilesFrom(dir, dirPaginationConf)
+            .stream()
+            .filter(f -> {
+              FileMetadata m = f.getMetadata();
+              // filter out the files with pagination
+                return !m.getTaxonomyPaginationConfiguration().isPresent()
+                    && !m.getDirectoryPaginationConfiguration().isPresent();
+              }).filter((f) -> patternFilter.test(f.getPath())).collect(toList());
+
+    return registerPaths(files, defaultOutputPath, dirPaginationConf.getPageSize(), resource,
+            path -> (f -> toPageContent(f, locale, path)));
+  }
+
+  private List<PathAndModelSupplier> handleStaticDir(FileResource resource, Path defaultOutputPath,
+      DirPaginationConfiguration dirPaginationConf, Path targetDirPath) throws IOException {
+    Comparator<Path> comparator = Comparator.comparing((Path p) -> p.getFileName().toString(),//
+        new AlphaNumericStringComparator(Locale.ENGLISH)).reversed();
+
+    int depth = dirPaginationConf.isRecursive() ? Integer.MAX_VALUE : 1;
+
+    Path baseOutputDir = configuration.getBaseOutputDir();
+    Path staticDir = configuration.getStaticDir();
+
+    Predicate<Path> patternFilter = matchPattern(dirPaginationConf);
+
+    List<Path> files =
+        Files.walk(targetDirPath, depth).filter(Files::isRegularFile).filter(patternFilter)
+            .sorted(comparator)
+            .map(file -> baseOutputDir.resolve(staticDir.relativize(file).toString()))
+            .collect(toList());
+
+    List<PathAndModelSupplier> toAdd =
+        registerPaths(files, defaultOutputPath, dirPaginationConf.getPageSize(), resource,
+            path -> (f -> PathUtils.relativePathTo(f, path)));
+    return toAdd;
+  }
+
 
 
 }

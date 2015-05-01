@@ -116,9 +116,9 @@ public class FileMetadata {
   }
   
   public Optional<TaxonomyPaginationConfiguration> getTaxonomyPaginationConfiguration() {
-    return ofNullable(metadata.get(METADATA_PAGINATE_OVER_TAXONOMY)).map(TO_STRING_LIST).map(taxonomies -> {
+    return ofNullable(metadata.get(METADATA_PAGINATE_OVER_TAXONOMY)).map(Object::toString).map(taxonomy -> {
       int pageSize = ofNullable(metadata.get(METADATA_PAGINATE_PAGE_SIZE)).map(Integer.class::cast).orElse(DEFAULT_PAGE_SIZE);
-      return new TaxonomyPaginationConfiguration(taxonomies, pageSize);
+      return new TaxonomyPaginationConfiguration(taxonomy, pageSize);
     });
     
   }

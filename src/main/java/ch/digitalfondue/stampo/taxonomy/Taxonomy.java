@@ -76,4 +76,12 @@ public class Taxonomy {
       }
     }
   }
+
+  public Map<String, Map<String, List<FileResource>>> getGroups() {
+    return groups;
+  }
+
+  public Comparator<FileResource> getFileSorter() {
+    return fileSorter;
+  }
 }

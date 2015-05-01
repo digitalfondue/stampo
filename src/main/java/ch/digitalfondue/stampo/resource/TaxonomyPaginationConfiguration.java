@@ -15,19 +15,18 @@
  */
 package ch.digitalfondue.stampo.resource;
 
-import java.util.List;
-
 
 public class TaxonomyPaginationConfiguration extends PaginationConfiguration {
 
-  private final List<String> taxonomomies;
+  private final String taxonomy;
 
-  public TaxonomyPaginationConfiguration(List<String> taxonomies, int pageSize) {
+  public TaxonomyPaginationConfiguration(String taxonomy, int pageSize) {
     super(pageSize);
-    this.taxonomomies = taxonomies;
+    this.taxonomy = taxonomy;
   }
 
-  public List<String> getTaxonomomies() {
-    return taxonomomies;
+  public String getTaxonomy() {
+    return taxonomy;
   }
+
 }
