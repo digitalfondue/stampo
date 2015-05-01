@@ -34,7 +34,7 @@ import ch.digitalfondue.stampo.exception.YamlParserException;
 
 import com.google.common.jimfs.Jimfs;
 
-public class StampoExpectedErrorsTest {
+public class ExpectedErrorsTest {
 
   @Test(expected = MissingDirectoryException.class)
   public void testMissingContentDirectoryException() throws IOException {

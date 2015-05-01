@@ -26,7 +26,7 @@ import ch.digitalfondue.stampo.command.Check;
 import ch.digitalfondue.stampo.command.Help;
 import ch.digitalfondue.stampo.command.Serve;
 
-public class StampoMainCommandsTest {
+public class MainCommandsTest {
 
   private static String[] of(String... strings) {
     return strings;

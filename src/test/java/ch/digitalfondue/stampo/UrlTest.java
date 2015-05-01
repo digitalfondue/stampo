@@ -25,7 +25,7 @@ import org.junit.Test;
 
 import ch.digitalfondue.stampo.TestUtils.InputOutputDirs;
 
-public class StampoUrlTest {
+public class UrlTest {
 
   /**
    * Files named index.html are not transformed in clean url The others, have the clean url

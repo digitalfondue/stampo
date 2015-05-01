@@ -27,7 +27,7 @@ import org.junit.Test;
 
 import ch.digitalfondue.stampo.TestUtils.InputOutputDirs;
 
-public class StampoMultiLocalesTest {
+public class MultiLocalesTest {
 
 
   @Test

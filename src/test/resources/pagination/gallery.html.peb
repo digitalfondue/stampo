@@ -1,0 +1,22 @@
+---
+paginate-over-directory: static/gallery
+paginate-page-size: 10
+---
+
+{{outputPath}}
+
+<ul>
+{% for image in pagination.pageContent %}
+  <li><a href="{{image}}"><img src="{{image}}" style="height:400px"></a>
+{% endfor %}
+</ul>
+
+{% if not pagination.firstPage %}
+<a href="{{pagination.previousPageRelativeLink}}">« Newer Posts</a>
+{% endif %}
+
+{{pagination.currentPage}} / {{pagination.pageCount}}
+
+{% if not pagination.lastPage %}
+<a href="{{pagination.nextPageRelativeLink}}">Older Posts »</a>
+{% endif %}

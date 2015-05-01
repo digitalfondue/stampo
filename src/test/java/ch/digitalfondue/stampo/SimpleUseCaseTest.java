@@ -26,7 +26,7 @@ import org.junit.Test;
 
 import ch.digitalfondue.stampo.TestUtils.InputOutputDirs;
 
-public class StampoSimpleUseCaseTest {
+public class SimpleUseCaseTest {
 
   @Test
   public void simpleContent() throws IOException {

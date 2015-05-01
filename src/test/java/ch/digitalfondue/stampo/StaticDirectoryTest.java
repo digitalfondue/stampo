@@ -24,7 +24,7 @@ import org.junit.Test;
 
 import ch.digitalfondue.stampo.TestUtils.InputOutputDirs;
 
-public class StampoStaticDirectoryTest {
+public class StaticDirectoryTest {
 
   @Test
   public void testCopyStaticDirectory() throws IOException {

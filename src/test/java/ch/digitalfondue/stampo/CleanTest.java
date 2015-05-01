@@ -26,20 +26,30 @@ import org.junit.Test;
 
 import ch.digitalfondue.stampo.TestUtils.InputOutputDirs;
 
-public class StampoChainedProcessorTest {
+public class CleanTest {
 
-  
   @Test
-  public void pebbleAndMarkdown() throws IOException {
+  public void testCleanDirectory() throws IOException {
     try (InputOutputDirs iod = TestUtils.get()) {
-      Files.createDirectories(iod.inputDir.resolve("content/test"));
-      write(iod.inputDir.resolve("content/test/index.peb.md"),
-          "#{{outputPath}}".getBytes(StandardCharsets.UTF_8));
+      Files.createDirectories(iod.inputDir.resolve("content/a/directory/inside/"));
+      write(iod.inputDir.resolve("content/a/directory/inside/index.html"),
+          "<h1>Hello World</h1>".getBytes(StandardCharsets.UTF_8));
       Stampo stampo = new Stampo(iod.inputDir, iod.outputDir);
+      
+      Assert.assertFalse(Files.exists(iod.outputDir));
+      
       stampo.build();
 
-      Assert.assertEquals("<h1>test</h1>", TestUtils.fileOutputAsString(iod, "test/index.html"));
+      Assert.assertEquals("<h1>Hello World</h1>", TestUtils.fileOutputAsString(iod, "a/directory/inside/index.html"));
+      
+      Assert.assertTrue(Files.exists(iod.outputDir));
+      Assert.assertTrue(Files.exists(iod.outputDir.resolve("a/directory/inside/index.html")));
+      
+      stampo.cleanupBuildDirectory();
+      
+      Assert.assertFalse(Files.exists(iod.outputDir.resolve("a/directory/inside/index.html")));
+      Assert.assertFalse(Files.exists(iod.outputDir));
+      
     }
   }
-  
 }

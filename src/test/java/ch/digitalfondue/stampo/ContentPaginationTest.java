@@ -30,7 +30,7 @@ import org.junit.Test;
 import ch.digitalfondue.stampo.TestUtils.InputOutputDirs;
 import ch.digitalfondue.stampo.exception.ConfigurationException;
 
-public class StampoContentPaginationTest {
+public class ContentPaginationTest {
 
   @Test
   public void paginationTest() throws IOException {
