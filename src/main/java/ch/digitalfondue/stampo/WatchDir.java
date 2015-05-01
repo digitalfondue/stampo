@@ -50,7 +50,6 @@ import static java.nio.file.StandardWatchEventKinds.ENTRY_MODIFY;
 import static java.nio.file.StandardWatchEventKinds.OVERFLOW;
 
 import java.io.IOException;
-import java.nio.file.FileSystems;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -77,7 +76,7 @@ public class WatchDir {
    * Creates a WatchService and registers the given directory
    */
   WatchDir(Path dir, Set<Path> ignore, Set<String> ignorePattern) throws IOException {
-    this.watcher = FileSystems.getDefault().newWatchService();
+    this.watcher = dir.getFileSystem().newWatchService();
     this.keys = new HashMap<WatchKey, Path>();
     this.ignore = ignore;
     this.ignorePattern = ignorePattern;
@@ -117,73 +116,76 @@ public class WatchDir {
 
 
   /**
-   * Process all events for keys queued to the watcher
+   * Process a single key queued to the watcher
    * 
    * @param delayQueue
    */
-  void processEvents(DelayQueue<Delayed> delayQueue) {
-    for (;;) {
+  void processEvent(DelayQueue<Delayed> delayQueue) {
 
-      // wait for key to be signalled
-      WatchKey key;
-      try {
-        key = watcher.take();
-      } catch (InterruptedException x) {
-        return;
-      }
 
-      Path dir = keys.get(key);
-      if (dir == null) {
+    // wait for key to be signalled
+    WatchKey key;
+    try {
+      key = watcher.poll(250, TimeUnit.MILLISECONDS);
+    } catch (InterruptedException x) {
+      return;
+    }
+    
+    if(key == null) {
+      return;
+    }
+
+    Path dir = keys.get(key);
+    if (dir == null) {
+      return;
+    }
+
+    for (WatchEvent<?> event : key.pollEvents()) {
+      WatchEvent.Kind<?> kind = event.kind();
+
+      if (kind == OVERFLOW) {
         continue;
       }
 
-      for (WatchEvent<?> event : key.pollEvents()) {
-        WatchEvent.Kind<?> kind = event.kind();
+      // Context for directory entry event is the file name of entry
+      @SuppressWarnings("unchecked")
+      WatchEvent<Path> ev = (WatchEvent<Path>) event;
+      Path name = ev.context();
+      Path child = dir.resolve(name);
 
-        if (kind == OVERFLOW) {
-          continue;
-        }
-
-        // Context for directory entry event is the file name of entry
-        @SuppressWarnings("unchecked")
-        WatchEvent<Path> ev = (WatchEvent<Path>) event;
-        Path name = ev.context();
-        Path child = dir.resolve(name);
-
-        //
-        if (ignore.contains(child)) {
-          continue;
-        }
-
-
-        if (!ignorePattern.stream().anyMatch(
-            m -> child.getFileSystem().getPathMatcher(m).matches(child.getFileName()))) {
-          delayQueue.add(new WatchDirDelay());
-        }
-
-
-        // if directory is created, and watching recursively, then
-        // register it and its sub-directories
-        if (kind == ENTRY_CREATE) {
-          try {
-            if (Files.isDirectory(child, NOFOLLOW_LINKS)) {
-              registerAll(child);
-            }
-          } catch (IOException x) {
-          }
-        }
+      //
+      if (ignore.contains(child)) {
+        return;
       }
 
 
-      // reset key and remove from set if directory no longer accessible
-      boolean valid = key.reset();
-      if (!valid) {
-        keys.remove(key);
+      if (!ignorePattern.stream().anyMatch(
+          m -> child.getFileSystem().getPathMatcher(m).matches(child.getFileName()))) {
+        delayQueue.add(new WatchDirDelay());
+      }
 
-        // all directories are inaccessible
-        if (keys.isEmpty()) {
-          break;
+
+      // if directory is created, and watching recursively, then
+      // register it and its sub-directories
+      if (kind == ENTRY_CREATE) {
+        try {
+          if (Files.isDirectory(child, NOFOLLOW_LINKS)) {
+            registerAll(child);
+          }
+        } catch (IOException x) {
         }
+      }
+    }
+
+
+    // reset key and remove from set if directory no longer accessible
+    boolean valid = key.reset();
+    if (!valid) {
+      keys.remove(key);
+
+      // all directories are inaccessible
+      if (keys.isEmpty()) {
+        return;
       }
     }
   }

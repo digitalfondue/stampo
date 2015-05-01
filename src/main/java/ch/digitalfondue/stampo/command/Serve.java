@@ -46,8 +46,8 @@ public class Serve extends Command {
     if (disableRebuildOnChange) {
       System.out.println("rebuild on change is disabled");
     }
-    new ServeAndWatch(hostname, port, !disableRebuildOnChange, !disableAutoReload, new Stampo(workingPath).getConfiguration())
-        .serve(triggerBuild);
+    new ServeAndWatch(hostname, port, !disableRebuildOnChange, !disableAutoReload, new Stampo(workingPath).getConfiguration(), triggerBuild)
+        .start();
   }
 
   public int getPort() {

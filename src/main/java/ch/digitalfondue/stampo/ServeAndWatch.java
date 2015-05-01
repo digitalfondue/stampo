@@ -42,10 +42,15 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.Collections;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.DelayQueue;
 import java.util.concurrent.Delayed;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
 
 import org.xnio.IoUtils;
 
@@ -60,72 +65,113 @@ public class ServeAndWatch {
   private final boolean rebuildOnChange;
   private final boolean autoReload;
   private final String reloadScript = getReloadScript();
+  private final Runnable triggerBuild;
+  
+  private final AtomicBoolean run = new AtomicBoolean(false);
+  private final AtomicReference<Undertow> server = new AtomicReference<>();
+  private final AtomicReference<Optional<Thread>> dirWatcherThread = new AtomicReference<>();
+  private final AtomicReference<Optional<Thread>> changeNotifierThread = new AtomicReference<>();
 
 
-  public ServeAndWatch(String hostname, int port, 
-      boolean rebuildOnChange, boolean autoReload,
-      StampoGlobalConfiguration configuration) {
+  public ServeAndWatch(String hostname, int port, boolean rebuildOnChange, boolean autoReload,
+      StampoGlobalConfiguration configuration, Runnable triggerBuild) {
     this.configuration = configuration;
     this.hostname = hostname;
     this.rebuildOnChange = rebuildOnChange;
     this.autoReload = autoReload;
     this.port = port;
+    this.triggerBuild = triggerBuild;
   }
 
-  public void serve(Runnable triggerBuild) {
-    
+  public void start() {
+
     Set<WebSocketChannel> activeChannels = Collections.newSetFromMap(new ConcurrentHashMap<>());
 
     DelayQueue<Delayed> delayQueue = new DelayQueue<Delayed>();
 
-    if (rebuildOnChange) {
-      new Thread(() -> {
-        try {
-          new WatchDir(configuration.getBaseDirectory(), Collections.singleton(configuration
-              .getBaseOutputDir()), configuration.getIgnorePatterns()).processEvents(delayQueue);
-        } catch (IOException ioe) {
-        }
-      }).start();
-
-
-      new Thread(() -> {
-        try {
-          for (;;) {
-            delayQueue.take();
-            if (delayQueue.isEmpty()) {
-              try {
-                triggerBuild.run();
-                activeChannels.stream().filter(WebSocketChannel::isOpen).forEach((wsc) -> WebSockets.sendText("change", wsc, null));
-              } catch (Throwable e) {
-                e.printStackTrace();
-              }
-            }
-          }
-        } catch (InterruptedException ie) {
-        }
-      }).start();
-
-    }
+    run.set(true);
     
-    prepareServer(activeChannels).start();
+    if (rebuildOnChange) {
+      
+      dirWatcherThread.set(
+          Optional.of(new Thread(() -> {
+            try {
+              WatchDir wd =
+                  new WatchDir(configuration.getBaseDirectory(), Collections
+                      .singleton(configuration.getBaseOutputDir()), configuration
+                      .getIgnorePatterns());
+              
+              while (run.get()) {
+                wd.processEvent(delayQueue);
+              }
+            } catch (IOException ioe) {
+            }
+          })));
+
+
+      changeNotifierThread.set(
+          Optional.of(new Thread(() -> {
+            try {
+              while (run.get()) {
+                Delayed d = delayQueue.poll(500, TimeUnit.MILLISECONDS);
+                if (d != null && delayQueue.isEmpty()) {
+                  try {
+                    triggerBuild.run();
+                    activeChannels.stream().filter(WebSocketChannel::isOpen)
+                        .forEach((wsc) -> WebSockets.sendText("change", wsc, null));
+                  } catch (Throwable e) {
+                    e.printStackTrace();
+                  }
+                }
+              }
+            } catch (InterruptedException ie) {
+              //
+            }
+          })));
+      
+      dirWatcherThread.get().get().start();
+      changeNotifierThread.get().get().start();
+    } else {
+      dirWatcherThread.set(Optional.empty());
+      changeNotifierThread.set(Optional.empty());
+    }
+
+    server.set(prepareServer(activeChannels));
+    server.get().start();
+    System.err.println("started server");
+  }
+
+  public void stop() {
+    run.set(false);
+
+    Consumer<Thread> t = (thread) -> {
+      try {
+        thread.join();
+      } catch(InterruptedException ie) {
+        //
+      }
+    };
+    
+    dirWatcherThread.get().ifPresent(t);
+    changeNotifierThread.get().ifPresent(t);
+    server.get().stop();
   }
 
   private Undertow prepareServer(Set<WebSocketChannel> activeChannels) {
-    
+
     HttpHandler handler =
         autoReload ? Handlers.path()
             .addExactPath("/stampo-reload", websocketHandler(activeChannels))
             .addPrefixPath("/", staticResourcesHandler()) : staticResourcesHandler();
-    
-    Undertow server = Undertow.builder()
-        .addHttpListener(port, hostname)
-        .setHandler(handler).build();
+
+    Undertow server =
+        Undertow.builder().addHttpListener(port, hostname).setHandler(handler).build();
     return server;
   }
-  
-  
-  private static class WebsocketReceiveListener extends AbstractReceiveListener{
-    
+
+
+  private static class WebsocketReceiveListener extends AbstractReceiveListener {
+
     private final Set<WebSocketChannel> activeChannels;
 
     public WebsocketReceiveListener(Set<WebSocketChannel> activeChannels) {
@@ -138,14 +184,14 @@ public class ServeAndWatch {
       activeChannels.remove(webSocketChannel);
       super.onClose(webSocketChannel, channel);
     }
-    
+
     @Override
     protected void onError(WebSocketChannel channel, Throwable error) {
       activeChannels.remove(channel);
       super.onError(channel, error);
     }
   }
-  
+
   private static HttpHandler websocketHandler(Set<WebSocketChannel> activeChannels) {
     return Handlers.websocket((WebSocketHttpExchange exchange, WebSocketChannel channel) -> {
       activeChannels.add(channel);
@@ -153,19 +199,21 @@ public class ServeAndWatch {
       channel.resumeReceives();
     });
   }
-  
+
   private static String getReloadScript() {
-    try (InputStream is = ServeAndWatch.class.getClassLoader().getResourceAsStream("stampo-reload-script.js")) {
+    try (InputStream is =
+        ServeAndWatch.class.getClassLoader().getResourceAsStream("stampo-reload-script.js")) {
       return CharStreams.toString(new InputStreamReader(is, UTF_8));
     } catch (IOException e) {
       throw new IllegalStateException("cannot read stampo-reload-script.js", e);
     }
   }
-  
+
   private String injectWebsocketScript(String s) {
-    return autoReload ? s.replaceFirst("<head>", "<head><script>/* websocket script for auto reload */ " + reloadScript +"</script>") : s;
+    return autoReload ? s.replaceFirst("<head>",
+        "<head><script>/* websocket script for auto reload */ " + reloadScript + "</script>") : s;
   }
-  
+
   private HttpHandler staticResourcesHandler() {
     return (ex) -> {
       System.out.println("requested url: " + ex.getRequestURI());
@@ -178,82 +226,84 @@ public class ServeAndWatch {
         ex.setResponseCode(302);
         return;
       }
-      
+
       if (isPathDirectory && exists(p.resolve("index.html"))) {
         p = p.resolve("index.html");
       }
-      
+
       if (isDirectory(p)) {
         setContentTypeAndNoCache(ex, "text/html;charset=utf-8");
         ex.setResponseCode(200);
-        
+
         try (DirectoryStream<Path> ds = newDirectoryStream(p)) {
           Sender sender = ex.getResponseSender();
-          
-          StringBuilder sb = new StringBuilder("<!DOCTYPE html><html><head></head><body><li><a href=\"..\">go up</a>");
+
+          StringBuilder sb =
+              new StringBuilder(
+                  "<!DOCTYPE html><html><head></head><body><li><a href=\"..\">go up</a>");
           for (Path path : ds) {
 
             String fileName = p.relativize(path).toString();
             sb.append(String.format("<li><a href=\"%s\">%s</a>", fileName, fileName));
           }
-          
+
           sb.append("</body></html>");
-          
+
           sender.send(injectWebsocketScript(sb.toString()), UTF_8);
         }
       } else if (exists(p)) {
 
         String contentType = probeContentType(p);
-        
+
         boolean isHtmlFile = contentType.equals("text/html");
-        setContentTypeAndNoCache(ex, isHtmlFile ? "text/html;charset=utf-8"
-            : contentType);
+        setContentTypeAndNoCache(ex, isHtmlFile ? "text/html;charset=utf-8" : contentType);
         ex.setResponseCode(200);
 
         Sender sender = ex.getResponseSender();
-        
-        if(!isHtmlFile) {
+
+        if (!isHtmlFile) {
           FileChannel fc = FileChannel.open(p, StandardOpenOption.READ);
           sender.transferFrom(fc, new CloseFileChannelIoCallback(fc));
         } else {
           sender.send(injectWebsocketScript(new String(Files.readAllBytes(p), UTF_8)), UTF_8);
         }
-        
+
       } else {
         setContentTypeAndNoCache(ex, "text/html;charset=utf-8");
         ex.setResponseCode(404);
-        ex.getResponseSender().send(injectWebsocketScript("<!DOCTYPE html><html><head></head><body>404 not found " + ex.getRequestURI().toString()+ "</body></html>"), UTF_8);
+        ex.getResponseSender().send(
+            injectWebsocketScript("<!DOCTYPE html><html><head></head><body>404 not found "
+                + ex.getRequestURI().toString() + "</body></html>"), UTF_8);
       }
     };
   }
-  
+
   static class CloseFileChannelIoCallback extends DefaultIoCallback {
-    
+
     private final FileChannel fc;
-    
+
     public CloseFileChannelIoCallback(FileChannel fc) {
       this.fc = fc;
     }
-    
+
     @Override
     public void onComplete(HttpServerExchange exchange, Sender sender) {
       IoUtils.safeClose(fc);
       super.onComplete(exchange, sender);
     }
-    
+
     @Override
     public void onException(HttpServerExchange exchange, Sender sender, IOException exception) {
       IoUtils.safeClose(fc);
       super.onException(exchange, sender, exception);
     }
   }
-  
-  
+
+
 
   private static void setContentTypeAndNoCache(HttpServerExchange ex, String contentType) {
     ex.getResponseHeaders().put(Headers.CONTENT_TYPE, contentType)
-    .put(Headers.CACHE_CONTROL, "no-cache, no-store, must-revalidate")
-    .put(Headers.PRAGMA, "no-cache")
-    .put(Headers.EXPIRES, "0");
+        .put(Headers.CACHE_CONTROL, "no-cache, no-store, must-revalidate")
+        .put(Headers.PRAGMA, "no-cache").put(Headers.EXPIRES, "0");
   }
 }

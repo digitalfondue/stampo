@@ -53,9 +53,7 @@ public class StaticPaginationTest {
       Assert.assertEquals(fromTestResourceAsString("pagination/result/staticpagination/page3.html"),
           fileOutputAsString(iod, "gallery/page/3/index.html"));
       Assert.assertEquals(fromTestResourceAsString("pagination/result/staticpagination/page4.html"),
-          fileOutputAsString(iod, "gallery/page/4/index.html"));
-      
-      System.err.println(fileOutputAsString(iod, "gallery/page/4/index.html"));
+          fileOutputAsString(iod, "gallery/page/4/index.html"));      
     }
   }
 }
