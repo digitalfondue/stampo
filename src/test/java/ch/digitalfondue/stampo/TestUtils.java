@@ -22,12 +22,13 @@ import java.nio.file.FileSystem;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
+import com.google.common.io.Resources;
 import com.google.common.jimfs.Jimfs;
 
 public class TestUtils {
 
 
-  public static class InputOutputDirs implements Closeable{
+  public static class InputOutputDirs implements Closeable {
     public final FileSystem fileSystem;
     public final Path inputDir;
     public final Path outputDir;
@@ -44,19 +45,31 @@ public class TestUtils {
     }
   }
 
-  
+
   public static InputOutputDirs get() throws IOException {
-    
+
     FileSystem fs = Jimfs.newFileSystem("base");
     Path baseInputDir = fs.getPath("input");
     Path outputDir = fs.getPath("output");
     Files.createDirectories(baseInputDir.resolve("content"));
-    
+
     return new InputOutputDirs(fs, baseInputDir, outputDir);
   }
 
   public static String fileOutputAsString(InputOutputDirs iod, String path) throws IOException {
     return new String(Files.readAllBytes(iod.outputDir.resolve(path)), StandardCharsets.UTF_8);
+  }
+
+  public static byte[] fromTestResource(String name) {
+    try {
+      return Resources.toByteArray(Resources.getResource(name));
+    } catch (IOException e) {
+      throw new IllegalArgumentException(e);
+    }
+  }
+
+  public static String fromTestResourceAsString(String name) {
+    return new String(fromTestResource(name), StandardCharsets.UTF_8);
   }
 
 }
