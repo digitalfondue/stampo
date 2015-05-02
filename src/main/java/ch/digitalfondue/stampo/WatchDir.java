@@ -50,6 +50,7 @@ import static java.nio.file.StandardWatchEventKinds.ENTRY_MODIFY;
 import static java.nio.file.StandardWatchEventKinds.OVERFLOW;
 
 import java.io.IOException;
+import java.nio.file.ClosedWatchServiceException;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -123,11 +124,11 @@ public class WatchDir {
   void processEvent(DelayQueue<Delayed> delayQueue) {
 
 
-    // wait for key to be signalled
+    // wait for key to be signaled
     WatchKey key;
     try {
       key = watcher.poll(250, TimeUnit.MILLISECONDS);
-    } catch (InterruptedException x) {
+    } catch (InterruptedException | ClosedWatchServiceException x) {
       return;
     }
     
