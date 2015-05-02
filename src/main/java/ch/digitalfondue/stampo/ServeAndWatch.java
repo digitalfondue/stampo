@@ -49,7 +49,6 @@ import java.util.concurrent.DelayQueue;
 import java.util.concurrent.Delayed;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
 import org.xnio.IoUtils;
@@ -68,9 +67,9 @@ public class ServeAndWatch {
   private final Runnable triggerBuild;
   
   private final AtomicBoolean run = new AtomicBoolean(false);
-  private final AtomicReference<Undertow> server = new AtomicReference<>();
-  private final AtomicReference<Optional<Thread>> dirWatcherThread = new AtomicReference<>();
-  private final AtomicReference<Optional<Thread>> changeNotifierThread = new AtomicReference<>();
+  private Undertow server;
+  private Optional<Thread> dirWatcherThread;
+  private Optional<Thread> changeNotifierThread;
 
 
   public ServeAndWatch(String hostname, int port, boolean rebuildOnChange, boolean autoReload,
@@ -93,7 +92,7 @@ public class ServeAndWatch {
     
     if (rebuildOnChange) {
       
-      dirWatcherThread.set(
+      dirWatcherThread = 
           Optional.of(new Thread(() -> {
             try {
               WatchDir wd =
@@ -106,10 +105,10 @@ public class ServeAndWatch {
               }
             } catch (IOException ioe) {
             }
-          })));
+          }));
 
 
-      changeNotifierThread.set(
+      changeNotifierThread =
           Optional.of(new Thread(() -> {
             try {
               while (run.get()) {
@@ -127,18 +126,17 @@ public class ServeAndWatch {
             } catch (InterruptedException ie) {
               //
             }
-          })));
-      
-      dirWatcherThread.get().get().start();
-      changeNotifierThread.get().get().start();
+          }));
     } else {
-      dirWatcherThread.set(Optional.empty());
-      changeNotifierThread.set(Optional.empty());
+      dirWatcherThread = Optional.empty();
+      changeNotifierThread = Optional.empty();
     }
+    
+    dirWatcherThread.ifPresent(Thread::start);
+    changeNotifierThread.ifPresent(Thread::start);
 
-    server.set(prepareServer(activeChannels));
-    server.get().start();
-    System.err.println("started server");
+    server = prepareServer(activeChannels);
+    server.start();
   }
 
   public void stop() {
@@ -152,9 +150,9 @@ public class ServeAndWatch {
       }
     };
     
-    dirWatcherThread.get().ifPresent(t);
-    changeNotifierThread.get().ifPresent(t);
-    server.get().stop();
+    dirWatcherThread.ifPresent(t);
+    changeNotifierThread.ifPresent(t);
+    server.stop();
   }
 
   private Undertow prepareServer(Set<WebSocketChannel> activeChannels) {
