@@ -30,7 +30,7 @@ import ch.digitalfondue.stampo.resource.FileResource;
 import ch.digitalfondue.stampo.resource.TaxonomyPaginationConfiguration;
 import ch.digitalfondue.stampo.taxonomy.Taxonomy;
 
-public class TaxonomyPaginator extends Paginator {
+public class TaxonomyPaginator extends Paginator implements Directive {
 
   public TaxonomyPaginator(
       Directory root,
@@ -42,7 +42,9 @@ public class TaxonomyPaginator extends Paginator {
   }
 
 
-  public List<PathAndModelSupplier> handlePagination(FileResource resource, Locale finalLocale, Path defaultOutputPath) {
+  @Override
+  public List<PathAndModelSupplier> generateOutputPaths(FileResource resource, Locale locale,
+      Path defaultOutputPath) {
     Path parentDir = defaultOutputPath.getParent();
     
     List<PathAndModelSupplier> outpuPaths = new ArrayList<>();
@@ -53,14 +55,14 @@ public class TaxonomyPaginator extends Paginator {
     Map<String, Map<String, List<FileResource>>> groups = taxonomy.getGroups();
     
     if (groups.containsKey(conf.getTaxonomy())) {
-      outpuPaths.addAll(handleTaxonomyGroup(resource, finalLocale, parentDir, groups.get(conf.getTaxonomy()), conf));
+      outpuPaths.addAll(handleTaxonomyGroup(resource, locale, parentDir, groups.get(conf.getTaxonomy()), conf));
     }
   
     return outpuPaths;
   }
 
 
-  private List<PathAndModelSupplier> handleTaxonomyGroup(FileResource resource, Locale finalLocale,
+  private List<PathAndModelSupplier> handleTaxonomyGroup(FileResource resource, Locale locale,
       Path baseDir, Map<String, List<FileResource>> map, TaxonomyPaginationConfiguration conf) {
     
     List<PathAndModelSupplier> toAdd = new ArrayList<>();
@@ -68,10 +70,16 @@ public class TaxonomyPaginator extends Paginator {
     for (Entry<String, List<FileResource>> tagFiles : map.entrySet()) {
       String finalDirName = tagFiles.getKey() + "/index.html";
       toAdd.addAll(registerPaths(tagFiles.getValue(), baseDir.resolve(finalDirName), conf.getPageSize(),
-          resource, path -> (f -> toPageContent(f, finalLocale, path))));
+          resource, path -> (f -> toPageContent(f, locale, path))));
     }
     
     return toAdd;
+  }
+
+
+  @Override
+  public String name() {
+    return "taxonomy-pagination";
   }
 
 }

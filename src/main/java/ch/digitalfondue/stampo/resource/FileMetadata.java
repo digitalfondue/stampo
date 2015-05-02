@@ -39,6 +39,7 @@ public class FileMetadata {
   public static final String METADATA_PAGINATE_MATCH = "paginate-match";
   public static final String METADATA_PAGINATE_RECURSIVE = "paginate-recursive";
   public static final String METADATA_PAGINATE_PAGE_SIZE = "paginate-page-size";
+  public static final String METADATA_DIRECTIVE = "directive";
 
   public static final String METADATA_DATE = "date";
   
@@ -46,6 +47,7 @@ public class FileMetadata {
 
   private final Map<String, Object> metadata;
   //
+  private final String directive;
   private final Optional<Date> date;
   private final Optional<List<Locale>> onlyForLocales;
   private final Optional<String> overrideOutputToPath;
@@ -64,6 +66,7 @@ public class FileMetadata {
     this.overrideLocale = ofNullable(metadata.get(METADATA_OVERRIDE_LOCALE)).map(Object::toString).map(Locale::forLanguageTag);
     this.overrideLayout = ofNullable(metadata.get(METADATA_OVERRIDE_LAYOUT)).map(Object::toString);
     this.overrideUseUglyUrl = ofNullable(metadata.get(METADATA_OVERRIDE_USE_UGLY_URL)).map(Boolean.class::cast);
+    this.directive = ofNullable(metadata.get(METADATA_DIRECTIVE)).map(Object::toString).orElse("default");
     //
   }
 
@@ -104,6 +107,10 @@ public class FileMetadata {
 
   public Optional<Boolean> getOverrideUseUglyUrl() {
     return overrideUseUglyUrl;
+  }
+  
+  public String getDirective() {
+    return directive;
   }
   
   public Optional<DirPaginationConfiguration> getDirectoryPaginationConfiguration() {

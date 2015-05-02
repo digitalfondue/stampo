@@ -1,4 +1,5 @@
 ---
+directive: taxonomy-pagination
 paginate-over-taxonomy: tags
 paginate-page-size: 5
 ---

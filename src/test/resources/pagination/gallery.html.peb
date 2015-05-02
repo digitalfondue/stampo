@@ -1,4 +1,5 @@
 ---
+directive: dir-pagination
 paginate-over-directory: static/gallery
 paginate-page-size: 10
 ---

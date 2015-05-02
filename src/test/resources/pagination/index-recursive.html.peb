@@ -1,4 +1,5 @@
 ---
+directive: dir-pagination
 paginate-over-directory: content/post
 paginate-page-size: 5
 paginate-recursive: true

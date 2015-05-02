@@ -23,22 +23,20 @@ import java.io.Writer;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
-import java.util.Collections;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Optional;
+import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 import ch.digitalfondue.stampo.ProcessedInputHandler;
 import ch.digitalfondue.stampo.StampoGlobalConfiguration;
-import ch.digitalfondue.stampo.exception.ConfigurationException;
 import ch.digitalfondue.stampo.resource.Directory;
-import ch.digitalfondue.stampo.resource.DirPaginationConfiguration;
 import ch.digitalfondue.stampo.resource.FileMetadata;
 import ch.digitalfondue.stampo.resource.FileResource;
-import ch.digitalfondue.stampo.resource.TaxonomyPaginationConfiguration;
 import ch.digitalfondue.stampo.taxonomy.Taxonomy;
 
 // TODO: cleanup and break up the class
@@ -49,11 +47,11 @@ public class ResourceProcessor {
   private final Directory root;
   private final StampoGlobalConfiguration configuration;
   private final Path outputDir;
-  private final DirPaginator dirPaginator;
-  private final TaxonomyPaginator taxonomyPaginator;
   private final Taxonomy taxonomy;
+  private final Map<String, Directive> directives;
 
-  public ResourceProcessor(Path outputDir, Directory root, StampoGlobalConfiguration configuration, Taxonomy taxonomy) {
+  public ResourceProcessor(Path outputDir, Directory root, StampoGlobalConfiguration configuration,
+      Taxonomy taxonomy) {
 
     this.root = root;
     this.configuration = configuration;
@@ -63,11 +61,17 @@ public class ResourceProcessor {
     this.fileResourceProcessor = new FileResourceProcessor(configuration, outputDir, root);
     this.layoutProcessor = new LayoutProcessor(configuration, root, fileResourceProcessor);
 
-    this.dirPaginator =
-        new DirPaginator(root, configuration, this::extractOutputPath,
-            (locale) -> (f, m) -> fileResourceProcessor.applyProcessors(f, locale, m), taxonomy);
-    this.taxonomyPaginator = new TaxonomyPaginator(root, configuration, this::extractOutputPath,
-        (locale) -> (f, m) -> fileResourceProcessor.applyProcessors(f, locale, m), taxonomy);
+    this.directives =
+        Arrays
+            .asList(
+                new DirPaginator(root, configuration, this::extractOutputPath,
+                    (locale) -> (f, m) -> fileResourceProcessor.applyProcessors(f, locale, m),
+                    taxonomy),//
+                new TaxonomyPaginator(root, configuration, this::extractOutputPath, (locale) -> (f,
+                    m) -> fileResourceProcessor.applyProcessors(f, locale, m), taxonomy),//
+                new DefaultDirective())//
+            .stream()//
+            .collect(Collectors.toMap(Directive::name, Function.identity()));
   }
 
 
@@ -78,30 +82,13 @@ public class ResourceProcessor {
 
     Locale finalLocale = metadata.getOverrideLocale().orElse(locale);
 
-    Optional<DirPaginationConfiguration> dirPagination =
-        metadata.getDirectoryPaginationConfiguration();
-    Optional<TaxonomyPaginationConfiguration> taxonomyPagination =
-        metadata.getTaxonomyPaginationConfiguration();
-
-    if (dirPagination.isPresent() && taxonomyPagination.isPresent()) {
-      throw new ConfigurationException(resource.getPath(), "cannot have both "
-          + FileMetadata.METADATA_PAGINATE_OVER_DIRECTORY + " and "
-          + FileMetadata.METADATA_PAGINATE_OVER_TAXONOMY + " attribute");
-    }
-    List<PathAndModelSupplier> outputPaths;
-
 
     Path defaultOutputPath = extractOutputPath(resource);
 
-    if (dirPagination.isPresent()) {
-      outputPaths = dirPaginator.handlePagination(resource, finalLocale, defaultOutputPath);
-    } else if (taxonomyPagination.isPresent()) {
-      outputPaths = taxonomyPaginator.handlePagination(resource, finalLocale, defaultOutputPath);
-    } else {
-      outputPaths =
-          Collections.singletonList(new PathAndModelSupplier(defaultOutputPath,
-              Collections::emptyMap));
-    }
+    List<PathAndModelSupplier> outputPaths =
+        directives.get(metadata.getDirective()).generateOutputPaths(resource, finalLocale,
+            defaultOutputPath);
+
     //
     outputPaths.forEach(outputPathAndModel -> processToPath(resource, outputHandler, finalLocale,
         outputPathAndModel.getOutputPath(), outputPathAndModel.getModelSupplier()));
@@ -137,7 +124,8 @@ public class ResourceProcessor {
     }
 
     Map<String, Object> model =
-        ModelPreparer.prepare(root, configuration, finalLocale, resource, outputPath, taxonomy, additionalData.get());
+        ModelPreparer.prepare(root, configuration, finalLocale, resource, outputPath, taxonomy,
+            additionalData.get());
 
     FileResourceProcessorOutput processed =
         fileResourceProcessor.applyProcessors(resource, finalLocale, model);

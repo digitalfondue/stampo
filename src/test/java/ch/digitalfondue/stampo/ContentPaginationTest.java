@@ -111,20 +111,4 @@ public class ContentPaginationTest {
       stampo.build();
     }
   }
-  
-  /**
-   * Cannot have paginate-over-taxonomy and paginate-over-directory in the same page.
-   * 
-   * @throws IOException
-   */
-  @Test(expected = IllegalArgumentException.class)
-  public void paginationBothConfiguration() throws IOException {
-    try (InputOutputDirs iod = get()) {
-      write(iod.inputDir.resolve("content/index.html"),
-          fromTestResource("pagination/index-both-pagination.html.peb"));
-      Stampo stampo = new Stampo(iod.inputDir, iod.outputDir);
-      stampo.build();
-    }
-  }
-
 }

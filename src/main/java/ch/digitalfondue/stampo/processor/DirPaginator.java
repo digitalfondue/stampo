@@ -43,7 +43,7 @@ import ch.digitalfondue.stampo.resource.FileResource;
 import ch.digitalfondue.stampo.taxonomy.Taxonomy;
 
 // TODO: refactor!
-public class DirPaginator extends Paginator {
+public class DirPaginator extends Paginator implements Directive {
 
   private static final Comparator<FileResource> NEW_FILE_FIRST = Comparator.comparingLong(
       FileResource::getCreationTime).reversed();
@@ -60,7 +60,8 @@ public class DirPaginator extends Paginator {
 
 
 
-  public List<PathAndModelSupplier> handlePagination(FileResource resource, Locale locale,
+  @Override
+  public List<PathAndModelSupplier> generateOutputPaths(FileResource resource, Locale locale,
       Path defaultOutputPath) {
 
     List<PathAndModelSupplier> outpuPaths = new ArrayList<PathAndModelSupplier>();
@@ -190,6 +191,8 @@ public class DirPaginator extends Paginator {
     return toAdd;
   }
 
-
-
+  @Override
+  public String name() {
+    return "dir-pagination";
+  }
 }
