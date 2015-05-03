@@ -22,12 +22,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 import java.util.ResourceBundle;
 import java.util.ResourceBundle.Control;
 
 import ch.digitalfondue.stampo.StampoGlobalConfiguration;
 
-import com.google.common.base.Optional;
 import com.mitchellbosecke.pebble.extension.AbstractExtension;
 import com.mitchellbosecke.pebble.extension.Function;
 import com.mitchellbosecke.pebble.template.EvaluationContext;
@@ -43,7 +43,7 @@ class PebbleExtension extends AbstractExtension {
   @Override
   public Map<String, Function> getFunctions() {
     Map<String, Function> f = new HashMap<>();
-    f.put("messageWithBundle", new MessageFunction(configuration, Optional.absent()));
+    f.put("messageWithBundle", new MessageFunction(configuration, Optional.empty()));
     f.put("message", new MessageFunction(configuration, Optional.of("messages")));
     f.put("fromMap", new FromMapFunction());
     return f;
@@ -82,7 +82,7 @@ class PebbleExtension extends AbstractExtension {
     @Override
     public Object execute(Map<String, Object> args) {
       
-      String bundleName = bundle.or((String) args.get("0"));
+      String bundleName = bundle.orElse((String) args.get("0"));
       
       int initialIdx = bundle.isPresent() ? 0 : 1;
       
