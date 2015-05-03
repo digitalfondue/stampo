@@ -15,6 +15,7 @@
  */
 package ch.digitalfondue.stampo.processor;
 
+import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.toList;
 
 import java.io.IOException;
@@ -24,10 +25,12 @@ import java.nio.file.Path;
 import java.nio.file.PathMatcher;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -36,7 +39,6 @@ import java.util.stream.Collectors;
 import ch.digitalfondue.stampo.PathUtils;
 import ch.digitalfondue.stampo.StampoGlobalConfiguration;
 import ch.digitalfondue.stampo.exception.ConfigurationException;
-import ch.digitalfondue.stampo.resource.DirPaginationConfiguration;
 import ch.digitalfondue.stampo.resource.Directory;
 import ch.digitalfondue.stampo.resource.FileMetadata;
 import ch.digitalfondue.stampo.resource.FileResource;
@@ -44,6 +46,10 @@ import ch.digitalfondue.stampo.taxonomy.Taxonomy;
 
 // TODO: refactor!
 public class DirPaginator extends Paginator implements Directive {
+
+  private static final String METADATA_PAGINATE_OVER_DIRECTORY = "paginate-over-directory";
+  private static final String METADATA_PAGINATE_MATCH = "paginate-match";
+  private static final String METADATA_PAGINATE_RECURSIVE = "paginate-recursive";
 
   private static final Comparator<FileResource> NEW_FILE_FIRST = Comparator.comparingLong(
       FileResource::getCreationTime).reversed();
@@ -58,6 +64,36 @@ public class DirPaginator extends Paginator implements Directive {
     super(root, configuration, outputPathExtractor, resourceProcessor, taxonomy);
   }
 
+  @SuppressWarnings("unchecked")
+  private static final Function<Object, List<String>> TO_STRING_LIST = (s) -> {
+    if (s instanceof String) {
+      return Collections.singletonList(s.toString());
+    } else if (s instanceof List) {
+      return (List<String>) s;
+    } else {
+      throw new IllegalArgumentException("wrong type for locales: " + s);
+    }
+  };
+
+
+
+  private Optional<DirPaginationConfiguration> getDirectoryPaginationConfiguration(
+      Map<String, Object> metadata) {
+    return ofNullable(metadata.get(METADATA_PAGINATE_OVER_DIRECTORY)).map(Object::toString).map(
+        (dir) -> {
+          List<String> ignorePattern =
+              ofNullable(metadata.get(METADATA_PAGINATE_MATCH)).map(TO_STRING_LIST).orElse(
+                  Collections.emptyList());
+          int pageSize =
+              ofNullable(metadata.get(METADATA_PAGINATE_PAGE_SIZE)).map(Integer.class::cast)
+                  .orElse(DEFAULT_PAGE_SIZE);
+          boolean recursive =
+              ofNullable(metadata.get(METADATA_PAGINATE_RECURSIVE)).map(Boolean.class::cast)
+                  .orElse(false);
+          return new DirPaginationConfiguration(dir, ignorePattern, pageSize, recursive);
+        });
+  }
+
 
 
   @Override
@@ -66,8 +102,9 @@ public class DirPaginator extends Paginator implements Directive {
 
     List<PathAndModelSupplier> outpuPaths = new ArrayList<PathAndModelSupplier>();
 
-    DirPaginationConfiguration dirPaginationConf = resource.getMetadata()//
-        .getDirectoryPaginationConfiguration().get();
+    DirPaginationConfiguration dirPaginationConf =
+        getDirectoryPaginationConfiguration(resource.getMetadata().getRawMap()).orElseThrow(
+            IllegalArgumentException::new);
 
     Path targetDirPath = configuration.getBaseDirectory()//
         .resolve(leftTrimSlash(dirPaginationConf.getBaseDirectory()));
@@ -92,11 +129,11 @@ public class DirPaginator extends Paginator implements Directive {
     }
     return outpuPaths;
   }
-  
+
   private static String leftTrimSlash(String s) {
     return s.startsWith("/") ? s.substring(1) : s;
   }
-  
+
   private void checkTargetDirectory(FileResource resource,
       DirPaginationConfiguration dirPaginationConfiguration, Path targetDir) {
     if (!targetDir.startsWith(configuration.getBaseDirectory())) {
@@ -153,18 +190,13 @@ public class DirPaginator extends Paginator implements Directive {
 
     Predicate<Path> patternFilter = matchPattern(dirPaginationConf);
 
-    List<FileResource> files =
-        extractFilesFrom(dir, dirPaginationConf)
-            .stream()
-            .filter(f -> {
-              FileMetadata m = f.getMetadata();
-              // filter out the files with pagination
-                return !m.getTaxonomyPaginationConfiguration().isPresent()
-                    && !m.getDirectoryPaginationConfiguration().isPresent();
-              }).filter((f) -> patternFilter.test(f.getPath())).collect(toList());
+    List<FileResource> files = extractFilesFrom(dir, dirPaginationConf).stream().filter(f -> {
+      FileMetadata m = f.getMetadata();
+      return "default".equals(m.getDirective());
+    }).filter((f) -> patternFilter.test(f.getPath())).collect(toList());
 
     return registerPaths(files, defaultOutputPath, dirPaginationConf.getPageSize(), resource,
-            path -> (f -> toPageContent(f, locale, path)));
+        path -> (f -> toPageContent(f, locale, path)));
   }
 
   private List<PathAndModelSupplier> handleStaticDir(FileResource resource, Path defaultOutputPath,
@@ -194,5 +226,32 @@ public class DirPaginator extends Paginator implements Directive {
   @Override
   public String name() {
     return "dir-pagination";
+  }
+  
+  private static class DirPaginationConfiguration extends PaginationConfiguration {
+
+    private final List<String> matchPattern;
+    private final String baseDirectory;
+    private final boolean recursive;
+
+    public DirPaginationConfiguration(String baseDirectory, List<String> matchPattern,
+        int pageSize, boolean recursive) {
+      super(pageSize);
+      this.baseDirectory = baseDirectory;
+      this.matchPattern = matchPattern;
+      this.recursive = recursive;
+    }
+
+    public boolean isRecursive() {
+      return recursive;
+    }
+
+    public String getBaseDirectory() {
+      return baseDirectory;
+    }
+
+    public List<String> getMatchPattern() {
+      return matchPattern;
+    }
   }
 }

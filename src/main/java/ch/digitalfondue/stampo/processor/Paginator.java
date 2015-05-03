@@ -37,6 +37,8 @@ import ch.digitalfondue.stampo.taxonomy.Taxonomy;
 public class Paginator {
   
   private static final String PAGE_DIRECTORY_NAME = "page";
+  protected static final String METADATA_PAGINATE_PAGE_SIZE = "paginate-page-size";
+  protected static final int DEFAULT_PAGE_SIZE = 10;
 
   protected final Directory root;
   protected final StampoGlobalConfiguration configuration;
