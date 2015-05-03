@@ -43,7 +43,7 @@ public class ResourceBundleControl extends Control {
   public ResourceBundleControl(Path localesDir) {
     this.localesDir = localesDir;
   }
-
+  
 
   @Override
   public ResourceBundle newBundle(String baseName, Locale locale, String format,
@@ -54,6 +54,11 @@ public class ResourceBundleControl extends Control {
     Path propFile = localesDir.resolve(bundleName + ".yaml");
 
     return new StampoResourceBundle(propFile);
+  }
+  
+  @Override
+  public long getTimeToLive(String baseName, Locale locale) {
+    return TTL_DONT_CACHE;
   }
 
 
@@ -84,11 +89,12 @@ public class ResourceBundleControl extends Control {
     
     private FileTime fromPropFile() {
       try {
-        BasicFileAttributes attrs = Files.readAttributes(propFile, BasicFileAttributes.class);
-        return attrs.lastModifiedTime();
+        if(Files.exists(propFile)) {
+          return Files.readAttributes(propFile, BasicFileAttributes.class).lastModifiedTime();
+        }
       } catch (IOException ioe) {
-        return FileTime.fromMillis(0);
       }
+      return FileTime.fromMillis(0);
     }
 
     @Override

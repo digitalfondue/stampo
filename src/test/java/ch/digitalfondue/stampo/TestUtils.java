@@ -26,8 +26,7 @@ import com.google.common.io.Resources;
 import com.google.common.jimfs.Jimfs;
 
 public class TestUtils {
-
-
+  
   public static class InputOutputDirs implements Closeable {
     public final FileSystem fileSystem;
     public final Path inputDir;

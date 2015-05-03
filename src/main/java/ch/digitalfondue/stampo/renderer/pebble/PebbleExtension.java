@@ -27,6 +27,7 @@ import java.util.ResourceBundle.Control;
 
 import ch.digitalfondue.stampo.StampoGlobalConfiguration;
 
+import com.google.common.base.Optional;
 import com.mitchellbosecke.pebble.extension.AbstractExtension;
 import com.mitchellbosecke.pebble.extension.Function;
 import com.mitchellbosecke.pebble.template.EvaluationContext;
@@ -42,7 +43,8 @@ class PebbleExtension extends AbstractExtension {
   @Override
   public Map<String, Function> getFunctions() {
     Map<String, Function> f = new HashMap<>();
-    f.put("message", new MessageFunction(configuration));
+    f.put("messageWithBundle", new MessageFunction(configuration, Optional.absent()));
+    f.put("message", new MessageFunction(configuration, Optional.of("messages")));
     f.put("fromMap", new FromMapFunction());
     return f;
   }
@@ -65,9 +67,11 @@ class PebbleExtension extends AbstractExtension {
   private static final class MessageFunction implements Function {
 
     private final Control control;
+    private final Optional<String> bundle;
 
-    public MessageFunction(StampoGlobalConfiguration configuration) {
+    public MessageFunction(StampoGlobalConfiguration configuration, Optional<String> bundle) {
       this.control = configuration.getResourceBundleControl();
+      this.bundle = bundle;
     }
 
     @Override
@@ -77,9 +81,14 @@ class PebbleExtension extends AbstractExtension {
 
     @Override
     public Object execute(Map<String, Object> args) {
-      String code = (String) args.get("0");
+      
+      String bundleName = bundle.or((String) args.get("0"));
+      
+      int initialIdx = bundle.isPresent() ? 0 : 1;
+      
+      String code = (String) args.get(Integer.toString(initialIdx));
       List<String> parameters = new ArrayList<>();
-      for (int i = 1; i < args.size() && args.containsKey(Integer.toString(i)); i++) {
+      for (int i = initialIdx + 1; i < args.size() && args.containsKey(Integer.toString(i)); i++) {
         parameters.add(args.get(Integer.toString(i)).toString());
       }
 
@@ -87,7 +96,7 @@ class PebbleExtension extends AbstractExtension {
       Locale locale = context.getLocale();
 
       return MessageFormat.format(
-          ResourceBundle.getBundle("messages", locale, control).getString(code),
+          ResourceBundle.getBundle(bundleName, locale, control).getString(code),
           parameters.toArray());
     }
 
