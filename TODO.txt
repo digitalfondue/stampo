@@ -1,7 +1,6 @@
 TODO:
 
 - cover resource bundle / i18n part
-- cover data directory support
 
 - refactor processing pipeline: add an additional stage. 
   Currently for each resource we output directly the result. Instead, it would be better to first generate

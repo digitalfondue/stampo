@@ -71,7 +71,7 @@ public class DirPaginator extends Paginator implements Directive {
     } else if (s instanceof List) {
       return (List<String>) s;
     } else {
-      throw new IllegalArgumentException("wrong type for locales: " + s);
+      throw new IllegalArgumentException("wrong type for list: " + s);
     }
   };
 
