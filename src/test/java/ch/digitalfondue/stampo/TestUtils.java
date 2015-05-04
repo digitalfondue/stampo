@@ -23,6 +23,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 import com.google.common.io.Resources;
+import com.google.common.jimfs.Configuration;
 import com.google.common.jimfs.Jimfs;
 
 public class TestUtils {
@@ -46,8 +47,7 @@ public class TestUtils {
 
 
   public static InputOutputDirs get() throws IOException {
-
-    FileSystem fs = Jimfs.newFileSystem("base");
+    FileSystem fs = Jimfs.newFileSystem("base", Configuration.unix());
     Path baseInputDir = fs.getPath("input");
     Path outputDir = fs.getPath("output");
     Files.createDirectories(baseInputDir.resolve("content"));
