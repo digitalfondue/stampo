@@ -113,8 +113,8 @@ public class FileResourceWithMetadataSection implements FileResource {
         int findStart2 = m.start();
         int findEnd2 = m.end();
 
-        // we remove the new line after the last "---" TODO: this could be problematic! we should detect which line separator the file use
-        contentInFile = content.substring(findEnd2 + System.lineSeparator().length());
+        // we remove the new line after the last "---" TODO: this could be problematic! we should detect which line separator the file use +1 = \n
+        contentInFile = content.substring(findEnd2 + 1);
         
         if (mode == ReadMode.ONLY_METADATA) {
           metadata =
