@@ -3,6 +3,13 @@ TODO:
 - test on windows
 - test on mac
 
+- draft support
+
+- support a "documentation use case".
+	- identify the best set of directives needed to simplify this use case
+	- we want to generate something like http://docs.jboss.org/seam/3/latest/reference/en-US/html/
+	  without too much effort. 
+
 - handle the new line correctly in FileResourceWithMetadataSection.readContent
  - it must be os agnostic: detect after "---" if it's a '\r\n' or '\r' or a '\n'
 
