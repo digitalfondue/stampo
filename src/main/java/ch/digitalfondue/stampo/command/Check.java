@@ -26,6 +26,7 @@ import java.util.Arrays;
 import ch.digitalfondue.stampo.Stampo;
 
 import com.beust.jcommander.Parameters;
+import com.google.common.jimfs.Configuration;
 import com.google.common.jimfs.Jimfs;
 
 @Parameters(separators = "=")
@@ -33,7 +34,7 @@ public class Check extends Command {
 
   @Override
   void runWithWorkingPath(String workingPath) {
-    try (FileSystem fs = Jimfs.newFileSystem()) {
+    try (FileSystem fs = Jimfs.newFileSystem(Configuration.unix())) {
       buildAndPrintResult(workingPath, fs);
     } catch (IOException ioe) {
       throw new IllegalStateException(ioe);
