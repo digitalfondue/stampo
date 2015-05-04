@@ -38,23 +38,23 @@ public class I18nTest {
       write(iod.inputDir.resolve("locales/messages.yaml"),
           "hello: Hello world!".getBytes(StandardCharsets.UTF_8));
       write(iod.inputDir.resolve("locales/custom_messages.yaml"),
-          "hello: Custom Hello world!".getBytes(StandardCharsets.UTF_8));
+          "hello: Custom Hello {0} world!".getBytes(StandardCharsets.UTF_8));
 
       write(iod.inputDir.resolve("content/index.html.peb"),
-          "{{message('hello')}} : {{messageWithBundle('custom_messages', 'hello')}}"
+          "{{message('hello')}} : {{messageWithBundle('custom_messages', 'hello', 'param')}}"
               .getBytes(StandardCharsets.UTF_8));
 
 
       write(iod.inputDir.resolve("content/index2.html.ftl"),
-          "${message('hello')}".getBytes(StandardCharsets.UTF_8));
+          "${message('hello')} : ${messageWithBundle('custom_messages', 'hello', 'param')}".getBytes(StandardCharsets.UTF_8));
 
       Stampo stampo = new Stampo(iod.inputDir, iod.outputDir);
       stampo.build();
 
-      Assert.assertEquals("Hello world! : Custom Hello world!",
+      Assert.assertEquals("Hello world! : Custom Hello param world!",
           fileOutputAsString(iod, "index.html"));
 
-      Assert.assertEquals("Hello world!", fileOutputAsString(iod, "index2/index.html"));
+      Assert.assertEquals("Hello world! : Custom Hello param world!", fileOutputAsString(iod, "index2/index.html"));
     }
   }
 

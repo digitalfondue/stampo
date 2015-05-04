@@ -87,9 +87,9 @@ class PebbleExtension extends AbstractExtension {
       int initialIdx = bundle.isPresent() ? 0 : 1;
       
       String code = (String) args.get(Integer.toString(initialIdx));
-      List<String> parameters = new ArrayList<>();
+      List<Object> parameters = new ArrayList<>();
       for (int i = initialIdx + 1; i < args.size() && args.containsKey(Integer.toString(i)); i++) {
-        parameters.add(args.get(Integer.toString(i)).toString());
+        parameters.add(args.get(Integer.toString(i)));
       }
 
       EvaluationContext context = (EvaluationContext) args.get("_context");

@@ -16,6 +16,8 @@
 package ch.digitalfondue.stampo.renderer.freemarker;
 
 import java.io.StringWriter;
+import java.text.MessageFormat;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
@@ -36,6 +38,8 @@ import freemarker.ext.beans.BeansWrapperBuilder;
 import freemarker.ext.beans.ResourceBundleModel;
 import freemarker.template.Configuration;
 import freemarker.template.Template;
+import freemarker.template.TemplateMethodModelEx;
+import freemarker.template.TemplateModelException;
 
 public class FreemarkerRenderer implements Renderer {
 
@@ -90,6 +94,29 @@ public class FreemarkerRenderer implements Renderer {
   
   private static void registerResourceBundleResolver(Map<String, Object> model, Locale locale, StampoGlobalConfiguration configuration) {
     model.put("message", new ResourceBundleModel(ResourceBundle.getBundle("messages", locale, configuration.getResourceBundleControl()), new BeansWrapperBuilder(Configuration.VERSION_2_3_22).build()));
+    model.put("messageWithBundle", new TemplateMethodModelEx() {
+      
+      @Override
+      public Object exec(@SuppressWarnings("rawtypes") List arguments) throws TemplateModelException {
+        
+        if (arguments.size() < 2) {
+          throw new IllegalArgumentException(
+              "messageWithBundle must have at least 2 parameters, passed only " + arguments.size());
+        }
+        
+        String bundleName = arguments.get(0).toString();
+        String code = arguments.get(1).toString();
+        
+        List<Object> parameters = new ArrayList<>();
+        for (int i = 2; i < arguments.size(); i++) {
+          parameters.add(arguments.get(i));
+        }
+        
+        return MessageFormat.format(
+            ResourceBundle.getBundle(bundleName, locale, configuration.getResourceBundleControl()).getString(code),
+            parameters.toArray());
+      }
+    });
   }
 
   private static Configuration getConfiguration(Directory root,
