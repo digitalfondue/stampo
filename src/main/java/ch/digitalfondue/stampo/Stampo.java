@@ -128,8 +128,7 @@ public class Stampo {
     }
 
     List<Locale> locales = configuration.getLocales();
-
-
+    
     cleanupBuildDirectory();
 
     Comparator<FileResource> newFileFirst = Comparator.comparingLong(FileResource::getCreationTime).reversed();
@@ -141,14 +140,12 @@ public class Stampo {
     Directory rootWithOnlyOverride =
         new PathOverrideAwareDirectory(Mode.SHOW_ONLY_PATH_OVERRIDE, root, FileResourceWithMetadataSection::new);
     
-    
-
     if (locales.size() > 1) {
 
       Optional<Locale> defaultLocale = configuration.getDefaultLocale();
 
       for (Locale locale : locales) {
-
+        
         Directory localeAwareRoot = new LocaleAwareDirectory(locale, rootWithOverrideHidden, FileResourceWithMetadataSection::new);
         
         Taxonomy taxonomy = new Taxonomy(configuration.getTaxonomyGroups(), newFileFirst);    
@@ -158,7 +155,7 @@ public class Stampo {
         Path finalOutputDir =
             defaultLocale.flatMap(
                 (l) -> l.equals(locale) ? of(configuration.getBaseOutputDir()) : empty())//
-                .orElse(configuration.getBaseOutputDir().resolve(locale.toString()));
+                .orElse(configuration.getBaseOutputDir().resolve(locale.toLanguageTag()));
 
 
         render(localeAwareRoot, new ResourceProcessor(finalOutputDir, localeAwareRoot,

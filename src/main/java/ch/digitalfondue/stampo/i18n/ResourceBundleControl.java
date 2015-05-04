@@ -50,10 +50,17 @@ public class ResourceBundleControl extends Control {
       ClassLoader loader, boolean reload) throws IllegalAccessException, InstantiationException,
       IOException {
 
-    String bundleName = toBundleName(baseName, locale);
+    String bundleName = toBundleNameWithLanguageTag(baseName, locale);
     Path propFile = localesDir.resolve(bundleName + ".yaml");
-
     return new StampoResourceBundle(propFile);
+  }
+  
+  private static String toBundleNameWithLanguageTag(String baseName, Locale locale) {
+    if (locale == null || locale == Locale.ROOT) {
+      return baseName;
+    } else {
+      return baseName + "_" + locale.toLanguageTag();
+    }
   }
   
   @Override

@@ -21,6 +21,7 @@ import static java.nio.file.Files.write;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.util.Arrays;
 
 import org.junit.Assert;
 import org.junit.Test;
@@ -54,6 +55,43 @@ public class I18nTest {
           fileOutputAsString(iod, "index.html"));
 
       Assert.assertEquals("Hello world!", fileOutputAsString(iod, "index2/index.html"));
+    }
+  }
+
+  @Test
+  public void testMultipleLocale() throws IOException {
+    try (InputOutputDirs iod = TestUtils.get()) {
+      Files.createDirectories(iod.inputDir.resolve("locales"));
+      write(iod.inputDir.resolve("locales/messages.yaml"),
+          "hello: Hello world!".getBytes(StandardCharsets.UTF_8));
+      write(iod.inputDir.resolve("locales/messages_en.yaml"),
+          "hello: Hello world en!".getBytes(StandardCharsets.UTF_8));
+      write(iod.inputDir.resolve("locales/messages_en-US.yaml"),
+          "hello: Hello world en-US!".getBytes(StandardCharsets.UTF_8));
+      write(iod.inputDir.resolve("locales/messages_fr.yaml"),
+          "hello: Hello world fr!".getBytes(StandardCharsets.UTF_8));
+
+
+      write(iod.inputDir.resolve("configuration.yaml"),
+          "locales: ['en', 'en-US','fr']".getBytes(StandardCharsets.UTF_8));
+
+
+      write(iod.inputDir.resolve("content/index.html.peb"),
+          "{{message('hello')}}"
+              .getBytes(StandardCharsets.UTF_8));
+      write(iod.inputDir.resolve("content/index2.html.ftl"),
+          "${message('hello')}".getBytes(StandardCharsets.UTF_8));
+
+      Stampo stampo = new Stampo(iod.inputDir, iod.outputDir);
+      stampo.build();
+      
+      for (String loc : Arrays.asList("en", "en-US", "fr")) {
+        Assert.assertEquals("Hello world " + loc + "!",
+            fileOutputAsString(iod, loc + "/index.html"));
+        Assert.assertEquals("Hello world " + loc + "!",
+            fileOutputAsString(iod, loc + "/index2/index.html"));
+      }
+
     }
   }
 }
