@@ -21,11 +21,13 @@ import static ch.digitalfondue.stampo.TestUtils.get;
 import static java.nio.file.Files.write;
 
 import java.io.IOException;
+import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.concurrent.CountDownLatch;
 
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 
 import ch.digitalfondue.stampo.TestUtils.InputOutputDirs;
@@ -35,6 +37,31 @@ import com.gargoylesoftware.htmlunit.Page;
 import com.gargoylesoftware.htmlunit.WebClient;
 
 public class ServeAndWatchTest {
+  
+  private String url;
+  private int port = 45000;
+  private static int startPort = 45000;
+  private static int finalPort = 63000;
+  
+  private static String address = "localhost";
+	
+  private static boolean isPortAvailable(int port) {
+	  try (Socket ignored = new Socket(address, port)) {
+	        return false;
+	    } catch (IOException ignored) {
+	        return true;
+	    }
+  }
+  
+  @Before
+  public void setupTests() {
+	  while(!isPortAvailable(port) && port <= finalPort) {
+	    port++;
+	  }
+	  
+	  url = new StringBuilder().append("http://").append(address)
+	      .append(":").append(port).toString();
+  }
 
   @Test
   public void checkOutput() throws IOException, InterruptedException {
@@ -50,7 +77,7 @@ public class ServeAndWatchTest {
       CountDownLatch cdl = new CountDownLatch(1);
 
       ServeAndWatch sw =
-          new ServeAndWatch("localhost", 8080, true, true, stampo.getConfiguration(), () -> {
+          new ServeAndWatch(address, port, true, true, stampo.getConfiguration(), () -> {
             new Stampo(iod.inputDir, iod.outputDir).build();
             cdl.countDown();
           });
@@ -58,7 +85,7 @@ public class ServeAndWatchTest {
 
       // check 404
       try {
-        webClient.getPage("http://localhost:8080");
+        webClient.getPage(url);
       } catch (FailingHttpStatusCodeException e) {
         Assert.assertEquals(404, e.getResponse().getStatusCode());
       }
@@ -67,23 +94,23 @@ public class ServeAndWatchTest {
 
       // check index
       Assert.assertEquals(fromTestResourceAsString("pagination/result/recursive/index.html"),
-          webClient.getPage("http://localhost:8080").getWebResponse().getContentAsString());
+          webClient.getPage(url).getWebResponse().getContentAsString());
 
 
       // check directory listing
-      Assert.assertTrue(webClient.getPage("http://localhost:8080/post/").getWebResponse()
+      Assert.assertTrue(webClient.getPage(url.concat("/post/")).getWebResponse()
           .getContentAsString()
           .contains(fromTestResourceAsString("serveandwatch/directory-listing.html")));
       
       
       // static content
-      Page page = webClient.getPage("http://localhost:8080/texts/1.txt");
+      Page page = webClient.getPage(url.concat("/texts/1.txt"));
       Assert.assertEquals("text/plain", page.getWebResponse().getContentType());
       Assert.assertEquals("hello world", page.getWebResponse().getContentAsString("UTF-8"));
       
       
       try {
-        webClient.getPage("http://localhost:8080/texts/2.txt");
+        webClient.getPage(url.concat("/texts/2.txt"));
       } catch (FailingHttpStatusCodeException e) {
         Assert.assertEquals(404, e.getResponse().getStatusCode());
       }
@@ -92,7 +119,7 @@ public class ServeAndWatchTest {
       write(iod.inputDir.resolve("static/texts/2.txt"), "hello world 2".getBytes(StandardCharsets.UTF_8));
       cdl.await();
       // newly created static content
-      Page page2 = webClient.getPage("http://localhost:8080/texts/2.txt");
+      Page page2 = webClient.getPage(url.concat("/texts/2.txt"));
       Assert.assertEquals("text/plain", page2.getWebResponse().getContentType());
       Assert.assertEquals("hello world 2", page2.getWebResponse().getContentAsString("UTF-8"));
       //
