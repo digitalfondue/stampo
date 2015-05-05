@@ -52,6 +52,13 @@ public class Serve extends Command {
   public void setDisableAutoReload(boolean flag) {
     disableAutoReload = flag;
   }
+  
+  @Parameter(description = "block thread on start", names = "--blocking-on-start")
+  private boolean blockingOnStart = false;
+  
+  public void setBlockingOnStart(boolean flag) {
+	  blockingOnStart = flag;
+  }
 
   @Override
   void runWithPaths(String inputPath, String outputPath) {
@@ -65,7 +72,7 @@ public class Serve extends Command {
       System.out.println("rebuild on change is disabled");
     }
     new ServeAndWatch(hostname, port, !disableRebuildOnChange, !disableAutoReload, 
-        new Stampo(Paths.get(inputPath), Paths.get(outputPath)).getConfiguration(), triggerBuild, false)
+        new Stampo(Paths.get(inputPath), Paths.get(outputPath)).getConfiguration(), triggerBuild, blockingOnStart)
         .start();
   }
 
