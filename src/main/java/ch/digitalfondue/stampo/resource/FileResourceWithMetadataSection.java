@@ -94,6 +94,14 @@ public class FileResourceWithMetadataSection implements FileResource {
       this.textContent = textContent;
     }
   }
+  
+  private static Optional<String> charAt(String s, int idx) {
+    try {
+      return Optional.of(Character.toString(s.charAt(idx)));
+    } catch (IndexOutOfBoundsException e) {
+      return Optional.empty();
+    }
+  }
 
   @SuppressWarnings("unchecked")
   private static Content readContent(String content, ReadMode mode) {
@@ -112,9 +120,13 @@ public class FileResourceWithMetadataSection implements FileResource {
       if (content.substring(0, findStart1).trim().isEmpty() && m.find()) {
         int findStart2 = m.start();
         int findEnd2 = m.end();
-
-        // we remove the new line after the last "---" TODO: this could be problematic! we should detect which line separator the file use +1 = \n
-        contentInFile = content.substring(findEnd2 + 1);
+        
+        String next2Chars = charAt(content, findEnd2).orElse("") + charAt(content, findEnd2 + 1).orElse("");
+        
+        int offset = next2Chars.equals("\r\n") ? 2 : (next2Chars.startsWith("\n") ||  next2Chars.startsWith("\r") ? 1 : 0);
+        
+        // we remove the new line after the last "---"
+        contentInFile = content.substring(findEnd2 + offset);
         
         if (mode == ReadMode.ONLY_METADATA) {
           metadata =
