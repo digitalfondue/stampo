@@ -81,6 +81,21 @@ public class SimpleUseCaseTest {
   }
   
   @Test
+  public void simpleContentWithMetadataAndPebbleTemplateWindowFile() throws IOException {
+    try (InputOutputDirs iod = TestUtils.get()) {
+      String content = "---\r\n" + //
+          "answer: 42\r\n" + //
+          "---\r\n" + //
+          "<h1>The answer is {{metadata.rawMap.answer}}</h1>\r\n";
+      write(iod.inputDir.resolve("content/index.html.peb"), content.getBytes(StandardCharsets.UTF_8));
+      Stampo stampo = new Stampo(iod.inputDir, iod.outputDir);
+      stampo.build();
+
+      Assert.assertEquals("<h1>The answer is 42</h1>\r\n", TestUtils.fileOutputAsString(iod, "index.html"));
+    }
+  }
+  
+  @Test
   public void simpleContentWithMetadataAndPebbleTemplateWithOverridePath() throws IOException {
     try (InputOutputDirs iod = TestUtils.get()) {
       String content = "---\n" + //

@@ -10,9 +10,6 @@ TODO:
 	- we want to generate something like http://docs.jboss.org/seam/3/latest/reference/en-US/html/
 	  without too much effort. 
 
-- handle the new line correctly in FileResourceWithMetadataSection.readContent
- - it must be os agnostic: detect after "---" if it's a '\r\n' or '\r' or a '\n'
-
 - refactor processing pipeline: add an additional stage. 
   Currently for each resource we output directly the result. Instead, it would be better to first generate
   a representation of the output tree, and then apply the processors.
