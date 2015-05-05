@@ -3,12 +3,46 @@ TODO:
 - test on windows
 - test on mac
 
-- draft support
-
 - support a "documentation use case".
+    - see http://www.mkdocs.org/
 	- identify the best set of directives needed to simplify this use case
 	- we want to generate something like http://docs.jboss.org/seam/3/latest/reference/en-US/html/
-	  without too much effort. 
+	  without too much effort.
+	   
+	- use file system layout, file name + dir name dictate the structure, depth can be used to define the cut out
+	- index.html : 
+	  ---
+	  directive: 'include-all'
+	  include-all: 'docs/**/*.md'
+	  recursive: true
+	  toc-depth: 3
+	  paginate-at-depth: 3
+	  ---
+	  
+	  {{pagination controls}}
+	  
+	  {{currentToc}}
+	  
+	  {{content}}
+	  
+	  {{pagination controls}}
+	  
+	 - docs/1-about.md
+	 - docs/2-installation.md
+	 - docs/3-configuration-and-administration.md
+	 - docs/4-user-manual.md
+	 - docs/4-user-manual/1-get-started.md <- intro get started + text
+	 - docs/4-user-manual/2-project.md <- intro project
+	 - docs/4-user-manual/2-project/1-create-a-project.md
+	 - docs/4-user-manual/2-project/2-create-a-board.md
+	 - docs/4-user-manual/2-project/3-statistics.md
+	
+	
+
+- draft support
+
+- archetype support (blog, doc, multi language standard website)
+
 
 - refactor processing pipeline: add an additional stage. 
   Currently for each resource we output directly the result. Instead, it would be better to first generate
