@@ -39,7 +39,7 @@ import com.mitchellbosecke.pebble.error.PebbleException;
 public class PebbleRenderer implements Renderer {
 
   private static PebbleEngine build(Directory root, StampoGlobalConfiguration configuration) {
-    PebbleEngine e = new PebbleEngine(new PebblePathLoader(configuration.getContentDir(), root));
+    PebbleEngine e = new PebbleEngine(new PebblePathLoader(configuration.getContentDir(), configuration.getLayoutDir(), configuration.getBaseDirectory(), root));
     e.addExtension(new PebbleExtension(configuration));
     return e;
   }

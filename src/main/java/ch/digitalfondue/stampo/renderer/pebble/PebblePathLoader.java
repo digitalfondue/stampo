@@ -32,25 +32,31 @@ import com.mitchellbosecke.pebble.loader.Loader;
 class PebblePathLoader implements Loader {
 
   private final Path contentDir;
+  private final Path layoutDir;
+  private final Path baseDir;
   private final Directory root;
 
 
-  PebblePathLoader(Path contentDir, Directory root) {
+  PebblePathLoader(Path contentDir, Path layoutDir, Path baseDir, Directory root) {
     this.contentDir = contentDir;
+    this.layoutDir = layoutDir;
+    this.baseDir = baseDir;
     this.root = root;
   }
 
   @Override
   public Reader getReader(String templateName) throws LoaderException {
-
+    
     Path template = contentDir.getFileSystem().getPath(templateName).normalize();
 
     try {
       if (template.startsWith(contentDir)) {
         return new StringReader(Renderer.getContentFileResource(template, contentDir, root).getContent().orElseThrow(IllegalArgumentException::new));
+      } else if (template.startsWith(layoutDir)) {
+        return newBufferedReader(template, StandardCharsets.UTF_8);
       } else {
         // it's outside the content dir: must be resolved over the baseDir
-        return newBufferedReader(template, StandardCharsets.UTF_8);
+        return newBufferedReader(baseDir.resolve(template), StandardCharsets.UTF_8);
       }
     } catch (IOException ioe) {
       throw new LoaderException(ioe, "was not able to load referenced template");

@@ -1,5 +1,8 @@
 TODO:
 
+- test pebble inheritance loading + inclusion
+- test freemarker inclusion
+
 - test on windows
 - test on mac
 
