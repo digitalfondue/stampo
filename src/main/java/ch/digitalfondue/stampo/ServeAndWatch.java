@@ -45,6 +45,7 @@ import java.util.Collections;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.DelayQueue;
 import java.util.concurrent.Delayed;
 import java.util.concurrent.TimeUnit;
@@ -67,19 +68,21 @@ public class ServeAndWatch {
   private final Runnable triggerBuild;
   
   private final AtomicBoolean run = new AtomicBoolean(false);
+  private final CountDownLatch blockOnStart;
   private Undertow server;
   private Optional<Thread> dirWatcherThread;
   private Optional<Thread> changeNotifierThread;
 
 
   public ServeAndWatch(String hostname, int port, boolean rebuildOnChange, boolean autoReload,
-      StampoGlobalConfiguration configuration, Runnable triggerBuild) {
+      StampoGlobalConfiguration configuration, Runnable triggerBuild, boolean blockingOnStart) {
     this.configuration = configuration;
     this.hostname = hostname;
     this.rebuildOnChange = rebuildOnChange;
     this.autoReload = autoReload;
     this.port = port;
     this.triggerBuild = triggerBuild;
+    this.blockOnStart = new CountDownLatch(blockingOnStart ? 1 : 0);
   }
 
   public void start() {
@@ -137,9 +140,17 @@ public class ServeAndWatch {
 
     server = prepareServer(activeChannels);
     server.start();
+    
+    try {
+      blockOnStart.await();
+    } catch (InterruptedException ie) {
+    }
   }
 
   public void stop() {
+    
+    blockOnStart.countDown();
+    
     run.set(false);
 
     Consumer<Thread> t = (thread) -> {

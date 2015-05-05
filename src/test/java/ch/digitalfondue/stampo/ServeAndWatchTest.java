@@ -79,7 +79,7 @@ public class ServeAndWatchTest {
           new ServeAndWatch(address, port, true, true, stampo.getConfiguration(), () -> {
             new Stampo(iod.inputDir, iod.outputDir).build();
             cdl.countDown();
-          });
+          }, false);
       sw.start();
 
       // check 404
