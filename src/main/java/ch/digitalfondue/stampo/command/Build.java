@@ -26,11 +26,11 @@ public class Build extends Command {
   }
   
   public Build(List<String> args) {
-    this.path = args;
+    this.srcPath = args;
   }
 
   @Override
-  void runWithWorkingPath(String workingPath) {
-    getBuildRunnable(workingPath).run();
+  void runWithPaths(String inputPath, String outputPath) {
+    getBuildRunnable(inputPath, outputPath).run();
   }
 }

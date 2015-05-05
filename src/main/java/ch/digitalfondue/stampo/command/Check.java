@@ -33,17 +33,17 @@ import com.google.common.jimfs.Jimfs;
 public class Check extends Command {
 
   @Override
-  void runWithWorkingPath(String workingPath) {
+  void runWithPaths(String inputPath, String outputhPath) {
     try (FileSystem fs = Jimfs.newFileSystem(Configuration.unix())) {
-      buildAndPrintResult(workingPath, fs);
+      buildAndPrintResult(inputPath, fs);
     } catch (IOException ioe) {
       throw new IllegalStateException(ioe);
     }
   }
 
-  private void buildAndPrintResult(String workingPath, FileSystem fs) {
+  private void buildAndPrintResult(String inputPath, FileSystem fs) {
     Path output = fs.getPath("output");
-    Stampo stampo = new Stampo(Paths.get(workingPath), output);
+    Stampo stampo = new Stampo(Paths.get(inputPath), output);
     
     stampo.build((file, layout) -> {
       return String.format(
@@ -86,4 +86,5 @@ public class Check extends Command {
       throw new IllegalStateException(ioe);
     }
   }
+  
 }

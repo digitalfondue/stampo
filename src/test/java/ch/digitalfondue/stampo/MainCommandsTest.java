@@ -37,15 +37,15 @@ public class MainCommandsTest {
     Runnable r = StampoMain.fromParameters(of());
     Assert.assertTrue(r instanceof Build);
     Build b = (Build) r;
-    Assert.assertTrue(b.getPath().isEmpty());
+    Assert.assertTrue(b.getSrcPath().isEmpty());
   }
 
   @Test
   public void callDefaultWithPath() {
     Runnable r = StampoMain.fromParameters(of("/my/path"));
     Build b = (Build) r;
-    Assert.assertTrue(b.getPath().size() == 1);
-    Assert.assertEquals("/my/path", b.getPath().get(0));
+    Assert.assertTrue(b.getSrcPath().size() == 1);
+    Assert.assertEquals("/my/path", b.getSrcPath().get(0));
   }
   
   
@@ -53,11 +53,11 @@ public class MainCommandsTest {
   public void callBuild() {
     Runnable r = StampoMain.fromParameters(of("build"));
     Assert.assertTrue(r instanceof Build);
-    Assert.assertTrue(((Build) r).getPath().isEmpty());
+    Assert.assertTrue(((Build) r).getSrcPath().isEmpty());
     
     Runnable r2 = StampoMain.fromParameters(of("build", "/my/path"));
     Assert.assertTrue(r2 instanceof Build);
-    Assert.assertEquals("/my/path", ((Build) r2).getPath().get(0));
+    Assert.assertEquals("/my/path", ((Build) r2).getSrcPath().get(0));
   }
   
   
@@ -71,11 +71,11 @@ public class MainCommandsTest {
   public void callCheck() {
     Runnable r = StampoMain.fromParameters(of("check"));
     Assert.assertTrue(r instanceof Check);
-    Assert.assertTrue(((Check) r).getPath().isEmpty());
+    Assert.assertTrue(((Check) r).getSrcPath().isEmpty());
     
     Runnable r2 = StampoMain.fromParameters(of("check", "/my/path"));
     Assert.assertTrue(r2 instanceof Check);
-    Assert.assertEquals("/my/path", ((Check) r2).getPath().get(0));
+    Assert.assertEquals("/my/path", ((Check) r2).getSrcPath().get(0));
   }
   
   
@@ -99,7 +99,7 @@ public class MainCommandsTest {
   }
   
   private static void checkServeParams(Serve s, List<String> path, int port, String hostname, boolean disableRebuildOnChange, boolean disableAutoReload) {
-    Assert.assertEquals(path, s.getPath());
+    Assert.assertEquals(path, s.getSrcPath());
     Assert.assertEquals(port, s.getPort());
     Assert.assertEquals(hostname, s.getHostname());
     Assert.assertEquals(disableRebuildOnChange, s.isDisableRebuildOnChange());

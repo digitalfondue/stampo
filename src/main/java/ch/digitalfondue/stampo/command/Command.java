@@ -33,23 +33,45 @@ import com.beust.jcommander.Parameters;
 @Parameters(separators = "=")
 public abstract class Command implements Runnable {
   
-  @Parameter(description = "path", arity = 1)
-  protected List<String> path = new ArrayList<>();
+  @Parameter(description = "src path", arity = 1)
+  protected List<String> srcPath = new ArrayList<>();
+  
+  public void setSrcPath(String path) {
+    if(srcPath.size() == 0) {
+      srcPath.add(path);
+    }
+  }
+  
+  @Parameter(description = "dist path", names = "--dist")
+  protected List<String> distPath = new ArrayList<>();
+  
+  public void setDistPath(String path) {
+    if(distPath.size() == 0) {
+      distPath.add(path);
+    }
+  }
 
   @Parameter(description = "print stack trace", names = "--debug")
   protected boolean printStackTrace = false;
 
-  private String workingPath() {
-    return Paths.get(this.path.stream().findFirst().orElse("."))
+  private String inputPath() {
+    return Paths.get(this.srcPath.stream().findFirst().orElse("."))
+        .toAbsolutePath().normalize().toString();
+  }
+  
+  private String outputPath(String inputPath) {
+    return Paths.get(this.distPath.stream().findFirst().orElse(inputPath.concat("/output")))
         .toAbsolutePath().normalize().toString();
   }
 
   @Override
   public void run() {
-    String workingPath = workingPath();
-    System.out.println("stampo working path is " + workingPath);
+    String inputPath = inputPath();
+    System.out.println("stampo working path is " + inputPath);
+    String outputPath = outputPath(inputPath);
+    System.out.println("stampo destination path is " + outputPath);
     try {
-      runWithWorkingPath(workingPath);
+      runWithPaths(inputPath, outputPath);
     } catch (MissingDirectoryException | YamlParserException | TemplateException
         | LayoutException| ConfigurationException e) {
       System.err.println(e.getMessage());
@@ -60,13 +82,13 @@ public abstract class Command implements Runnable {
     }
   }
 
-  abstract void runWithWorkingPath(String workingPath);
+  abstract void runWithPaths(String inputPath, String outputhPath);
   
   
-  static Runnable getBuildRunnable(String workingPath) {
+  static Runnable getBuildRunnable(String inputPath, String outputPath) {
     return () -> {
       long start = System.currentTimeMillis();
-      Stampo s = new Stampo(workingPath);
+      Stampo s = new Stampo(Paths.get(inputPath), Paths.get(outputPath));
       s.build();
       long end = System.currentTimeMillis();
       System.out.println("built in " + (end - start) + "ms, output in "
@@ -74,8 +96,12 @@ public abstract class Command implements Runnable {
     };
   }
 
-  public List<String> getPath() {
-    return path;
+  public List<String> getSrcPath() {
+    return srcPath;
+  }
+  
+  public List<String> getDistPath() {
+    return distPath;
   }
 
   public boolean isPrintStackTrace() {

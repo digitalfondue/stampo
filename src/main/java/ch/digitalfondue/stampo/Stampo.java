@@ -21,7 +21,6 @@ import static java.nio.file.Files.exists;
 import static java.nio.file.Files.isDirectory;
 import static java.nio.file.Files.newInputStream;
 import static java.nio.file.Files.walkFileTree;
-import static java.nio.file.Paths.get;
 import static java.util.Collections.emptyMap;
 import static java.util.Optional.empty;
 import static java.util.Optional.of;
@@ -95,15 +94,6 @@ public class Stampo {
   
   public Stampo(Path baseInputDir, Path outputDir) {
     this(baseInputDir, outputDir, Arrays.asList(new PebbleRenderer(), new MarkdownRenderer(), new FreemarkerRenderer()));
-  }
-
-
-  public Stampo(String baseDirectory) {
-    this(get(baseDirectory));
-  }
-  
-  public Stampo(Path baseDirectory) {
-    this(baseDirectory.normalize(), baseDirectory.resolve("output").normalize());
   }
 
   public StampoGlobalConfiguration getConfiguration() {
