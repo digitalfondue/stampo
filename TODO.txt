@@ -1,5 +1,15 @@
 TODO:
 
+- unit test for relative url case, it seems we have some issues with the pebble loader.
+	- it seems to fail with 
+	
+	[ERROR] Failed to execute goal ch.digitalfondue.mvnstampo:mvnstampo:1.0-SNAPSHOT:build (default) on project mvnstampotest: Execution default of goal ch.digitalfondue.mvnstampo:mvnstampo:1.0-SNAPSHOT:build failed: 
+	
+	Error while rendering resource src/main/resources/site/content/news/up-and-running.en.md, 
+	there was an error with layout src/main/resources/site/layout/news/index.html.peb was not able to load referenced template (?:?): 
+	src/main/resources/site/src/main/resources/site/layout/news/index.html.peb -> [Help 1]
+
+
 - test on windows
 - test on mac
 

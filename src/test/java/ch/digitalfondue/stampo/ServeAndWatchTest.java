@@ -40,7 +40,6 @@ public class ServeAndWatchTest {
   
   private String url;
   private int port = 45000;
-  private static int startPort = 45000;
   private static int finalPort = 63000;
   
   private static String address = "localhost";
