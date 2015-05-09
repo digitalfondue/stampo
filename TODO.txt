@@ -16,7 +16,7 @@ TODO:
 	- index.html : 
 	  ---
 	  directive: 'include-all'
-	  include-all: 'docs/**/*.md'
+	  include-all: 'docs/**/*.'
 	  recursive: true
 	  toc-depth: 3
 	  paginate-at-depth: 3
@@ -39,6 +39,9 @@ TODO:
 	 - docs/4-user-manual/2-project/1-create-a-project.md
 	 - docs/4-user-manual/2-project/2-create-a-board.md
 	 - docs/4-user-manual/2-project/3-statistics.md
+	 
+	 
+	 - TOC generation : use jsoup, extract hX, add id, "id generation policy: file name + sequence number"
 	
 	
 

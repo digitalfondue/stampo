@@ -28,6 +28,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -61,14 +62,15 @@ public class ResourceProcessor {
     this.fileResourceProcessor = new FileResourceProcessor(configuration, outputDir, root);
     this.layoutProcessor = new LayoutProcessor(configuration, root, fileResourceProcessor);
 
+    
+    Function<Locale, BiFunction<FileResource, Map<String, Object>, FileResourceProcessorOutput>> resourceProcessor = (locale) -> (f, m) -> fileResourceProcessor.applyProcessors(f, locale, m);
+    
     this.directives =
         Arrays
             .asList(
-                new DirPaginator(root, configuration, this::extractOutputPath,
-                    (locale) -> (f, m) -> fileResourceProcessor.applyProcessors(f, locale, m),
-                    taxonomy),//
-                new TaxonomyPaginator(root, configuration, this::extractOutputPath, (locale) -> (f,
-                    m) -> fileResourceProcessor.applyProcessors(f, locale, m), taxonomy),//
+                new DirPaginator(root, configuration, this::extractOutputPath, resourceProcessor, taxonomy),//
+                new TaxonomyPaginator(root, configuration, this::extractOutputPath, resourceProcessor, taxonomy),//
+                new IncludeAllPaginator(root, configuration, this::extractOutputPath, resourceProcessor, taxonomy),
                 new DefaultDirective())//
             .stream()//
             .collect(Collectors.toMap(Directive::name, Function.identity()));
@@ -134,8 +136,7 @@ public class ResourceProcessor {
 
     layoutModel.put("content", processed.getContent());
 
-    LayoutProcessorOutput processedLayout =
-        layoutProcessor.applyLayout(resource, finalLocale, layoutModel);
+    LayoutProcessorOutput processedLayout = layoutProcessor.applyLayout(resource, finalLocale, layoutModel);
 
     try (Writer writer =
         newBufferedWriter(outputPath, StandardCharsets.UTF_8, StandardOpenOption.CREATE_NEW,
