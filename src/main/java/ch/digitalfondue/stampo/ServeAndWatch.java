@@ -41,7 +41,11 @@ import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -53,6 +57,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 
 import org.xnio.IoUtils;
+
+import ch.digitalfondue.stampo.processor.AlphaNumericStringComparator;
 
 import com.google.common.io.CharStreams;
 
@@ -72,6 +78,8 @@ public class ServeAndWatch {
   private Undertow server;
   private Optional<Thread> dirWatcherThread;
   private Optional<Thread> changeNotifierThread;
+  
+  private final Comparator<Path> pathComparator = Comparator.comparing(Path::toString, new AlphaNumericStringComparator(Locale.ENGLISH));
 
 
   public ServeAndWatch(String hostname, int port, boolean rebuildOnChange, boolean autoReload,
@@ -250,7 +258,12 @@ public class ServeAndWatch {
           StringBuilder sb =
               new StringBuilder(
                   "<!DOCTYPE html><html><head></head><body><li><a href=\"..\">go up</a>");
-          for (Path path : ds) {
+          
+          List<Path> paths = new ArrayList<>();
+          ds.iterator().forEachRemaining(paths::add);
+          paths.sort(pathComparator);
+          
+          for (Path path : paths) {
 
             String fileName = p.relativize(path).toString();
             sb.append(String.format("<li><a href=\"%s\">%s</a>", fileName, fileName));
