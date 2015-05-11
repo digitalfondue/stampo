@@ -15,21 +15,23 @@
  */
 package ch.digitalfondue.stampo.processor;
 
-import static ch.digitalfondue.stampo.processor.ModelPreparer.prepare;
-import static java.util.Collections.emptyMap;
-import static java.util.Collections.singletonMap;
+import static java.util.Optional.empty;
+import static java.util.Optional.of;
 import static java.util.Optional.ofNullable;
 
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import ch.digitalfondue.stampo.StampoGlobalConfiguration;
 import ch.digitalfondue.stampo.resource.Directory;
@@ -52,7 +54,6 @@ public class IncludeAllPaginator implements Directive {
   private final Function<Locale, BiFunction<FileResource, Map<String, Object>, FileResourceProcessorOutput>> resourceProcessor;
   private final ResourceFactory resourceFactory;
   private final Taxonomy taxonomy;
-  private final Comparator<FileResource> comparator = Comparator.comparing((FileResource f) -> f.getPath().toString(), new AlphaNumericStringComparator(Locale.ENGLISH));
 
   public IncludeAllPaginator(Directory root, StampoGlobalConfiguration configuration,
       Function<FileResource, Path> outputPathExtractor,
@@ -79,98 +80,163 @@ public class IncludeAllPaginator implements Directive {
     
     Directory toIncludeAllDir = new LocaleAwareDirectory(locale, new RootResource(resourceFactory, p), FileResourceWithMetadataSection::new);
     
-    return traverseDirs(toIncludeAllDir, locale, resource, defaultOutputPath);
+    StructuredDocument doc = new StructuredDocument(0, toIncludeAllDir, p);
+    
+    int maxDepth = (Integer) resource.getMetadata().getRawMap().getOrDefault("paginate-at-depth", 1);
+    
+    List<PathAndModelSupplier> res = new ArrayList<>();
+    doc.toOutputPaths(0, new OutputPathsEnv(maxDepth, locale, toIncludeAllDir, resource, defaultOutputPath), res);
+    return res;
   }
   
-  private static class SectionAccumulator {
-    private final Locale locale;
-    private final Directory baseDir;
-    private final FileResource resource;
-    private final int depth;
-    private final int depthLimit;
+  private static class OutputPathsEnv {
+    final int maxDepth;
+    final Locale locale;
+    final Directory baseDir;
+    final FileResource resource;
+    final Path defaultOutputPath;
     
-    private final List<PathAndModelSupplier> pathAndModelSupplier;
-
-    SectionAccumulator(Directory baseDir, Locale locale, FileResource resource, List<PathAndModelSupplier> pathAndModelSupplier, int depth, int depthLimit) {
-      this.baseDir = baseDir;
+    public OutputPathsEnv(int maxDepth, Locale locale, Directory baseDir, FileResource resource, Path defaultOutputPath) {
+      this.maxDepth = maxDepth;
       this.locale = locale;
+      this.baseDir = baseDir;
       this.resource = resource;
-      this.pathAndModelSupplier = pathAndModelSupplier;
-      this.depth = depth;
-      this.depthLimit = depthLimit;
-    }
-
-    SectionAccumulator(SectionAccumulator sectionModel, int depth) {
-      this.baseDir = sectionModel.baseDir;
-      this.locale = sectionModel.locale;
-      this.resource = sectionModel.resource;
-      this.depthLimit = sectionModel.depthLimit;
-      this.pathAndModelSupplier = sectionModel.pathAndModelSupplier;
-      this.depth = depth;
+      this.defaultOutputPath = defaultOutputPath;
     }
   }
   
   
-  private List<PathAndModelSupplier> traverseDirs(Directory dir, Locale locale, FileResource resource, Path defaultOutputPath) {
-    List<PathAndModelSupplier> pathsAndModel = new ArrayList<>();
+  private class StructuredDocument {
+    final int depth;
+    final Path relativeToBasePath;
+    final Optional<FileResource> fileResource;
+    final Optional<Directory> directory;
+    final List<StructuredDocument> childDocuments;
     
-    int maxDepth = (Integer) resource.getMetadata().getRawMap().getOrDefault("paginate-at-depth", 0);
-    SectionAccumulator sp = new SectionAccumulator(dir, locale, resource, pathsAndModel, 1, maxDepth);
-    traverseSections(dir, defaultOutputPath, sp);
-    return pathsAndModel;
-  }
-  
-  
-  private void traverseSections(Directory currentDir, Path defaultOutputPath, SectionAccumulator acc) {
-    currentDir.getFiles().values().stream().sorted(comparator).forEach(v -> {
+    
+    StructuredDocument(int depth, Directory directory, Path basePath) {
+      this.depth = depth;
+      this.fileResource = empty();
+      this.directory = of(directory);
+      this.childDocuments = from(depth, of(directory), basePath);
+      this.relativeToBasePath = basePath.relativize(directory.getPath());
+    }
+    
+    StructuredDocument(int depth, FileResource resource, Optional<Directory> directory, Path basePath) {
+      this.depth = depth;
+      this.fileResource = of(resource);
+      this.directory = directory;
+      this.childDocuments = from(depth, directory, basePath);
+      this.relativeToBasePath = basePath.relativize(resource.getPath());
+    }
+    
+    void toOutputPaths(int depth, OutputPathsEnv env, List<PathAndModelSupplier> res) {
       
-      Path virtualPath = acc.resource.getPath().getParent().resolve(acc.baseDir.getPath().relativize(v.getPath()));
+      FileResource v = fileResource.orElseGet(() -> new FileResourcePlaceHolder(relativeToBasePath, configuration));
+      
+      Path virtualPath = env.resource.getPath().getParent().resolve(this.relativeToBasePath.toString());
+      
       FileResource virtualResource = new VirtualPathFileResource(virtualPath, v);
       Path finalOutputPathForResource = outputPathExtractor.apply(virtualResource);
-      FileResourceProcessorOutput out = resourceProcessor.apply(acc.locale).apply(v, prepare(root, configuration, acc.locale, v, finalOutputPathForResource, taxonomy, emptyMap()));
       
-      if(acc.depth < acc.depthLimit) {
-        
-        ofNullable(currentDir.getDirectories().get(v.getFileNameWithoutExtensions())).ifPresent(section -> {
-          traverseSections(section, defaultOutputPath, new SectionAccumulator(acc, acc.depth + 1));
-        });
-        
-        acc.pathAndModelSupplier.add(new PathAndModelSupplier(finalOutputPathForResource, () ->
-          prepare(root, configuration, acc.locale, virtualResource, defaultOutputPath, taxonomy, singletonMap("includeAllResult", out.getContent()))
-        ));
-        
-      } else if(acc.depth == acc.depthLimit) {//cutoff point in the pagination
-        
-        StringBuilder sb = new StringBuilder();
-        
-        ofNullable(currentDir.getDirectories().get(v.getFileNameWithoutExtensions())).ifPresent(section -> {
-          fetchContentRec(currentDir, finalOutputPathForResource, new SectionAccumulator(acc, acc.depth + 1), sb);
-        });
-        
-        
-        acc.pathAndModelSupplier.add(new PathAndModelSupplier(finalOutputPathForResource, () ->
-          prepare(root, configuration, acc.locale, virtualResource, defaultOutputPath, taxonomy, singletonMap("includeAllResult", out.getContent() + sb.toString()))
-        ));
+      StringBuilder sb = new StringBuilder();
+      
+      if(depth < env.maxDepth) {
+        sb.append(renderFile(env.locale));
+        childDocuments.forEach(sd -> sd.toOutputPaths(depth + 1, env, res));
+      } else if (depth == env.maxDepth ) {//cutoff point
+        sb.append(renderFile(env.locale));
+        renderChildDocuments(env.locale).forEach(sb::append);
       }
       
-    });
+      res.add(new PathAndModelSupplier(finalOutputPathForResource, () -> Collections.singletonMap("includeAllResult", sb.toString())));
+      
+    }
+    
+    
+    String renderFile(Locale locale) {
+      return fileResource.map(f -> resourceProcessor.apply(locale).apply(f, Collections.emptyMap()).getContent()).orElse("");
+    }
+    
+    
+    List<String> renderChildDocuments(Locale locale) {
+      return childDocuments.stream().map(c -> c.renderFile(locale) + c.renderChildDocuments(locale).stream().collect(Collectors.joining())).collect(Collectors.toList());
+    }
+    
+    
+    List<StructuredDocument> from(int depth, Optional<Directory> directory, Path basePath) {
+      List<StructuredDocument> res = new ArrayList<>();
+      
+      return directory.map((d) -> {
+        
+        Set<Path> alreadyVisisted = new HashSet<>();
+        
+        d.getFiles().values().forEach(f -> {
+          Optional<Directory> associatedChildDir = ofNullable(d.getDirectories().get(f.getFileNameWithoutExtensions()));
+          associatedChildDir.map(Directory::getPath).ifPresent(alreadyVisisted::add);
+          res.add(new StructuredDocument(depth + 1, f, associatedChildDir, basePath));
+        });
+        
+        
+        d.getDirectories().values().stream().filter(dir -> !alreadyVisisted.contains(dir.getPath())).forEach(dir -> {
+          res.add(new StructuredDocument(depth + 1, dir, basePath));
+        });
+        
+        Collections.sort(res, Comparator.comparing((StructuredDocument sd) -> sd.fileResource.map(FileResource::getFileNameWithoutExtensions).orElseGet(() -> sd.directory.map(Directory::getName).orElse(""))));
+        
+        
+        return res;
+      }).orElseGet(Collections::emptyList);
+    }
   }
   
-  private void fetchContentRec(Directory currentDir, Path defaultOutputPath, SectionAccumulator acc, StringBuilder sb) {
-    currentDir.getFiles().values().stream().sorted(comparator).forEach(v -> {
-      FileResourceProcessorOutput out = resourceProcessor.apply(acc.locale).apply(v, prepare(root, configuration, acc.locale, v, defaultOutputPath, taxonomy, Collections.emptyMap()));
-      sb.append(out.getContent());
-      ofNullable(currentDir.getDirectories().get(v.getFileNameWithoutExtensions())).ifPresent(section -> {
-        fetchContentRec(section, defaultOutputPath, new SectionAccumulator(acc, acc.depth + 1), sb);
-      });
-    });
+  private static class FileResourcePlaceHolder implements FileResource {
+    
+    final StampoGlobalConfiguration conf;
+    final Path path;
+    
+    FileResourcePlaceHolder(Path path, StampoGlobalConfiguration conf) {
+      this.path = path;
+      this.conf = conf;
+    }
+
+    @Override
+    public Resource getParent() {
+      return null;
+    }
+
+    @Override
+    public Path getPath() {
+      return path;
+    }
+
+    @Override
+    public StampoGlobalConfiguration getConfiguration() {
+      return conf;
+    }
+
+    @Override
+    public FileMetadata getMetadata() {
+      return new FileMetadata(Collections.emptyMap());
+    }
+
+    @Override
+    public Optional<String> getContent() {
+      return of("");
+    }
+
+    @Override
+    public StructuredFileExtension getStructuredFileExtension() {
+      return new StructuredFileExtension(Collections.emptyList(), empty(), of("html"), Collections.emptySet(), Collections.emptyList());
+    }
+    
   }
+  
 
   @Override
   public String name() {
     return "include-all";
   }
-  
   
   //override the path of a file resource
   private static class VirtualPathFileResource implements FileResource {
