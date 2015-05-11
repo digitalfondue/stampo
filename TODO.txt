@@ -11,9 +11,7 @@ TODO:
 	- TBD:
 		- toc generation
 			- create the correct hierarchy
-		- handling of the "base page"
 		- give enough info for generate the pagination handler 
-
 
     - see http://www.mkdocs.org/
 	- identify the best set of directives needed to simplify this use case

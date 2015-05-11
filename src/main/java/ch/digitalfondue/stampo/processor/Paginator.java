@@ -19,7 +19,6 @@ import static java.util.stream.Collectors.toList;
 
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -139,8 +138,7 @@ public class Paginator {
   protected PageContent toPageContent(FileResource fileResource, Locale locale, Path pagePath) {
 
     Map<String, Object> model =
-        ModelPreparer.prepare(root, configuration, locale, fileResource, pagePath, taxonomy,
-            Collections.emptyMap());
+        ModelPreparer.prepare(root, configuration, locale, fileResource, pagePath, taxonomy);
 
     FileResourceProcessorOutput processed =
         resourceProcessor.apply(locale).apply(fileResource, model);

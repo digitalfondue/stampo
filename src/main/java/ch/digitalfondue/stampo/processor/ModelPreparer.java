@@ -17,6 +17,7 @@ package ch.digitalfondue.stampo.processor;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Locale;
@@ -35,6 +36,9 @@ import ch.digitalfondue.stampo.taxonomy.Taxonomy;
 
 public class ModelPreparer {
 
+  public static Map<String, Object> prepare(Directory root, StampoGlobalConfiguration configuration, Locale locale, FileResource resource, Path outputPath, Taxonomy taxonomy) {
+    return prepare(root, configuration, locale, resource, outputPath, taxonomy, Collections.emptyMap());
+  }
   
   public static Map<String, Object> prepare(Directory root, StampoGlobalConfiguration configuration, Locale locale, FileResource resource, Path outputPath, Taxonomy taxonomy, Map<String, Object> additionalData) {
     Map<String, Object> model = new HashMap<>();

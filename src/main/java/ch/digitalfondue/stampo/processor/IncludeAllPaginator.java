@@ -85,23 +85,19 @@ public class IncludeAllPaginator implements Directive {
     int maxDepth = (Integer) resource.getMetadata().getRawMap().getOrDefault("paginate-at-depth", 1);
     
     List<PathAndModelSupplier> res = new ArrayList<>();
-    doc.toOutputPaths(0, new OutputPathsEnv(maxDepth, locale, toIncludeAllDir, resource, defaultOutputPath), res);
+    doc.toOutputPaths(new OutputPathsEnv(maxDepth, locale, resource), res);
     return res;
   }
   
   private static class OutputPathsEnv {
     final int maxDepth;
     final Locale locale;
-    final Directory baseDir;
     final FileResource resource;
-    final Path defaultOutputPath;
     
-    public OutputPathsEnv(int maxDepth, Locale locale, Directory baseDir, FileResource resource, Path defaultOutputPath) {
+    public OutputPathsEnv(int maxDepth, Locale locale, FileResource resource) {
       this.maxDepth = maxDepth;
       this.locale = locale;
-      this.baseDir = baseDir;
       this.resource = resource;
-      this.defaultOutputPath = defaultOutputPath;
     }
   }
   
@@ -130,7 +126,7 @@ public class IncludeAllPaginator implements Directive {
       this.relativeToBasePath = basePath.relativize(resource.getPath());
     }
     
-    void toOutputPaths(int depth, OutputPathsEnv env, List<PathAndModelSupplier> res) {
+    void toOutputPaths(OutputPathsEnv env, List<PathAndModelSupplier> res) {
       
       FileResource v = fileResource.orElseGet(() -> new FileResourcePlaceHolder(relativeToBasePath, configuration));
       
@@ -141,26 +137,28 @@ public class IncludeAllPaginator implements Directive {
       
       StringBuilder sb = new StringBuilder();
       
+      Map<String, Object> model = ModelPreparer.prepare(root, configuration, env.locale, virtualResource, finalOutputPathForResource, taxonomy);
+      
+      sb.append(renderFile(env.locale, model));
+      
       if(depth < env.maxDepth) {
-        sb.append(renderFile(env.locale));
-        childDocuments.forEach(sd -> sd.toOutputPaths(depth + 1, env, res));
+        childDocuments.forEach(sd -> sd.toOutputPaths(env, res));
       } else if (depth == env.maxDepth ) {//cutoff point
-        sb.append(renderFile(env.locale));
-        renderChildDocuments(env.locale).forEach(sb::append);
+        renderChildDocuments(env.locale, model).forEach(sb::append);
       }
       
-      res.add(new PathAndModelSupplier(finalOutputPathForResource, () -> Collections.singletonMap("includeAllResult", sb.toString())));
-      
+      Map<String, Object> modelForSupplier = ModelPreparer.prepare(root, configuration, env.locale, virtualResource, finalOutputPathForResource, taxonomy, Collections.singletonMap("includeAllResult", sb.toString()));
+      res.add(new PathAndModelSupplier(finalOutputPathForResource, () -> modelForSupplier));
     }
     
     
-    String renderFile(Locale locale) {
-      return fileResource.map(f -> resourceProcessor.apply(locale).apply(f, Collections.emptyMap()).getContent()).orElse("");
+    String renderFile(Locale locale, Map<String, Object> model) {
+      return fileResource.map(f -> resourceProcessor.apply(locale).apply(f, model).getContent()).orElse("");
     }
     
     
-    List<String> renderChildDocuments(Locale locale) {
-      return childDocuments.stream().map(c -> c.renderFile(locale) + c.renderChildDocuments(locale).stream().collect(Collectors.joining())).collect(Collectors.toList());
+    List<String> renderChildDocuments(Locale locale, Map<String, Object> model) {
+      return childDocuments.stream().map(c -> c.renderFile(locale, model) + c.renderChildDocuments(locale, model).stream().collect(Collectors.joining())).collect(Collectors.toList());
     }
     
     
