@@ -18,6 +18,7 @@ package ch.digitalfondue.stampo.processor;
 import static java.util.Optional.empty;
 import static java.util.Optional.of;
 import static java.util.Optional.ofNullable;
+import static java.util.stream.Collectors.toList;
 
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -33,6 +34,7 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import ch.digitalfondue.stampo.PathUtils;
 import ch.digitalfondue.stampo.StampoGlobalConfiguration;
 import ch.digitalfondue.stampo.resource.Directory;
 import ch.digitalfondue.stampo.resource.DirectoryResource;
@@ -73,9 +75,10 @@ public class IncludeAllPaginator implements Directive {
     String path = ofNullable(resource.getMetadata().getRawMap().get("include-all"))
             .map(String.class::cast).orElseThrow(IllegalArgumentException::new);
 
-    Path p = configuration.getBaseDirectory().resolve(path);
-    if (!p.startsWith(configuration.getBaseDirectory())) {
-      throw new IllegalArgumentException();// cannot be outside
+    Path baseDirectory = configuration.getBaseDirectory();
+    Path p = baseDirectory.resolve(path);
+    if (!p.startsWith(baseDirectory)) {
+      throw new IllegalArgumentException(p+" must be inside of the basedirectory: " + baseDirectory);// cannot be outside
     }
     
     Directory toIncludeAllDir = new LocaleAwareDirectory(locale, new RootResource(resourceFactory, p), FileResourceWithMetadataSection::new);
@@ -84,11 +87,54 @@ public class IncludeAllPaginator implements Directive {
     
     int maxDepth = (Integer) resource.getMetadata().getRawMap().getOrDefault("paginate-at-depth", 1);
     
-    List<PathAndModelSupplier> res = new ArrayList<>();
+    List<FlattenedStructuredDocument> res = new ArrayList<>();
     doc.toOutputPaths(new OutputPathsEnv(maxDepth, locale, resource), res);
-    return res;
+    
+    addPaginationInfoToModel(res);
+    
+    return res.stream().map(f -> new PathAndModelSupplier(f.path, () -> f.model)).collect(toList());
   }
   
+  private void addPaginationInfoToModel(List<FlattenedStructuredDocument> res) {
+    final int resCount = res.size();
+    for (int i = 0; i < resCount; i++) {
+      FlattenedStructuredDocument current = res.get(i);
+      String previousPageUrl = i > 0 ? PathUtils.relativePathTo(res.get(i-1).path, current.path) : null;
+      String nextPageUrl = i < resCount -1 ? PathUtils.relativePathTo(res.get(i+1).path, current.path) : null;
+      current.model.put("pagination", new Pagination(i + 1, resCount, previousPageUrl, nextPageUrl));
+    }
+  }
+  
+  public static class Pagination {
+    private final int page;
+    private final int total;
+    private final String previousPageUrl;
+    private final String nextPageUrl;
+    
+    public Pagination(int page, int total, String previousPageUrl, String nextPageUrl) {
+      this.page = page;
+      this.total = total;
+      this.previousPageUrl = previousPageUrl;
+      this.nextPageUrl = nextPageUrl;
+    }
+
+    public int getPage() {
+      return page;
+    }
+
+    public int getTotal() {
+      return total;
+    }
+
+    public String getPreviousPageUrl() {
+      return previousPageUrl;
+    }
+
+    public String getNextPageUrl() {
+      return nextPageUrl;
+    }
+  }
+
   private static class OutputPathsEnv {
     final int maxDepth;
     final Locale locale;
@@ -98,6 +144,16 @@ public class IncludeAllPaginator implements Directive {
       this.maxDepth = maxDepth;
       this.locale = locale;
       this.resource = resource;
+    }
+  }
+  
+  private static class FlattenedStructuredDocument {
+    final Path path;
+    final Map<String, Object> model;
+    
+    FlattenedStructuredDocument(Path path, Map<String, Object> model) {
+      this.path = path;
+      this.model = model;
     }
   }
   
@@ -126,7 +182,7 @@ public class IncludeAllPaginator implements Directive {
       this.relativeToBasePath = basePath.relativize(resource.getPath());
     }
     
-    void toOutputPaths(OutputPathsEnv env, List<PathAndModelSupplier> res) {
+    void toOutputPaths(OutputPathsEnv env, List<FlattenedStructuredDocument> res) {
       
       FileResource v = fileResource.orElseGet(() -> new FileResourcePlaceHolder(relativeToBasePath, configuration));
       
@@ -136,21 +192,22 @@ public class IncludeAllPaginator implements Directive {
       Path finalOutputPathForResource = outputPathExtractor.apply(virtualResource);
       
       StringBuilder sb = new StringBuilder();
-      
       Map<String, Object> model = ModelPreparer.prepare(root, configuration, env.locale, virtualResource, finalOutputPathForResource, taxonomy);
-      
       sb.append(renderFile(env.locale, model));
       
       if(depth < env.maxDepth) {
+        
+        Map<String, Object> modelForSupplier = ModelPreparer.prepare(root, configuration, env.locale, virtualResource, finalOutputPathForResource, taxonomy, Collections.singletonMap("includeAllResult", sb.toString()));
+        res.add(new FlattenedStructuredDocument(finalOutputPathForResource, modelForSupplier));
+        
         childDocuments.forEach(sd -> sd.toOutputPaths(env, res));
       } else if (depth == env.maxDepth ) {//cutoff point
         renderChildDocuments(env.locale, model).forEach(sb::append);
+        
+        Map<String, Object> modelForSupplier = ModelPreparer.prepare(root, configuration, env.locale, virtualResource, finalOutputPathForResource, taxonomy, Collections.singletonMap("includeAllResult", sb.toString()));
+        res.add(new FlattenedStructuredDocument(finalOutputPathForResource, modelForSupplier));
       }
-      
-      Map<String, Object> modelForSupplier = ModelPreparer.prepare(root, configuration, env.locale, virtualResource, finalOutputPathForResource, taxonomy, Collections.singletonMap("includeAllResult", sb.toString()));
-      res.add(new PathAndModelSupplier(finalOutputPathForResource, () -> modelForSupplier));
     }
-    
     
     String renderFile(Locale locale, Map<String, Object> model) {
       return fileResource.map(f -> resourceProcessor.apply(locale).apply(f, model).getContent()).orElse("");
