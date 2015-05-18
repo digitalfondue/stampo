@@ -34,6 +34,10 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
+
 import ch.digitalfondue.stampo.PathUtils;
 import ch.digitalfondue.stampo.StampoGlobalConfiguration;
 import ch.digitalfondue.stampo.resource.Directory;
@@ -95,13 +99,29 @@ public class IncludeAllPaginator implements Directive {
     return res.stream().map(f -> new PathAndModelSupplier(f.path, () -> f.model)).collect(toList());
   }
   
+  private void generateToc(List<FlattenedStructuredDocument> res, int from) {
+    FlattenedStructuredDocument base = res.get(from);
+    int minDepth = base.depth;
+    for (int i = from+1; i < res.size(); i++) {
+      FlattenedStructuredDocument current = res.get(i);
+      if(minDepth >= current.depth) {
+        break;
+      }
+      base.tocRoot.add(current.tocRoot);
+    }
+  }
+  
   private void addPaginationInfoToModel(List<FlattenedStructuredDocument> res) {
     final int resCount = res.size();
     for (int i = 0; i < resCount; i++) {
       FlattenedStructuredDocument current = res.get(i);
+      
+      generateToc(res, i);
+      
       String previousPageUrl = i > 0 ? PathUtils.relativePathTo(res.get(i-1).path, current.path) : null;
       String nextPageUrl = i < resCount -1 ? PathUtils.relativePathTo(res.get(i+1).path, current.path) : null;
       current.model.put("pagination", new Pagination(i + 1, resCount, previousPageUrl, nextPageUrl));
+      current.model.put("toc", current.tocRoot.toHtml());
     }
   }
   
@@ -148,13 +168,87 @@ public class IncludeAllPaginator implements Directive {
   }
   
   private static class FlattenedStructuredDocument {
+    final int depth;
     final Path path;
     final Map<String, Object> model;
+    final Toc tocRoot;
     
-    FlattenedStructuredDocument(Path path, Map<String, Object> model) {
+    FlattenedStructuredDocument(int depth, Path path, Map<String, Object> model, Toc tocRoot) {
+      this.depth = depth;
       this.path = path;
       this.model = model;
+      this.tocRoot = tocRoot;
     }
+  }
+  
+  private static class Toc {
+    final List<Toc> toc = new ArrayList<>();
+    final Optional<Integer> baseDepth;
+    final Optional<Integer> headerLevel;
+    final Optional<String> name;
+    
+    Toc(Optional<Integer> baseDepth, Optional<Integer> headerLevel, Optional<String> name) {
+      this.baseDepth = baseDepth;
+      this.headerLevel = headerLevel;
+      this.name = name;
+    }
+    
+    void add(Toc toc) {
+      if(!toc.baseDepth.isPresent()) {
+        throw new IllegalStateException("Cannot add non root Toc");
+      }
+      
+      if (toc.baseDepth.get().intValue() -1 == baseDepth.get().intValue()) { 
+        // it's a direct children
+        this.toc.add(toc);
+      } else if (toc.baseDepth.get().intValue() > baseDepth.get().intValue() && !this.toc.isEmpty() && this.toc.get(this.toc.size() -1).baseDepth.isPresent()) {
+        //it's a children of the latest children
+        this.toc.get(this.toc.size() -1).add(toc);
+      } else {
+        throw new IllegalStateException("Cannot add toc");
+      }
+    }
+    
+    void add(int headerLevel, String name) {
+      if(!toc.isEmpty() && toc.get(toc.size()-1).headerLevel.isPresent() && toc.get(toc.size()-1).headerLevel.get() < headerLevel) {
+        toc.get(toc.size()-1).add(headerLevel, name);
+      } else {
+        this.toc.add(new Toc(empty(), of(headerLevel), of(name)));
+      }
+    }
+    
+    String toHtml() {
+      StringBuilder sb = new StringBuilder();
+      name.ifPresent(sb::append);
+      sb.append("\n<ol>");
+      toc.stream().forEach(t -> sb.append("<li>").append(t.toHtml()).append("</li>\n"));
+      return sb.append("</ol>\n").toString();
+    }
+    
+    @Override
+    public String toString() {
+      StringBuilder sb = new StringBuilder();
+      
+      sb.append(baseDepth).append(" - ").append(headerLevel).append(" ").append(name).append("\n");
+      
+      toc.stream().forEach(sb::append);
+      return sb.toString();
+    }
+  }
+  
+  
+  private static int headerLevel(String name) {
+    return Integer.parseInt(name.substring(1));
+  }
+  
+  private Toc extractTocFrom(int depth, String s) {
+    Elements titles = Jsoup.parseBodyFragment(s).select("h1,h2,h3,h4,h5,h6");
+    
+    Toc root = new Toc(of(depth), empty(), empty());
+    for(Element e : titles) {
+      root.add(headerLevel(e.tagName()), e.text());
+    }
+    return root;
   }
   
   
@@ -195,17 +289,25 @@ public class IncludeAllPaginator implements Directive {
       Map<String, Object> model = ModelPreparer.prepare(root, configuration, env.locale, virtualResource, finalOutputPathForResource, taxonomy);
       sb.append(renderFile(env.locale, model));
       
+      
       if(depth < env.maxDepth) {
         
-        Map<String, Object> modelForSupplier = ModelPreparer.prepare(root, configuration, env.locale, virtualResource, finalOutputPathForResource, taxonomy, Collections.singletonMap("includeAllResult", sb.toString()));
-        res.add(new FlattenedStructuredDocument(finalOutputPathForResource, modelForSupplier));
+        String includeAllResult = sb.toString();
+        
+        Map<String, Object> modelForSupplier = ModelPreparer.prepare(root, configuration, env.locale, virtualResource, finalOutputPathForResource, taxonomy, Collections.singletonMap("includeAllResult", includeAllResult));
+        
+        Toc tocRoot = extractTocFrom(depth, includeAllResult);
+        res.add(new FlattenedStructuredDocument(depth, finalOutputPathForResource, modelForSupplier, tocRoot));
         
         childDocuments.forEach(sd -> sd.toOutputPaths(env, res));
       } else if (depth == env.maxDepth ) {//cutoff point
         renderChildDocuments(env.locale, model).forEach(sb::append);
         
-        Map<String, Object> modelForSupplier = ModelPreparer.prepare(root, configuration, env.locale, virtualResource, finalOutputPathForResource, taxonomy, Collections.singletonMap("includeAllResult", sb.toString()));
-        res.add(new FlattenedStructuredDocument(finalOutputPathForResource, modelForSupplier));
+        String includeAllResult = sb.toString();
+        
+        Toc tocRoot = extractTocFrom(depth, includeAllResult);
+        Map<String, Object> modelForSupplier = ModelPreparer.prepare(root, configuration, env.locale, virtualResource, finalOutputPathForResource, taxonomy, Collections.singletonMap("includeAllResult", includeAllResult));
+        res.add(new FlattenedStructuredDocument(depth, finalOutputPathForResource, modelForSupplier, tocRoot));
       }
     }
     

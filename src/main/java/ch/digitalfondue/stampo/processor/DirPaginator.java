@@ -100,7 +100,7 @@ public class DirPaginator extends Paginator implements Directive {
   public List<PathAndModelSupplier> generateOutputPaths(FileResource resource, Locale locale,
       Path defaultOutputPath) {
 
-    List<PathAndModelSupplier> outpuPaths = new ArrayList<PathAndModelSupplier>();
+    List<PathAndModelSupplier> outpuPaths = new ArrayList<>();
 
     DirPaginationConfiguration dirPaginationConf =
         getDirectoryPaginationConfiguration(resource.getMetadata().getRawMap()).orElseThrow(

@@ -78,7 +78,7 @@ public class WatchDir {
    */
   WatchDir(Path dir, Set<Path> ignore, Set<String> ignorePattern) throws IOException {
     this.watcher = dir.getFileSystem().newWatchService();
-    this.keys = new HashMap<WatchKey, Path>();
+    this.keys = new HashMap<>();
     this.ignore = ignore;
     this.ignorePattern = ignorePattern;
 

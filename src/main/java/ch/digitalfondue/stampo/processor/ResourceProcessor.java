@@ -132,7 +132,7 @@ public class ResourceProcessor {
     FileResourceProcessorOutput processed =
         fileResourceProcessor.applyProcessors(resource, finalLocale, model);
 
-    Map<String, Object> layoutModel = new HashMap<String, Object>(model);
+    Map<String, Object> layoutModel = new HashMap<>(model);
 
     layoutModel.put("content", processed.getContent());
 

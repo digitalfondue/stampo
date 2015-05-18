@@ -39,7 +39,7 @@ public class Taxonomy {
     this.groupingProperties = groupingProperties;
     this.fileSorter = fileSorter;
     
-    groupingProperties.forEach((group) -> groups.put(group, new TreeMap<String, List<FileResource>>()));
+    groupingProperties.forEach((group) -> groups.put(group, new TreeMap<>()));
   }
 
   public void add(Directory directory) {
