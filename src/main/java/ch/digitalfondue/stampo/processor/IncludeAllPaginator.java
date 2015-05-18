@@ -112,7 +112,7 @@ public class IncludeAllPaginator implements Directive {
       if (minDepth >= current.depth) {
         break;
       }
-      base.tocRoot.add(current.tocRoot);
+      base.tocRoot.add(current.tocRoot.copy());
     }
   }
 
@@ -120,7 +120,7 @@ public class IncludeAllPaginator implements Directive {
     final int resCount = res.size();
     for (int i = 0; i < resCount; i++) {
       FlattenedStructuredDocument current = res.get(i);
-
+      
       generateToc(res, i);
 
       String previousPageUrl = null;

@@ -22,6 +22,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import ch.digitalfondue.stampo.PathUtils;
 
@@ -84,5 +85,11 @@ public class Toc {
       sb.append("</ol>\n");
     }
     return sb.toString();
+  }
+
+  public Toc copy() {
+    Toc toc = new Toc(baseDepth, headerLevel, name, id, outputPath);
+    toc.toc.addAll(this.toc.stream().map(Toc::copy).collect(Collectors.toList()));
+    return toc;
   }
 }
