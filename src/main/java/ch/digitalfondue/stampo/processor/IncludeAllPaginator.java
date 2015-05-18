@@ -40,16 +40,20 @@ import org.jsoup.select.Elements;
 
 import ch.digitalfondue.stampo.PathUtils;
 import ch.digitalfondue.stampo.StampoGlobalConfiguration;
+import ch.digitalfondue.stampo.processor.includeall.FileResourcePlaceHolder;
+import ch.digitalfondue.stampo.processor.includeall.FlattenedStructuredDocument;
+import ch.digitalfondue.stampo.processor.includeall.OutputPathsEnv;
+import ch.digitalfondue.stampo.processor.includeall.Pagination;
+import ch.digitalfondue.stampo.processor.includeall.Toc;
+import ch.digitalfondue.stampo.processor.includeall.TocAndMainTitle;
+import ch.digitalfondue.stampo.processor.includeall.VirtualPathFileResource;
 import ch.digitalfondue.stampo.resource.Directory;
 import ch.digitalfondue.stampo.resource.DirectoryResource;
-import ch.digitalfondue.stampo.resource.FileMetadata;
 import ch.digitalfondue.stampo.resource.FileResource;
 import ch.digitalfondue.stampo.resource.FileResourceWithMetadataSection;
 import ch.digitalfondue.stampo.resource.LocaleAwareDirectory;
-import ch.digitalfondue.stampo.resource.Resource;
 import ch.digitalfondue.stampo.resource.ResourceFactory;
 import ch.digitalfondue.stampo.resource.RootResource;
-import ch.digitalfondue.stampo.resource.StructuredFileExtension;
 import ch.digitalfondue.stampo.taxonomy.Taxonomy;
 
 public class IncludeAllPaginator implements Directive {
@@ -256,7 +260,7 @@ public class IncludeAllPaginator implements Directive {
           .map(
               c -> c.renderFile(locale, model)
                   + c.renderChildDocuments(locale, model).stream().collect(Collectors.joining()))
-          .collect(Collectors.toList());
+          .collect(toList());
     }
 
 
@@ -293,237 +297,6 @@ public class IncludeAllPaginator implements Directive {
 
             return res;
           }).orElseGet(Collections::emptyList);
-    }
-  }
-
-  private static class FileResourcePlaceHolder implements FileResource {
-
-    final StampoGlobalConfiguration conf;
-    final Path path;
-
-    FileResourcePlaceHolder(Path path, StampoGlobalConfiguration conf) {
-      this.path = path;
-      this.conf = conf;
-    }
-
-    @Override
-    public Resource getParent() {
-      return null;
-    }
-
-    @Override
-    public Path getPath() {
-      return path;
-    }
-
-    @Override
-    public StampoGlobalConfiguration getConfiguration() {
-      return conf;
-    }
-
-    @Override
-    public FileMetadata getMetadata() {
-      return new FileMetadata(Collections.emptyMap());
-    }
-
-    @Override
-    public Optional<String> getContent() {
-      return of("");
-    }
-
-    @Override
-    public StructuredFileExtension getStructuredFileExtension() {
-      return new StructuredFileExtension(Collections.emptyList(), empty(), of("html"),
-          Collections.emptySet(), Collections.emptyList());
-    }
-
-  }
-
-
-  // override the path of a file resource
-  private static class VirtualPathFileResource implements FileResource {
-
-    private final Path path;
-    private final FileResource fileResource;
-
-    VirtualPathFileResource(Path path, FileResource fileResource) {
-      this.path = path;
-      this.fileResource = fileResource;
-    }
-
-    @Override
-    public Resource getParent() {
-      throw new IllegalStateException();
-    }
-
-    @Override
-    public Path getPath() {
-      return path;
-    }
-
-    @Override
-    public StampoGlobalConfiguration getConfiguration() {
-      return fileResource.getConfiguration();
-    }
-
-    @Override
-    public FileMetadata getMetadata() {
-      // TODO: should use parent override for use-ugly url!
-      return fileResource.getMetadata();
-    }
-
-    @Override
-    public Optional<String> getContent() {
-      return fileResource.getContent();
-    }
-
-    @Override
-    public StructuredFileExtension getStructuredFileExtension() {
-      return fileResource.getStructuredFileExtension();
-    }
-
-  }
-
-  public static class Pagination {
-    private final int page;
-    private final int total;
-    private final String previousPageUrl;
-    private final String previousPageTitle;
-    private final String nextPageUrl;
-    private final String nextPageTitle;
-
-    public Pagination(int page, int total, String previousPageUrl, String previousPageTitle,
-        String nextPageUrl, String nextPageTitle) {
-      this.page = page;
-      this.total = total;
-      this.previousPageUrl = previousPageUrl;
-      this.previousPageTitle = previousPageTitle;
-      this.nextPageUrl = nextPageUrl;
-      this.nextPageTitle = nextPageTitle;
-    }
-
-    public int getPage() {
-      return page;
-    }
-
-    public int getTotal() {
-      return total;
-    }
-
-    public String getPreviousPageUrl() {
-      return previousPageUrl;
-    }
-
-    public String getNextPageUrl() {
-      return nextPageUrl;
-    }
-
-    public String getPreviousPageTitle() {
-      return previousPageTitle;
-    }
-
-    public String getNextPageTitle() {
-      return nextPageTitle;
-    }
-  }
-
-  private static class OutputPathsEnv {
-    final int maxDepth;
-    final Locale locale;
-    final FileResource resource;
-
-    public OutputPathsEnv(int maxDepth, Locale locale, FileResource resource) {
-      this.maxDepth = maxDepth;
-      this.locale = locale;
-      this.resource = resource;
-    }
-  }
-
-  private static class FlattenedStructuredDocument {
-    final int depth;
-    final Path path;
-    final Map<String, Object> model;
-    final Toc tocRoot;
-    final Optional<String> title;
-
-    FlattenedStructuredDocument(int depth, Path path, Map<String, Object> model, Toc tocRoot,
-        Optional<String> title) {
-      this.depth = depth;
-      this.path = path;
-      this.model = model;
-      this.tocRoot = tocRoot;
-      this.title = title;
-    }
-  }
-
-  private static class Toc {
-    final List<Toc> toc = new ArrayList<>();
-    final Optional<Integer> baseDepth;
-    final Optional<Integer> headerLevel;
-    final Optional<String> name;
-    final Optional<String> id;
-    final Path outputPath;
-
-    Toc(Optional<Integer> baseDepth, Optional<Integer> headerLevel, Optional<String> name,
-        Optional<String> id, Path outputPath) {
-      this.baseDepth = baseDepth;
-      this.headerLevel = headerLevel;
-      this.name = name;
-      this.id = id;
-      this.outputPath = outputPath;
-    }
-
-    void add(Toc toc) {
-      if (!toc.baseDepth.isPresent()) {
-        throw new IllegalStateException("Cannot add non root Toc");
-      }
-
-      if (toc.baseDepth.get().intValue() - 1 == baseDepth.get().intValue()) {
-        // it's a direct children
-        this.toc.add(toc);
-      } else if (toc.baseDepth.get().intValue() > baseDepth.get().intValue() && !this.toc.isEmpty()
-          && this.toc.get(this.toc.size() - 1).baseDepth.isPresent()) {
-        // it's a children of the latest children
-        this.toc.get(this.toc.size() - 1).add(toc);
-      } else {
-        throw new IllegalStateException("Cannot add toc");
-      }
-    }
-
-    void add(int headerLevel, String name, String id) {
-      if (!toc.isEmpty() && toc.get(toc.size() - 1).headerLevel.isPresent()
-          && toc.get(toc.size() - 1).headerLevel.get() < headerLevel) {
-        toc.get(toc.size() - 1).add(headerLevel, name, id);
-      } else {
-        this.toc.add(new Toc(empty(), of(headerLevel), of(name), of(id), outputPath));
-      }
-    }
-
-    String toHtml(Path path) {
-      StringBuilder sb = new StringBuilder();
-      name.ifPresent((n) -> {
-        sb.append("<a href=\"").append(PathUtils.relativePathTo(outputPath, path));
-        id.ifPresent(i -> {
-          sb.append("#").append(i);
-        });
-        sb.append("\">").append(n).append("</a>");
-      });
-      if (!toc.isEmpty()) {
-        sb.append("\n<ol>");
-        toc.stream().forEach(t -> sb.append("<li>").append(t.toHtml(path)).append("</li>\n"));
-        sb.append("</ol>\n");
-      }
-      return sb.toString();
-    }
-  }
-
-  private static class TocAndMainTitle {
-    final Toc toc;
-    final Optional<String> title;
-
-    TocAndMainTitle(Toc toc, Optional<String> title) {
-      this.toc = toc;
-      this.title = title;
     }
   }
 

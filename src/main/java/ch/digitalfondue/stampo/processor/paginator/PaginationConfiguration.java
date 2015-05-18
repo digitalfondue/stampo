@@ -13,27 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ch.digitalfondue.stampo.processor;
+package ch.digitalfondue.stampo.processor.paginator;
 
-import java.nio.file.Path;
-import java.util.Map;
-import java.util.function.Supplier;
 
-public class PathAndModelSupplier {
+public abstract class PaginationConfiguration {
 
-  private final Path outputPath;
-  private final Supplier<Map<String, Object>> modelSupplier;
 
-  public PathAndModelSupplier(Path outputPath, Supplier<Map<String, Object>> modelSupplier) {
-    this.outputPath = outputPath;
-    this.modelSupplier = modelSupplier;
+  public PaginationConfiguration(int pageSize) {
+    this.pageSize = pageSize;
   }
 
-  public Path getOutputPath() {
-    return outputPath;
+  private final int pageSize;
+
+  public int getPageSize() {
+    return pageSize;
   }
 
-  public Supplier<Map<String, Object>> getModelSupplier() {
-    return modelSupplier;
-  }
 }

@@ -34,11 +34,12 @@ import java.util.Optional;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
 
 import ch.digitalfondue.stampo.PathUtils;
 import ch.digitalfondue.stampo.StampoGlobalConfiguration;
 import ch.digitalfondue.stampo.exception.ConfigurationException;
+import ch.digitalfondue.stampo.processor.paginator.PaginationConfiguration;
+import ch.digitalfondue.stampo.processor.paginator.Paginator;
 import ch.digitalfondue.stampo.resource.Directory;
 import ch.digitalfondue.stampo.resource.FileMetadata;
 import ch.digitalfondue.stampo.resource.FileResource;
@@ -152,7 +153,7 @@ public class DirPaginator extends Paginator implements Directive {
 
     List<PathMatcher> matchers =
         dirPaginationConf.getMatchPattern().stream().map(inputFs::getPathMatcher)
-            .collect(Collectors.toList());
+            .collect(toList());
 
     Path baseDir = configuration.getBaseDirectory();
 

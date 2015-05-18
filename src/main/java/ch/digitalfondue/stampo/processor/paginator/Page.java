@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ch.digitalfondue.stampo.processor;
+package ch.digitalfondue.stampo.processor.paginator;
 
 import java.util.List;
 import java.util.function.BiFunction;

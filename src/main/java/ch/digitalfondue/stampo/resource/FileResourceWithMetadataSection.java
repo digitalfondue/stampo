@@ -49,7 +49,7 @@ public class FileResourceWithMetadataSection implements FileResource {
     this.path = path;
     this.parent = parent;
     this.metadata = new FileMetadata(readContent(ReadMode.ONLY_METADATA).metadata);
-    this.structuredFileExtension = classifyFileExtension(path);
+    this.structuredFileExtension = classifyFileExtension();
   }
 
   public FileResourceWithMetadataSection(FileResource fileResource, Resource parent) {
@@ -154,7 +154,7 @@ public class FileResourceWithMetadataSection implements FileResource {
   }
  
   /* given a list of extensions, return a structured view */
-  private StructuredFileExtension classifyFileExtension(Path filePath) {
+  private StructuredFileExtension classifyFileExtension() {
     List<String> exts = getFileExtensions();
     Collections.reverse(exts);
     //

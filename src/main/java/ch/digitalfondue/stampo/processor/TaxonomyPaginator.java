@@ -28,6 +28,8 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 
 import ch.digitalfondue.stampo.StampoGlobalConfiguration;
+import ch.digitalfondue.stampo.processor.paginator.PaginationConfiguration;
+import ch.digitalfondue.stampo.processor.paginator.Paginator;
 import ch.digitalfondue.stampo.resource.Directory;
 import ch.digitalfondue.stampo.resource.FileResource;
 import ch.digitalfondue.stampo.taxonomy.Taxonomy;

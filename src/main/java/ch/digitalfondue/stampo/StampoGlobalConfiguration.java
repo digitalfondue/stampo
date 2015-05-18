@@ -17,8 +17,11 @@ package ch.digitalfondue.stampo;
 
 import static java.nio.file.Files.newInputStream;
 import static java.util.Arrays.asList;
+import static java.util.Collections.emptyMap;
+import static java.util.Collections.emptySet;
 import static java.util.Collections.singleton;
 import static java.util.Collections.singletonList;
+import static java.util.Collections.unmodifiableMap;
 import static java.util.Collections.unmodifiableSet;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.toList;
@@ -28,7 +31,6 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -38,9 +40,9 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.ResourceBundle.Control;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
-import java.util.Set;
 
 import org.yaml.snakeyaml.Yaml;
 
@@ -83,7 +85,7 @@ public class StampoGlobalConfiguration {
     this.configuration = configuration;
     this.renderers = renderers;
     this.locales = extractLocales(configuration);
-    this.localesAsString = Collections.unmodifiableSet(locales.stream().map(Object::toString).collect(Collectors.toSet()));
+    this.localesAsString = unmodifiableSet(locales.stream().map(Object::toString).collect(Collectors.toSet()));
     this.defaultLocale = defaultLocale(configuration);
     this.ignorePatterns = extractIgnorePatterns(configuration);
     this.taxonomies = extractTaxonomies(configuration);
@@ -107,8 +109,8 @@ public class StampoGlobalConfiguration {
       resProcMapping.putAll(renderer.extensionTransformMapping());
     }
     
-    processorResourceExtensions = Collections.unmodifiableSet(resProcExt);
-    processorExtensionTransformMapping = Collections.unmodifiableMap(resProcMapping);
+    processorResourceExtensions = unmodifiableSet(resProcExt);
+    processorExtensionTransformMapping = unmodifiableMap(resProcMapping);
   }
 
   // patterns follow
@@ -151,7 +153,7 @@ public class StampoGlobalConfiguration {
       } else {
         throw new IllegalArgumentException("wrong type for taxonomies: " + taxonomies);
       }
-    }).orElse(Collections.emptySet());
+    }).orElse(emptySet());
   }
   
   
@@ -193,7 +195,7 @@ public class StampoGlobalConfiguration {
         throw new IllegalStateException(ioe);
       }
     }
-    return Collections.emptyMap();
+    return emptyMap();
   }
   
   public Set<String> getTaxonomyGroups() {

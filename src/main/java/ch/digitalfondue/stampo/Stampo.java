@@ -34,7 +34,6 @@ import java.nio.file.Path;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
@@ -78,7 +77,7 @@ public class Stampo {
     if (exists(configFile)) {
       Yaml yaml = new Yaml();
       try (InputStream is = newInputStream(configFile)) {
-        Map<String, Object> c = ofNullable((Map<String, Object>) yaml.loadAs(is, Map.class)).orElse(Collections.emptyMap());
+        Map<String, Object> c = ofNullable((Map<String, Object>) yaml.loadAs(is, Map.class)).orElse(emptyMap());
         this.configuration = new StampoGlobalConfiguration(c, baseInputDir, outputDir, renderers);
       } catch (IOException ioe) {
         throw new IllegalArgumentException(ioe);
@@ -113,7 +112,7 @@ public class Stampo {
   public void build(ProcessedInputHandler outputHandler,
       BiConsumer<Path, Path> staticDirectoryAction) {
 
-    if (!Files.exists(configuration.getContentDir())) {
+    if (!exists(configuration.getContentDir())) {
       throw new MissingDirectoryException(configuration.getContentDir());
     }
 

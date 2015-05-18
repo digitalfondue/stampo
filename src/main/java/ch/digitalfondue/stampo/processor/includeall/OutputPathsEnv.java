@@ -13,20 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ch.digitalfondue.stampo.processor;
+package ch.digitalfondue.stampo.processor.includeall;
 
+import java.util.Locale;
 
-abstract class PaginationConfiguration {
+import ch.digitalfondue.stampo.resource.FileResource;
 
+public class OutputPathsEnv {
+  public final int maxDepth;
+  public final Locale locale;
+  public final FileResource resource;
 
-  public PaginationConfiguration(int pageSize) {
-    this.pageSize = pageSize;
+  public OutputPathsEnv(int maxDepth, Locale locale, FileResource resource) {
+    this.maxDepth = maxDepth;
+    this.locale = locale;
+    this.resource = resource;
   }
-
-  private final int pageSize;
-
-  public int getPageSize() {
-    return pageSize;
-  }
-
 }

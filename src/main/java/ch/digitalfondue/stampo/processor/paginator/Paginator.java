@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ch.digitalfondue.stampo.processor;
+package ch.digitalfondue.stampo.processor.paginator;
 
 import static java.util.stream.Collectors.toList;
 
@@ -29,6 +29,9 @@ import java.util.function.Supplier;
 
 import ch.digitalfondue.stampo.PathUtils;
 import ch.digitalfondue.stampo.StampoGlobalConfiguration;
+import ch.digitalfondue.stampo.processor.FileResourceProcessorOutput;
+import ch.digitalfondue.stampo.processor.ModelPreparer;
+import ch.digitalfondue.stampo.processor.PathAndModelSupplier;
 import ch.digitalfondue.stampo.resource.Directory;
 import ch.digitalfondue.stampo.resource.FileResource;
 import ch.digitalfondue.stampo.taxonomy.Taxonomy;

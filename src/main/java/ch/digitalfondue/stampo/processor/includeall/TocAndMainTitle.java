@@ -13,27 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ch.digitalfondue.stampo.processor;
+package ch.digitalfondue.stampo.processor.includeall;
 
-import java.nio.file.Path;
-import java.util.Map;
-import java.util.function.Supplier;
+import java.util.Optional;
 
-public class PathAndModelSupplier {
+public class TocAndMainTitle {
+  public final Toc toc;
+  public final Optional<String> title;
 
-  private final Path outputPath;
-  private final Supplier<Map<String, Object>> modelSupplier;
-
-  public PathAndModelSupplier(Path outputPath, Supplier<Map<String, Object>> modelSupplier) {
-    this.outputPath = outputPath;
-    this.modelSupplier = modelSupplier;
-  }
-
-  public Path getOutputPath() {
-    return outputPath;
-  }
-
-  public Supplier<Map<String, Object>> getModelSupplier() {
-    return modelSupplier;
+  public TocAndMainTitle(Toc toc, Optional<String> title) {
+    this.toc = toc;
+    this.title = title;
   }
 }
