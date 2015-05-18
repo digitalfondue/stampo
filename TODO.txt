@@ -7,45 +7,27 @@ TODO:
 - test on mac
 
 - support a "documentation use case". WIP:
-	- basic pieces seems to work.
 	- TBD:
-		- toc generation
-			- create the correct hierarchy
-		- give enough info for generate the pagination handler 
+		- toc generation:
+			- should remove empty notes, for example we have:
+				1.
+				  1. About
+				2.
+				  1. Installation
+                     1. Requirements
+               we can simplify in
+               
+                1. About
+                2. Installation
+                   1. Requirements
+                
+                
+               (this is due to the paginate-at-depth cutoff point, we generate empty nodes)
+               
+    - add chapter number&co the pagination model
 
     - see http://www.mkdocs.org/
-	- identify the best set of directives needed to simplify this use case
 	- we want to generate something like http://docs.jboss.org/seam/3/latest/reference/en-US/html/
-	  without too much effort.
-	   
-	- use file system layout, file name + dir name dictate the structure, depth can be used to define the cut out
-	- index.html : 
-	  ---
-	  directive: 'include-all'
-	  include-all: 'docs/**/*.'
-	  recursive: true
-	  toc-depth: 3
-	  paginate-at-depth: 3
-	  ---
-	  
-	  {{pagination controls}}
-	  
-	  {{currentToc}}
-	  
-	  {{content}}
-	  
-	  {{pagination controls}}
-	  
-	 - docs/1-about.md
-	 - docs/2-installation.md
-	 - docs/3-configuration-and-administration.md
-	 - docs/4-user-manual.md
-	 - docs/4-user-manual/1-get-started.md <- intro get started + text
-	 - docs/4-user-manual/2-project.md <- intro project
-	 - docs/4-user-manual/2-project/1-create-a-project.md
-	 - docs/4-user-manual/2-project/2-create-a-board.md
-	 - docs/4-user-manual/2-project/3-statistics.md
-	
 
 - draft support
 

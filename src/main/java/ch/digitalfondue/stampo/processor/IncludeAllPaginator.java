@@ -61,205 +61,122 @@ public class IncludeAllPaginator implements Directive {
   private final ResourceFactory resourceFactory;
   private final Taxonomy taxonomy;
 
-  public IncludeAllPaginator(Directory root, StampoGlobalConfiguration configuration,
+  public IncludeAllPaginator(
+      Directory root,
+      StampoGlobalConfiguration configuration,
       Function<FileResource, Path> outputPathExtractor,
-      Function<Locale, BiFunction<FileResource, Map<String, Object>, FileResourceProcessorOutput>> resourceProcessor, Taxonomy taxonomy) {
+      Function<Locale, BiFunction<FileResource, Map<String, Object>, FileResourceProcessorOutput>> resourceProcessor,
+      Taxonomy taxonomy) {
     this.root = root;
     this.configuration = configuration;
     this.outputPathExtractor = outputPathExtractor;
     this.resourceProcessor = resourceProcessor;
-    this.resourceFactory = new ResourceFactory(DirectoryResource::new, FileResourceWithMetadataSection::new, Comparator.comparing(FileResource::getPath), configuration);
+    this.resourceFactory =
+        new ResourceFactory(DirectoryResource::new, FileResourceWithMetadataSection::new,
+            Comparator.comparing(FileResource::getPath), configuration);
     this.taxonomy = taxonomy;
+  }
+
+  @Override
+  public String name() {
+    return "include-all";
   }
 
   @Override
   public List<PathAndModelSupplier> generateOutputPaths(FileResource resource, Locale locale,
       Path defaultOutputPath) {
 
-    String path = ofNullable(resource.getMetadata().getRawMap().get("include-all"))
-            .map(String.class::cast).orElseThrow(IllegalArgumentException::new);
+    String path =
+        ofNullable(resource.getMetadata().getRawMap().get("include-all")).map(String.class::cast)
+            .orElseThrow(IllegalArgumentException::new);
 
     Path baseDirectory = configuration.getBaseDirectory();
     Path p = baseDirectory.resolve(path);
     if (!p.startsWith(baseDirectory)) {
-      throw new IllegalArgumentException(p+" must be inside of the basedirectory: " + baseDirectory);// cannot be outside
+      throw new IllegalArgumentException(p + " must be inside of the basedirectory: "
+          + baseDirectory);// cannot be outside
     }
-    
-    Directory toIncludeAllDir = new LocaleAwareDirectory(locale, new RootResource(resourceFactory, p), FileResourceWithMetadataSection::new);
-    
+
+    Directory toIncludeAllDir =
+        new LocaleAwareDirectory(locale, new RootResource(resourceFactory, p),
+            FileResourceWithMetadataSection::new);
+
     StructuredDocument doc = new StructuredDocument(0, toIncludeAllDir, p);
-    
-    int maxDepth = (Integer) resource.getMetadata().getRawMap().getOrDefault("paginate-at-depth", 1);
-    
+
+    int maxDepth =
+        (Integer) resource.getMetadata().getRawMap().getOrDefault("paginate-at-depth", 1);
+
     List<FlattenedStructuredDocument> res = new ArrayList<>();
     doc.toOutputPaths(new OutputPathsEnv(maxDepth, locale, resource), res);
-    
+
     addPaginationInfoToModel(res);
-    
+
     return res.stream().map(f -> new PathAndModelSupplier(f.path, () -> f.model)).collect(toList());
   }
-  
+
   private void generateToc(List<FlattenedStructuredDocument> res, int from) {
     FlattenedStructuredDocument base = res.get(from);
     int minDepth = base.depth;
-    for (int i = from+1; i < res.size(); i++) {
+    for (int i = from + 1; i < res.size(); i++) {
       FlattenedStructuredDocument current = res.get(i);
-      if(minDepth >= current.depth) {
+      if (minDepth >= current.depth) {
         break;
       }
       base.tocRoot.add(current.tocRoot);
     }
   }
-  
+
   private void addPaginationInfoToModel(List<FlattenedStructuredDocument> res) {
     final int resCount = res.size();
     for (int i = 0; i < resCount; i++) {
       FlattenedStructuredDocument current = res.get(i);
-      
+
       generateToc(res, i);
-      
-      String previousPageUrl = i > 0 ? PathUtils.relativePathTo(res.get(i-1).path, current.path) : null;
-      String nextPageUrl = i < resCount -1 ? PathUtils.relativePathTo(res.get(i+1).path, current.path) : null;
-      current.model.put("pagination", new Pagination(i + 1, resCount, previousPageUrl, nextPageUrl));
-      current.model.put("toc", current.tocRoot.toHtml());
-    }
-  }
-  
-  public static class Pagination {
-    private final int page;
-    private final int total;
-    private final String previousPageUrl;
-    private final String nextPageUrl;
-    
-    public Pagination(int page, int total, String previousPageUrl, String nextPageUrl) {
-      this.page = page;
-      this.total = total;
-      this.previousPageUrl = previousPageUrl;
-      this.nextPageUrl = nextPageUrl;
-    }
 
-    public int getPage() {
-      return page;
-    }
+      String previousPageUrl = null;
+      String previousPageTitle = null;
 
-    public int getTotal() {
-      return total;
-    }
+      String nextPageUrl = null;
+      String nextPageTitle = null;
 
-    public String getPreviousPageUrl() {
-      return previousPageUrl;
-    }
-
-    public String getNextPageUrl() {
-      return nextPageUrl;
-    }
-  }
-
-  private static class OutputPathsEnv {
-    final int maxDepth;
-    final Locale locale;
-    final FileResource resource;
-    
-    public OutputPathsEnv(int maxDepth, Locale locale, FileResource resource) {
-      this.maxDepth = maxDepth;
-      this.locale = locale;
-      this.resource = resource;
-    }
-  }
-  
-  private static class FlattenedStructuredDocument {
-    final int depth;
-    final Path path;
-    final Map<String, Object> model;
-    final Toc tocRoot;
-    
-    FlattenedStructuredDocument(int depth, Path path, Map<String, Object> model, Toc tocRoot) {
-      this.depth = depth;
-      this.path = path;
-      this.model = model;
-      this.tocRoot = tocRoot;
-    }
-  }
-  
-  private static class Toc {
-    final List<Toc> toc = new ArrayList<>();
-    final Optional<Integer> baseDepth;
-    final Optional<Integer> headerLevel;
-    final Optional<String> name;
-    
-    Toc(Optional<Integer> baseDepth, Optional<Integer> headerLevel, Optional<String> name) {
-      this.baseDepth = baseDepth;
-      this.headerLevel = headerLevel;
-      this.name = name;
-    }
-    
-    void add(Toc toc) {
-      if(!toc.baseDepth.isPresent()) {
-        throw new IllegalStateException("Cannot add non root Toc");
+      if (i > 0) {
+        previousPageUrl = PathUtils.relativePathTo(res.get(i - 1).path, current.path);
+        previousPageTitle = res.get(i - 1).title.orElse(null);
       }
-      
-      if (toc.baseDepth.get().intValue() -1 == baseDepth.get().intValue()) { 
-        // it's a direct children
-        this.toc.add(toc);
-      } else if (toc.baseDepth.get().intValue() > baseDepth.get().intValue() && !this.toc.isEmpty() && this.toc.get(this.toc.size() -1).baseDepth.isPresent()) {
-        //it's a children of the latest children
-        this.toc.get(this.toc.size() -1).add(toc);
-      } else {
-        throw new IllegalStateException("Cannot add toc");
+      if (i < resCount - 1) {
+        nextPageUrl = PathUtils.relativePathTo(res.get(i + 1).path, current.path);
+        nextPageTitle = res.get(i + 1).title.orElse(null);
       }
-    }
-    
-    void add(int headerLevel, String name) {
-      if(!toc.isEmpty() && toc.get(toc.size()-1).headerLevel.isPresent() && toc.get(toc.size()-1).headerLevel.get() < headerLevel) {
-        toc.get(toc.size()-1).add(headerLevel, name);
-      } else {
-        this.toc.add(new Toc(empty(), of(headerLevel), of(name)));
-      }
-    }
-    
-    String toHtml() {
-      StringBuilder sb = new StringBuilder();
-      name.ifPresent(sb::append);
-      sb.append("\n<ol>");
-      toc.stream().forEach(t -> sb.append("<li>").append(t.toHtml()).append("</li>\n"));
-      return sb.append("</ol>\n").toString();
-    }
-    
-    @Override
-    public String toString() {
-      StringBuilder sb = new StringBuilder();
-      
-      sb.append(baseDepth).append(" - ").append(headerLevel).append(" ").append(name).append("\n");
-      
-      toc.stream().forEach(sb::append);
-      return sb.toString();
+      current.model.put("pagination", new Pagination(i + 1, resCount, previousPageUrl,
+          previousPageTitle, nextPageUrl, nextPageTitle));
+      current.model.put("toc", current.tocRoot.toHtml(current.path));
     }
   }
-  
-  
+
   private static int headerLevel(String name) {
     return Integer.parseInt(name.substring(1));
   }
-  
-  private Toc extractTocFrom(int depth, String s) {
+
+  private static TocAndMainTitle extractTocFrom(int depth, String s, Path finalOutputPathForResource) {
     Elements titles = Jsoup.parseBodyFragment(s).select("h1,h2,h3,h4,h5,h6");
-    
-    Toc root = new Toc(of(depth), empty(), empty());
-    for(Element e : titles) {
-      root.add(headerLevel(e.tagName()), e.text());
+
+    Toc root = new Toc(of(depth), empty(), empty(), empty(), finalOutputPathForResource);
+    for (Element e : titles) {
+   // FIXME add id, use path + e.text() as a id
+      root.add(headerLevel(e.tagName()), e.text(), ""); 
     }
-    return root;
+    return new TocAndMainTitle(root, titles.stream().findFirst().map(Element::text));
   }
-  
-  
+
+
   private class StructuredDocument {
     final int depth;
     final Path relativeToBasePath;
     final Optional<FileResource> fileResource;
     final Optional<Directory> directory;
     final List<StructuredDocument> childDocuments;
-    
-    
+
+
     StructuredDocument(int depth, Directory directory, Path basePath) {
       this.depth = depth;
       this.fileResource = empty();
@@ -267,91 +184,123 @@ public class IncludeAllPaginator implements Directive {
       this.childDocuments = from(depth, of(directory), basePath);
       this.relativeToBasePath = basePath.relativize(directory.getPath());
     }
-    
-    StructuredDocument(int depth, FileResource resource, Optional<Directory> directory, Path basePath) {
+
+    StructuredDocument(int depth, FileResource resource, Optional<Directory> directory,
+        Path basePath) {
       this.depth = depth;
       this.fileResource = of(resource);
       this.directory = directory;
       this.childDocuments = from(depth, directory, basePath);
       this.relativeToBasePath = basePath.relativize(resource.getPath());
     }
-    
+
     void toOutputPaths(OutputPathsEnv env, List<FlattenedStructuredDocument> res) {
-      
-      FileResource v = fileResource.orElseGet(() -> new FileResourcePlaceHolder(relativeToBasePath, configuration));
-      
-      Path virtualPath = env.resource.getPath().getParent().resolve(this.relativeToBasePath.toString());
-      
+
+      FileResource v =
+          fileResource.orElseGet(() -> new FileResourcePlaceHolder(relativeToBasePath,
+              configuration));
+
+      Path virtualPath =
+          env.resource.getPath().getParent().resolve(this.relativeToBasePath.toString());
+
       FileResource virtualResource = new VirtualPathFileResource(virtualPath, v);
       Path finalOutputPathForResource = outputPathExtractor.apply(virtualResource);
-      
+
       StringBuilder sb = new StringBuilder();
-      Map<String, Object> model = ModelPreparer.prepare(root, configuration, env.locale, virtualResource, finalOutputPathForResource, taxonomy);
+      Map<String, Object> model =
+          ModelPreparer.prepare(root, configuration, env.locale, virtualResource,
+              finalOutputPathForResource, taxonomy);
       sb.append(renderFile(env.locale, model));
-      
-      
-      if(depth < env.maxDepth) {
-        
+
+
+      if (depth < env.maxDepth) {
+
         String includeAllResult = sb.toString();
-        
-        Map<String, Object> modelForSupplier = ModelPreparer.prepare(root, configuration, env.locale, virtualResource, finalOutputPathForResource, taxonomy, Collections.singletonMap("includeAllResult", includeAllResult));
-        
-        Toc tocRoot = extractTocFrom(depth, includeAllResult);
-        res.add(new FlattenedStructuredDocument(depth, finalOutputPathForResource, modelForSupplier, tocRoot));
-        
+
+        Map<String, Object> modelForSupplier =
+            ModelPreparer.prepare(root, configuration, env.locale, virtualResource,
+                finalOutputPathForResource, taxonomy,
+                Collections.singletonMap("includeAllResult", includeAllResult));
+
+        TocAndMainTitle tocRoot =
+            extractTocFrom(depth, includeAllResult, finalOutputPathForResource);
+        res.add(new FlattenedStructuredDocument(depth, finalOutputPathForResource,
+            modelForSupplier, tocRoot.toc, tocRoot.title));
+
         childDocuments.forEach(sd -> sd.toOutputPaths(env, res));
-      } else if (depth == env.maxDepth ) {//cutoff point
+      } else if (depth == env.maxDepth) {// cutoff point
         renderChildDocuments(env.locale, model).forEach(sb::append);
-        
+
         String includeAllResult = sb.toString();
-        
-        Toc tocRoot = extractTocFrom(depth, includeAllResult);
-        Map<String, Object> modelForSupplier = ModelPreparer.prepare(root, configuration, env.locale, virtualResource, finalOutputPathForResource, taxonomy, Collections.singletonMap("includeAllResult", includeAllResult));
-        res.add(new FlattenedStructuredDocument(depth, finalOutputPathForResource, modelForSupplier, tocRoot));
+
+        TocAndMainTitle tocRoot =
+            extractTocFrom(depth, includeAllResult, finalOutputPathForResource);
+        Map<String, Object> modelForSupplier =
+            ModelPreparer.prepare(root, configuration, env.locale, virtualResource,
+                finalOutputPathForResource, taxonomy,
+                Collections.singletonMap("includeAllResult", includeAllResult));
+        res.add(new FlattenedStructuredDocument(depth, finalOutputPathForResource,
+            modelForSupplier, tocRoot.toc, tocRoot.title));
       }
     }
-    
+
     String renderFile(Locale locale, Map<String, Object> model) {
-      return fileResource.map(f -> resourceProcessor.apply(locale).apply(f, model).getContent()).orElse("");
+      return fileResource.map(f -> resourceProcessor.apply(locale).apply(f, model).getContent())
+          .orElse("");
     }
-    
-    
+
+
     List<String> renderChildDocuments(Locale locale, Map<String, Object> model) {
-      return childDocuments.stream().map(c -> c.renderFile(locale, model) + c.renderChildDocuments(locale, model).stream().collect(Collectors.joining())).collect(Collectors.toList());
+      return childDocuments
+          .stream()
+          .map(
+              c -> c.renderFile(locale, model)
+                  + c.renderChildDocuments(locale, model).stream().collect(Collectors.joining()))
+          .collect(Collectors.toList());
     }
-    
-    
+
+
     List<StructuredDocument> from(int depth, Optional<Directory> directory, Path basePath) {
       List<StructuredDocument> res = new ArrayList<>();
-      
-      return directory.map((d) -> {
-        
-        Set<Path> alreadyVisisted = new HashSet<>();
-        
-        d.getFiles().values().forEach(f -> {
-          Optional<Directory> associatedChildDir = ofNullable(d.getDirectories().get(f.getFileNameWithoutExtensions()));
-          associatedChildDir.map(Directory::getPath).ifPresent(alreadyVisisted::add);
-          res.add(new StructuredDocument(depth + 1, f, associatedChildDir, basePath));
-        });
-        
-        
-        d.getDirectories().values().stream().filter(dir -> !alreadyVisisted.contains(dir.getPath())).forEach(dir -> {
-          res.add(new StructuredDocument(depth + 1, dir, basePath));
-        });
-        
-        Collections.sort(res, Comparator.comparing((StructuredDocument sd) -> sd.fileResource.map(FileResource::getFileNameWithoutExtensions).orElseGet(() -> sd.directory.map(Directory::getName).orElse(""))));
-        
-        
-        return res;
-      }).orElseGet(Collections::emptyList);
+
+      return directory.map(
+          (d) -> {
+
+            Set<Path> alreadyVisisted = new HashSet<>();
+
+            d.getFiles()
+                .values()
+                .forEach(
+                    f -> {
+                      Optional<Directory> associatedChildDir =
+                          ofNullable(d.getDirectories().get(f.getFileNameWithoutExtensions()));
+                      associatedChildDir.map(Directory::getPath).ifPresent(alreadyVisisted::add);
+                      res.add(new StructuredDocument(depth + 1, f, associatedChildDir, basePath));
+                    });
+
+
+            d.getDirectories().values().stream()
+                .filter(dir -> !alreadyVisisted.contains(dir.getPath())).forEach(dir -> {
+                  res.add(new StructuredDocument(depth + 1, dir, basePath));
+                });
+
+            Collections.sort(
+                res,
+                Comparator.comparing((StructuredDocument sd) -> sd.fileResource.map(
+                    FileResource::getFileNameWithoutExtensions).orElseGet(
+                    () -> sd.directory.map(Directory::getName).orElse(""))));
+
+
+            return res;
+          }).orElseGet(Collections::emptyList);
     }
   }
-  
+
   private static class FileResourcePlaceHolder implements FileResource {
-    
+
     final StampoGlobalConfiguration conf;
     final Path path;
-    
+
     FileResourcePlaceHolder(Path path, StampoGlobalConfiguration conf) {
       this.path = path;
       this.conf = conf;
@@ -384,23 +333,19 @@ public class IncludeAllPaginator implements Directive {
 
     @Override
     public StructuredFileExtension getStructuredFileExtension() {
-      return new StructuredFileExtension(Collections.emptyList(), empty(), of("html"), Collections.emptySet(), Collections.emptyList());
+      return new StructuredFileExtension(Collections.emptyList(), empty(), of("html"),
+          Collections.emptySet(), Collections.emptyList());
     }
-    
-  }
-  
 
-  @Override
-  public String name() {
-    return "include-all";
   }
-  
-  //override the path of a file resource
+
+
+  // override the path of a file resource
   private static class VirtualPathFileResource implements FileResource {
-    
+
     private final Path path;
     private final FileResource fileResource;
-    
+
     VirtualPathFileResource(Path path, FileResource fileResource) {
       this.path = path;
       this.fileResource = fileResource;
@@ -423,7 +368,7 @@ public class IncludeAllPaginator implements Directive {
 
     @Override
     public FileMetadata getMetadata() {
-      //TODO: should use parent override for use-ugly url!
+      // TODO: should use parent override for use-ugly url!
       return fileResource.getMetadata();
     }
 
@@ -436,7 +381,150 @@ public class IncludeAllPaginator implements Directive {
     public StructuredFileExtension getStructuredFileExtension() {
       return fileResource.getStructuredFileExtension();
     }
-    
+
+  }
+
+  public static class Pagination {
+    private final int page;
+    private final int total;
+    private final String previousPageUrl;
+    private final String previousPageTitle;
+    private final String nextPageUrl;
+    private final String nextPageTitle;
+
+    public Pagination(int page, int total, String previousPageUrl, String previousPageTitle,
+        String nextPageUrl, String nextPageTitle) {
+      this.page = page;
+      this.total = total;
+      this.previousPageUrl = previousPageUrl;
+      this.previousPageTitle = previousPageTitle;
+      this.nextPageUrl = nextPageUrl;
+      this.nextPageTitle = nextPageTitle;
+    }
+
+    public int getPage() {
+      return page;
+    }
+
+    public int getTotal() {
+      return total;
+    }
+
+    public String getPreviousPageUrl() {
+      return previousPageUrl;
+    }
+
+    public String getNextPageUrl() {
+      return nextPageUrl;
+    }
+
+    public String getPreviousPageTitle() {
+      return previousPageTitle;
+    }
+
+    public String getNextPageTitle() {
+      return nextPageTitle;
+    }
+  }
+
+  private static class OutputPathsEnv {
+    final int maxDepth;
+    final Locale locale;
+    final FileResource resource;
+
+    public OutputPathsEnv(int maxDepth, Locale locale, FileResource resource) {
+      this.maxDepth = maxDepth;
+      this.locale = locale;
+      this.resource = resource;
+    }
+  }
+
+  private static class FlattenedStructuredDocument {
+    final int depth;
+    final Path path;
+    final Map<String, Object> model;
+    final Toc tocRoot;
+    final Optional<String> title;
+
+    FlattenedStructuredDocument(int depth, Path path, Map<String, Object> model, Toc tocRoot,
+        Optional<String> title) {
+      this.depth = depth;
+      this.path = path;
+      this.model = model;
+      this.tocRoot = tocRoot;
+      this.title = title;
+    }
+  }
+
+  private static class Toc {
+    final List<Toc> toc = new ArrayList<>();
+    final Optional<Integer> baseDepth;
+    final Optional<Integer> headerLevel;
+    final Optional<String> name;
+    final Optional<String> id;
+    final Path outputPath;
+
+    Toc(Optional<Integer> baseDepth, Optional<Integer> headerLevel, Optional<String> name,
+        Optional<String> id, Path outputPath) {
+      this.baseDepth = baseDepth;
+      this.headerLevel = headerLevel;
+      this.name = name;
+      this.id = id;
+      this.outputPath = outputPath;
+    }
+
+    void add(Toc toc) {
+      if (!toc.baseDepth.isPresent()) {
+        throw new IllegalStateException("Cannot add non root Toc");
+      }
+
+      if (toc.baseDepth.get().intValue() - 1 == baseDepth.get().intValue()) {
+        // it's a direct children
+        this.toc.add(toc);
+      } else if (toc.baseDepth.get().intValue() > baseDepth.get().intValue() && !this.toc.isEmpty()
+          && this.toc.get(this.toc.size() - 1).baseDepth.isPresent()) {
+        // it's a children of the latest children
+        this.toc.get(this.toc.size() - 1).add(toc);
+      } else {
+        throw new IllegalStateException("Cannot add toc");
+      }
+    }
+
+    void add(int headerLevel, String name, String id) {
+      if (!toc.isEmpty() && toc.get(toc.size() - 1).headerLevel.isPresent()
+          && toc.get(toc.size() - 1).headerLevel.get() < headerLevel) {
+        toc.get(toc.size() - 1).add(headerLevel, name, id);
+      } else {
+        this.toc.add(new Toc(empty(), of(headerLevel), of(name), of(id), outputPath));
+      }
+    }
+
+    String toHtml(Path path) {
+      StringBuilder sb = new StringBuilder();
+      name.ifPresent((n) -> {
+        sb.append("<a href=\"").append(PathUtils.relativePathTo(outputPath, path));
+        id.ifPresent(i -> {
+          sb.append("#").append(i);
+        });
+        sb.append("\">").append(n).append("</a>");
+      });
+      if (!toc.isEmpty()) {
+        sb.append("\n<ol>");
+        toc.stream().forEach(t -> sb.append("<li>").append(t.toHtml(path)).append("</li>\n"));
+        sb.append("</ol>\n");
+      }
+      return sb.toString();
+    }
+  }
+
+  private static class TocAndMainTitle {
+    final Toc toc;
+    final Optional<String> title;
+
+    TocAndMainTitle(Toc toc, Optional<String> title) {
+      this.toc = toc;
+      this.title = title;
+    }
   }
 
 }
