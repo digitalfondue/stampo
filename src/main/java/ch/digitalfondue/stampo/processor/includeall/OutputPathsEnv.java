@@ -15,18 +15,36 @@
  */
 package ch.digitalfondue.stampo.processor.includeall;
 
+import java.nio.file.Path;
 import java.util.Locale;
+import java.util.Map;
+import java.util.function.BiFunction;
+import java.util.function.Function;
 
+import ch.digitalfondue.stampo.StampoGlobalConfiguration;
+import ch.digitalfondue.stampo.processor.FileResourceProcessorOutput;
+import ch.digitalfondue.stampo.resource.Directory;
 import ch.digitalfondue.stampo.resource.FileResource;
+import ch.digitalfondue.stampo.taxonomy.Taxonomy;
 
 public class OutputPathsEnv {
   public final int maxDepth;
   public final Locale locale;
   public final FileResource resource;
+  public final StampoGlobalConfiguration configuration;
+  public final Directory root;
+  public final Function<FileResource, Path> outputPathExtractor;
+  public final Function<Locale, BiFunction<FileResource, Map<String, Object>, FileResourceProcessorOutput>> resourceProcessor;
+  public final Taxonomy taxonomy;
 
-  public OutputPathsEnv(int maxDepth, Locale locale, FileResource resource) {
+  public OutputPathsEnv(int maxDepth, Locale locale, FileResource resource, StampoGlobalConfiguration configuration, Directory root, Function<FileResource, Path> outputPathExtractor, Function<Locale, BiFunction<FileResource, Map<String, Object>, FileResourceProcessorOutput>> resourceProcessor, Taxonomy taxonomy) {
     this.maxDepth = maxDepth;
     this.locale = locale;
     this.resource = resource;
+    this.configuration = configuration;
+    this.root = root;
+    this.outputPathExtractor = outputPathExtractor;
+    this.resourceProcessor = resourceProcessor;
+    this.taxonomy = taxonomy;
   }
 }

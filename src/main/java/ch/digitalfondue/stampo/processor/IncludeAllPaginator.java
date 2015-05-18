@@ -15,38 +15,24 @@
  */
 package ch.digitalfondue.stampo.processor;
 
-import static java.util.Optional.empty;
-import static java.util.Optional.of;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.toList;
 
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Comparator;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.function.Function;
-import java.util.stream.Collectors;
-
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 
 import ch.digitalfondue.stampo.PathUtils;
 import ch.digitalfondue.stampo.StampoGlobalConfiguration;
-import ch.digitalfondue.stampo.processor.includeall.FileResourcePlaceHolder;
 import ch.digitalfondue.stampo.processor.includeall.FlattenedStructuredDocument;
 import ch.digitalfondue.stampo.processor.includeall.OutputPathsEnv;
 import ch.digitalfondue.stampo.processor.includeall.Pagination;
-import ch.digitalfondue.stampo.processor.includeall.Toc;
-import ch.digitalfondue.stampo.processor.includeall.TocAndMainTitle;
-import ch.digitalfondue.stampo.processor.includeall.VirtualPathFileResource;
+import ch.digitalfondue.stampo.processor.includeall.StructuredDocument;
 import ch.digitalfondue.stampo.resource.Directory;
 import ch.digitalfondue.stampo.resource.DirectoryResource;
 import ch.digitalfondue.stampo.resource.FileResource;
@@ -111,7 +97,7 @@ public class IncludeAllPaginator implements Directive {
         (Integer) resource.getMetadata().getRawMap().getOrDefault("paginate-at-depth", 1);
 
     List<FlattenedStructuredDocument> res = new ArrayList<>();
-    doc.toOutputPaths(new OutputPathsEnv(maxDepth, locale, resource), res);
+    doc.toOutputPaths(new OutputPathsEnv(maxDepth, locale, resource, configuration, root, outputPathExtractor, resourceProcessor, taxonomy), res);
 
     addPaginationInfoToModel(res);
 
@@ -154,149 +140,6 @@ public class IncludeAllPaginator implements Directive {
       current.model.put("pagination", new Pagination(i + 1, resCount, previousPageUrl,
           previousPageTitle, nextPageUrl, nextPageTitle));
       current.model.put("toc", current.tocRoot.toHtml(current.path));
-    }
-  }
-
-  private static int headerLevel(String name) {
-    return Integer.parseInt(name.substring(1));
-  }
-
-  private static TocAndMainTitle extractTocFrom(int depth, String s, Path finalOutputPathForResource) {
-    Elements titles = Jsoup.parseBodyFragment(s).select("h1,h2,h3,h4,h5,h6");
-
-    Toc root = new Toc(of(depth), empty(), empty(), empty(), finalOutputPathForResource);
-    for (Element e : titles) {
-   // FIXME add id, use path + e.text() as a id
-      root.add(headerLevel(e.tagName()), e.text(), ""); 
-    }
-    return new TocAndMainTitle(root, titles.stream().findFirst().map(Element::text));
-  }
-
-
-  private class StructuredDocument {
-    final int depth;
-    final Path relativeToBasePath;
-    final Optional<FileResource> fileResource;
-    final Optional<Directory> directory;
-    final List<StructuredDocument> childDocuments;
-
-
-    StructuredDocument(int depth, Directory directory, Path basePath) {
-      this.depth = depth;
-      this.fileResource = empty();
-      this.directory = of(directory);
-      this.childDocuments = from(depth, of(directory), basePath);
-      this.relativeToBasePath = basePath.relativize(directory.getPath());
-    }
-
-    StructuredDocument(int depth, FileResource resource, Optional<Directory> directory,
-        Path basePath) {
-      this.depth = depth;
-      this.fileResource = of(resource);
-      this.directory = directory;
-      this.childDocuments = from(depth, directory, basePath);
-      this.relativeToBasePath = basePath.relativize(resource.getPath());
-    }
-
-    void toOutputPaths(OutputPathsEnv env, List<FlattenedStructuredDocument> res) {
-
-      FileResource v =
-          fileResource.orElseGet(() -> new FileResourcePlaceHolder(relativeToBasePath,
-              configuration));
-
-      Path virtualPath =
-          env.resource.getPath().getParent().resolve(this.relativeToBasePath.toString());
-
-      FileResource virtualResource = new VirtualPathFileResource(virtualPath, v);
-      Path finalOutputPathForResource = outputPathExtractor.apply(virtualResource);
-
-      StringBuilder sb = new StringBuilder();
-      Map<String, Object> model =
-          ModelPreparer.prepare(root, configuration, env.locale, virtualResource,
-              finalOutputPathForResource, taxonomy);
-      sb.append(renderFile(env.locale, model));
-
-
-      if (depth < env.maxDepth) {
-
-        String includeAllResult = sb.toString();
-
-        Map<String, Object> modelForSupplier =
-            ModelPreparer.prepare(root, configuration, env.locale, virtualResource,
-                finalOutputPathForResource, taxonomy,
-                Collections.singletonMap("includeAllResult", includeAllResult));
-
-        TocAndMainTitle tocRoot =
-            extractTocFrom(depth, includeAllResult, finalOutputPathForResource);
-        res.add(new FlattenedStructuredDocument(depth, finalOutputPathForResource,
-            modelForSupplier, tocRoot.toc, tocRoot.title));
-
-        childDocuments.forEach(sd -> sd.toOutputPaths(env, res));
-      } else if (depth == env.maxDepth) {// cutoff point
-        renderChildDocuments(env.locale, model).forEach(sb::append);
-
-        String includeAllResult = sb.toString();
-
-        TocAndMainTitle tocRoot =
-            extractTocFrom(depth, includeAllResult, finalOutputPathForResource);
-        Map<String, Object> modelForSupplier =
-            ModelPreparer.prepare(root, configuration, env.locale, virtualResource,
-                finalOutputPathForResource, taxonomy,
-                Collections.singletonMap("includeAllResult", includeAllResult));
-        res.add(new FlattenedStructuredDocument(depth, finalOutputPathForResource,
-            modelForSupplier, tocRoot.toc, tocRoot.title));
-      }
-    }
-
-    String renderFile(Locale locale, Map<String, Object> model) {
-      return fileResource.map(f -> resourceProcessor.apply(locale).apply(f, model).getContent())
-          .orElse("");
-    }
-
-
-    List<String> renderChildDocuments(Locale locale, Map<String, Object> model) {
-      return childDocuments
-          .stream()
-          .map(
-              c -> c.renderFile(locale, model)
-                  + c.renderChildDocuments(locale, model).stream().collect(Collectors.joining()))
-          .collect(toList());
-    }
-
-
-    List<StructuredDocument> from(int depth, Optional<Directory> directory, Path basePath) {
-      List<StructuredDocument> res = new ArrayList<>();
-
-      return directory.map(
-          (d) -> {
-
-            Set<Path> alreadyVisisted = new HashSet<>();
-
-            d.getFiles()
-                .values()
-                .forEach(
-                    f -> {
-                      Optional<Directory> associatedChildDir =
-                          ofNullable(d.getDirectories().get(f.getFileNameWithoutExtensions()));
-                      associatedChildDir.map(Directory::getPath).ifPresent(alreadyVisisted::add);
-                      res.add(new StructuredDocument(depth + 1, f, associatedChildDir, basePath));
-                    });
-
-
-            d.getDirectories().values().stream()
-                .filter(dir -> !alreadyVisisted.contains(dir.getPath())).forEach(dir -> {
-                  res.add(new StructuredDocument(depth + 1, dir, basePath));
-                });
-
-            Collections.sort(
-                res,
-                Comparator.comparing((StructuredDocument sd) -> sd.fileResource.map(
-                    FileResource::getFileNameWithoutExtensions).orElseGet(
-                    () -> sd.directory.map(Directory::getName).orElse(""))));
-
-
-            return res;
-          }).orElseGet(Collections::emptyList);
     }
   }
 

@@ -8,6 +8,7 @@ TODO:
 
 - support a "documentation use case". WIP:
 	- TBD:
+	    - check multi language doc generation
 		- toc generation:
 			- should remove empty notes, for example we have:
 				1.
