@@ -26,6 +26,10 @@ public interface Directory extends Resource {
 
   Map<String, Directory> getDirectories();
   
+  default boolean containAnyFiles() {
+    return !getFiles().isEmpty() || getDirectories().values().stream().map(Directory::containAnyFiles).reduce(false, (l,r) -> l || r); 
+  }
+  
   default Optional<Directory> getDirectory(Path path) {
     
     Directory currentDir = this;

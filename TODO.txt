@@ -9,7 +9,19 @@ TODO:
 - support a "documentation use case". WIP:
 	- TBD:
 	    - check multi language doc generation
+	    	- edge case, only fr file:
+	    		/doc/4-user-manual/3-derpo/1-create-a-derpo.fr.md
+	    	- index.fr.html
+	    	
+	    	- the Toc of the "virtual" 4-user-manual/index.html page contain a duplicate entry:
+	    	
+	    		Create a derpo project
+				Create a derpo project
+	    	  
+	    	  which is obviously wrong
+	    	  
 		- toc generation:
+			- id for title
 			- should remove empty notes, for example we have:
 				1.
 				  1. About

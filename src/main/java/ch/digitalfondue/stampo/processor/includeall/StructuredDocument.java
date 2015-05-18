@@ -155,6 +155,7 @@ public class StructuredDocument {
 
 
           d.getDirectories().values().stream()
+              .filter(dir -> dir.containAnyFiles())
               .filter(dir -> !alreadyVisisted.contains(dir.getPath())).forEach(dir -> {
                 res.add(new StructuredDocument(depth + 1, dir, basePath));
               });

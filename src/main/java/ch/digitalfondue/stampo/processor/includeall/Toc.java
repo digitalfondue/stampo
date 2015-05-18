@@ -42,6 +42,7 @@ public class Toc {
     this.outputPath = outputPath;
   }
 
+  //for adding another toc root
   public void add(Toc toc) {
     if (!toc.baseDepth.isPresent()) {
       throw new IllegalStateException("Cannot add non root Toc");
