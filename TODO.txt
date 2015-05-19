@@ -6,26 +6,22 @@ TODO:
 - test on windows
 - test on mac
 
+- refactor the whole rendering pipeline
+
 - support a "documentation use case". WIP:
 	- TBD:
 	    - check multi language doc generation
-		- toc generation:
-			- id for title
-			- should collapse empty nodes, for example we have:
-				1.
-				  1. About
-				2.
-				  1. Installation
-                     1. Requirements
-               we can simplify in
-               
-                1. About
-                2. Installation
-                   1. Requirements
-                
-                
-               (this is due to the paginate-at-depth cutoff point, we generate empty nodes)
-               
+	- small bug at the cutoff depth when generating the doc:
+		- paginate-at-depth: 1
+			- User manual
+				- Get started
+				- Project
+		- paginate-at-depth: 2
+			-
+				- User manual
+				- Get started
+				- Project
+	
     - add chapter number&co the pagination model
 
     - see http://www.mkdocs.org/

@@ -81,7 +81,16 @@ public class Toc {
     });
     if (!toc.isEmpty()) {
       sb.append("\n<ol>");
-      toc.stream().forEach(t -> sb.append("<li>").append(t.toHtml(path)).append("</li>\n"));
+      toc.stream().forEach(t -> {
+        sb.append("<li>");
+        if(!t.name.isPresent() && t.toc.size() ==1) {
+          //fold the inner node to avoid useless intermediate list
+          sb.append(t.toc.get(0).toHtml(path));
+        } else {
+          sb.append(t.toHtml(path));
+        }
+        sb.append("</li>\n");
+      });
       sb.append("</ol>\n");
     }
     return sb.toString();
