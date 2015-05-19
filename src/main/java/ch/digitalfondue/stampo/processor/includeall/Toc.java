@@ -15,90 +15,61 @@
  */
 package ch.digitalfondue.stampo.processor.includeall;
 
-import static java.util.Optional.empty;
-import static java.util.Optional.of;
-
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
-import java.util.stream.Collectors;
 
 import ch.digitalfondue.stampo.PathUtils;
 
 public class Toc {
-  final List<Toc> toc = new ArrayList<>();
-  final Optional<Integer> baseDepth;
-  final Optional<Integer> headerLevel;
-  final Optional<String> name;
-  final Optional<String> id;
-  final Path outputPath;
+  private final List<Header> headers = new ArrayList<>();
+  
 
-  public Toc(Optional<Integer> baseDepth, Optional<Integer> headerLevel, Optional<String> name,
-      Optional<String> id, Path outputPath) {
-    this.baseDepth = baseDepth;
-    this.headerLevel = headerLevel;
-    this.name = name;
-    this.id = id;
-    this.outputPath = outputPath;
-  }
-
-  //for adding another toc root
+  // for adding another toc root
   public void add(Toc toc) {
-    if (!toc.baseDepth.isPresent()) {
-      throw new IllegalStateException("Cannot add non root Toc");
-    }
-
-    if (toc.baseDepth.get().intValue() - 1 == baseDepth.get().intValue()) {
-      // it's a direct children
-      this.toc.add(toc);
-    } else if (toc.baseDepth.get().intValue() > baseDepth.get().intValue() && !this.toc.isEmpty()
-        && this.toc.get(this.toc.size() - 1).baseDepth.isPresent()) {
-      // it's a children of the latest children
-      this.toc.get(this.toc.size() - 1).add(toc);
-    } else {
-      throw new IllegalStateException("Cannot add toc");
-    }
+    headers.addAll(toc.headers);
   }
 
-  public void add(int headerLevel, String name, String id) {
-    if (!toc.isEmpty() && toc.get(toc.size() - 1).headerLevel.isPresent()
-        && toc.get(toc.size() - 1).headerLevel.get() < headerLevel) {
-      toc.get(toc.size() - 1).add(headerLevel, name, id);
-    } else {
-      this.toc.add(new Toc(empty(), of(headerLevel), of(name), of(id), outputPath));
-    }
+  public void add(int headerLevel, String name, String id, Path outputPath) {
+    headers.add(new Header(headerLevel, name, outputPath));
   }
 
   public String toHtml(Path path) {
     StringBuilder sb = new StringBuilder();
-    name.ifPresent((n) -> {
-      sb.append("<a href=\"").append(PathUtils.relativePathTo(outputPath, path));
-      id.ifPresent(i -> {
-        sb.append("#").append(i);
-      });
-      sb.append("\">").append(n).append("</a>");
-    });
-    if (!toc.isEmpty()) {
-      sb.append("\n<ol>");
-      toc.stream().forEach(t -> {
-        sb.append("<li>");
-        if(!t.name.isPresent() && t.toc.size() ==1) {
-          //fold the inner node to avoid useless intermediate list
-          sb.append(t.toc.get(0).toHtml(path));
-        } else {
-          sb.append(t.toHtml(path));
-        }
-        sb.append("</li>\n");
-      });
-      sb.append("</ol>\n");
+    int lvl = 0;
+    int opened = 0;
+    for(Header h : headers) {
+      if(h.level > lvl) {
+        opened++;
+        sb.append("<ol>");
+        lvl = h.level;
+      }
+      else if(h.level < lvl) {
+        sb.append("</ol>");
+        opened--;
+        lvl = h.level;
+      }
+      sb.append("<li>").append("<a href=\"").append(PathUtils.relativePathTo(h.outputPath, path));
+      
+      sb.append("\">").append(h.name).append("</a>").append("</li>");
     }
+    
+    for(int i = 0; i< opened;i++) {
+      sb.append("</ol>");
+    }
+
     return sb.toString();
   }
 
-  public Toc copy() {
-    Toc toc = new Toc(baseDepth, headerLevel, name, id, outputPath);
-    toc.toc.addAll(this.toc.stream().map(Toc::copy).collect(Collectors.toList()));
-    return toc;
+  public static class Header {
+    final int level;
+    final String name;
+    final Path outputPath;
+
+    Header(int level, String name, Path outputPath) {
+      this.level = level;
+      this.name = name;
+      this.outputPath = outputPath;
+    }
   }
 }

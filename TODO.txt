@@ -11,17 +11,7 @@ TODO:
 - support a "documentation use case". WIP:
 	- TBD:
 	    - check multi language doc generation
-	- small bug at the cutoff depth when generating the doc:
-		- paginate-at-depth: 1
-			- User manual
-				- Get started
-				- Project
-		- paginate-at-depth: 2
-			-
-				- User manual
-				- Get started
-				- Project
-	
+		
     - add chapter number&co the pagination model
 
     - see http://www.mkdocs.org/

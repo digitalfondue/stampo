@@ -112,7 +112,7 @@ public class IncludeAllPaginator implements Directive {
       if (minDepth >= current.depth) {
         break;
       }
-      base.tocRoot.add(current.tocRoot.copy());
+      base.tocRoot.add(current.tocRoot);
     }
   }
 

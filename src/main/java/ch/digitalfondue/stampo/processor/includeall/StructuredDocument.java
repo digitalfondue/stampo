@@ -178,10 +178,10 @@ public class StructuredDocument {
   private static TocAndMainTitle extractTocFrom(int depth, String s, Path finalOutputPathForResource) {
     Elements titles = Jsoup.parseBodyFragment(s).select("h1,h2,h3,h4,h5,h6");
 
-    Toc root = new Toc(of(depth), empty(), empty(), empty(), finalOutputPathForResource);
+    Toc root = new Toc();
     for (Element e : titles) {
-   // FIXME add id, use path + e.text() as a id
-      root.add(headerLevel(e.tagName()), e.text(), ""); 
+      // FIXME add id, use path + e.text() as a id
+      root.add(headerLevel(e.tagName()), e.text(), "", finalOutputPathForResource); 
     }
     return new TocAndMainTitle(root, titles.stream().findFirst().map(Element::text));
   }
