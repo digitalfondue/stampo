@@ -143,7 +143,7 @@ public class Stampo {
 
         Path finalOutputDir =
             defaultLocale.flatMap(
-                (l) -> l.equals(locale) ? of(configuration.getBaseOutputDir()) : empty())//
+                l -> l.equals(locale) ? of(configuration.getBaseOutputDir()) : empty())//
                 .orElse(configuration.getBaseOutputDir().resolve(locale.toLanguageTag()));
 
 
@@ -174,8 +174,8 @@ public class Stampo {
 
   private void render(Directory root, ResourceProcessor renderer, Locale locale,
       ProcessedInputHandler outputHandler) {
-    root.getFiles().values().forEach((f) -> renderer.process(f, locale, outputHandler));
-    root.getDirectories().values().forEach((d) -> {
+    root.getFiles().values().forEach(f -> renderer.process(f, locale, outputHandler));
+    root.getDirectories().values().forEach(d -> {
       render(d, renderer, locale, outputHandler);
     });
   }

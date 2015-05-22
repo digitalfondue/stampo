@@ -11,8 +11,8 @@ TODO:
 - support a "documentation use case". WIP:
 	- TBD:
 	    - check multi language doc generation
-		
-    - add chapter number&co the pagination model
+	    - id generation for header
+		- tests
 
     - see http://www.mkdocs.org/
 	- we want to generate something like http://docs.jboss.org/seam/3/latest/reference/en-US/html/

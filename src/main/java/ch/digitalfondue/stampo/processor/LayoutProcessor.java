@@ -48,8 +48,7 @@ class LayoutProcessor {
     this.fileResourceProcessor = fileResourceProcessor;
 
     Map<String, Function<LayoutParameters, LayoutProcessorOutput>> l = new LinkedHashMap<>();
-    configuration.getRenderers().forEach(
-        (renderer) -> renderer.registerLayoutRenderer(root, configuration, l));
+    configuration.getRenderers().forEach(renderer -> renderer.registerLayoutRenderer(root, configuration, l));
     layoutEngines = Collections.unmodifiableMap(l);
   }
 
@@ -63,11 +62,8 @@ class LayoutProcessor {
         .map(Files::getFileExtension)//
         .map(layoutEngines::get)
         //
-        .orElse(
-            (lParam) -> {
-              return new LayoutProcessorOutput(lParam.model.get("content").toString(), "none",
-                  lParam.layoutTemplate, lParam.locale);
-            }).apply(new LayoutParameters(layout, resource.getPath(), locale, model));
+        .orElse(lParam -> new LayoutProcessorOutput(lParam.model.get("content").toString(), "none", lParam.layoutTemplate, lParam.locale))
+          .apply(new LayoutParameters(layout, resource.getPath(), locale, model));
   }
 
   private String processedExtension(FileResource fileResource) {

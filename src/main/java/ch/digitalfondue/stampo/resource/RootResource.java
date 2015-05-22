@@ -61,7 +61,7 @@ public class RootResource implements Resource, Directory {
   public Map<String, FileResource> getFiles() {
     
     return fromDirectoryStream(
-        (p) -> Files.isRegularFile(p) && !mustBeIgnored(p, resourceFactory.getConfiguration().getIgnorePatterns()), 
+        p -> Files.isRegularFile(p) && !mustBeIgnored(p, resourceFactory.getConfiguration().getIgnorePatterns()), 
         p -> resourceFactory.fileResource(p, this), 
         resourceFactory.getFileResourceComparator());
   }

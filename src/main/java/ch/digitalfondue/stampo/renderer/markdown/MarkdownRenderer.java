@@ -36,12 +36,8 @@ public class MarkdownRenderer implements Renderer {
   private static final List<String> EXTENSIONS = Arrays.asList("markdown", "mdown", "mkdn", "mkd", "md");
 
   private static Function<FileResourceParameters, FileResourceProcessorOutput> fileResourceProcessor() {
-
     PegDownProcessor pegDownProcessor = new PegDownProcessor();
-    return (params) -> {
-      return new FileResourceProcessorOutput(pegDownProcessor.markdownToHtml(params.fileResource
-          .getContent().orElseThrow(IllegalArgumentException::new)), params.fileResource.getPath(), "markdown", params.locale);
-    };
+    return params -> new FileResourceProcessorOutput(pegDownProcessor.markdownToHtml(params.fileResource.getContent().orElseThrow(IllegalArgumentException::new)), params.fileResource.getPath(), "markdown", params.locale);
   }
 
   @Override
@@ -69,7 +65,7 @@ public class MarkdownRenderer implements Renderer {
 
   @Override
   public Map<String, String> extensionTransformMapping() {
-    return EXTENSIONS.stream().collect(Collectors.toMap(Function.identity(), (_ignore) -> "html"));
+    return EXTENSIONS.stream().collect(Collectors.toMap(Function.identity(), ignore -> "html"));
   }
 
 }

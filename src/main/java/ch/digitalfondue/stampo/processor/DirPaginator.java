@@ -66,7 +66,7 @@ public class DirPaginator extends Paginator implements Directive {
   }
 
   @SuppressWarnings("unchecked")
-  private static final Function<Object, List<String>> TO_STRING_LIST = (s) -> {
+  private static final Function<Object, List<String>> TO_STRING_LIST = s -> {
     if (s instanceof String) {
       return Collections.singletonList(s.toString());
     } else if (s instanceof List) {
@@ -81,7 +81,7 @@ public class DirPaginator extends Paginator implements Directive {
   private Optional<DirPaginationConfiguration> getDirectoryPaginationConfiguration(
       Map<String, Object> metadata) {
     return ofNullable(metadata.get(METADATA_PAGINATE_OVER_DIRECTORY)).map(Object::toString).map(
-        (dir) -> {
+        dir -> {
           List<String> ignorePattern =
               ofNullable(metadata.get(METADATA_PAGINATE_MATCH)).map(TO_STRING_LIST).orElse(
                   Collections.emptyList());
@@ -157,8 +157,8 @@ public class DirPaginator extends Paginator implements Directive {
 
     Path baseDir = configuration.getBaseDirectory();
 
-    return matchers.isEmpty() ? (Path p) -> true : (Path p) -> matchers.stream().anyMatch(
-        (matcher) -> matcher.matches(baseDir.relativize(p)));
+    return matchers.isEmpty() ? p -> true : p -> matchers.stream().anyMatch(
+        matcher -> matcher.matches(baseDir.relativize(p)));
   }
 
   private static void recurAddFileResources(Directory dir, List<FileResource> fr) {
@@ -194,7 +194,7 @@ public class DirPaginator extends Paginator implements Directive {
     List<FileResource> files = extractFilesFrom(dir, dirPaginationConf).stream().filter(f -> {
       FileMetadata m = f.getMetadata();
       return "default".equals(m.getDirective());
-    }).filter((f) -> patternFilter.test(f.getPath())).collect(toList());
+    }).filter(f -> patternFilter.test(f.getPath())).collect(toList());
 
     return registerPaths(files, defaultOutputPath, dirPaginationConf.getPageSize(), resource,
         path -> (f -> toPageContent(f, locale, path)));

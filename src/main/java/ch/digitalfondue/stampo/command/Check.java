@@ -69,7 +69,7 @@ public class Check extends Command {
     System.out.println("The build will generate the following files:");
     System.out.println();
     try {
-      Files.walk(output).forEach((p) -> {
+      Files.walk(output).forEach(p -> {
         if (!Files.isDirectory(p)) {
           System.out.println("- " + output.relativize(p));
           try {

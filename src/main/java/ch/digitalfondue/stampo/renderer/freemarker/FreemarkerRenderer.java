@@ -49,7 +49,7 @@ public class FreemarkerRenderer implements Renderer {
       Map<String, Function<LayoutParameters, LayoutProcessorOutput>> extensionProcessor) {
 
     Configuration c = getConfiguration(root, configuration);
-    extensionProcessor.put("ftl", (params) -> {
+    extensionProcessor.put("ftl", params -> {
 
       try {
         
@@ -76,7 +76,7 @@ public class FreemarkerRenderer implements Renderer {
 
     Configuration c = getConfiguration(root, configuration);
 
-    extensionProcessor.put("ftl", (params) -> {
+    extensionProcessor.put("ftl", params -> {
       try {
         
         registerResourceBundleResolver(params.model, params.locale, configuration);

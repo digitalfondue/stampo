@@ -55,7 +55,7 @@ public class FileMetadata {
     //
     this.date = ofNullable(metadata.get(METADATA_DATE)).map(Date.class::cast);
     this.onlyForLocales = ofNullable(metadata.get(METADATA_ONLY_FOR_LOCALES)).map(TO_STRING_LIST).map(
-        (l) -> l.stream().map(Locale::forLanguageTag).collect(Collectors.toList()));
+        l -> l.stream().map(Locale::forLanguageTag).collect(Collectors.toList()));
     this.overrideOutputToPath = ofNullable(metadata.get(METADATA_OVERRIDE_OUTPUT_TO_PATH)).map(Object::toString);
     this.overrideLocale = ofNullable(metadata.get(METADATA_OVERRIDE_LOCALE)).map(Object::toString).map(Locale::forLanguageTag);
     this.overrideLayout = ofNullable(metadata.get(METADATA_OVERRIDE_LAYOUT)).map(Object::toString);
@@ -69,7 +69,7 @@ public class FileMetadata {
   }
 
   @SuppressWarnings("unchecked")
-  private static final Function<Object, List<String>> TO_STRING_LIST = (s) -> {
+  private static final Function<Object, List<String>> TO_STRING_LIST = s -> {
     if (s instanceof String) {
       return Collections.singletonList(s.toString());
     } else if (s instanceof List) {

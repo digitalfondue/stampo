@@ -67,56 +67,46 @@ public class StructuredDocument {
 
   public void toOutputPaths(OutputPathsEnv env, List<FlattenedStructuredDocument> res) {
 
-    FileResource v =
-        fileResource.orElseGet(() -> new FileResourcePlaceHolder(relativeToBasePath,
+    FileResource v = fileResource.orElseGet(() -> new FileResourcePlaceHolder(relativeToBasePath,
             env.configuration));
 
-    Path virtualPath =
-        env.resource.getPath().getParent().resolve(this.relativeToBasePath.toString());
+    Path virtualPath = env.resource.getPath().getParent().resolve(this.relativeToBasePath.toString());
 
     FileResource virtualResource = new VirtualPathFileResource(virtualPath, v);
     Path finalOutputPathForResource = env.outputPathExtractor.apply(virtualResource);
 
     StringBuilder sb = new StringBuilder();
-    Map<String, Object> model =
-        ModelPreparer.prepare(env.root, env.configuration, env.locale, virtualResource,
+    Map<String, Object> model = ModelPreparer.prepare(env.root, env.configuration, env.locale, virtualResource,
             finalOutputPathForResource, env.taxonomy);
+    
     sb.append(renderFile(env, model));
 
 
     if (depth < env.maxDepth) {
 
-      String includeAllResult = sb.toString();
-
-      Map<String, Object> modelForSupplier =
-          ModelPreparer.prepare(env.root, env.configuration, env.locale, virtualResource,
-              finalOutputPathForResource, env.taxonomy,
-              Collections.singletonMap("includeAllResult", includeAllResult));
-
-      TocAndMainTitle tocRoot =
-          extractTocFrom(depth, includeAllResult, finalOutputPathForResource);
+      addFlattenedStructuredDocument(env, res, virtualResource, finalOutputPathForResource, sb.toString());
       
-      res.add(new FlattenedStructuredDocument(depth, finalOutputPathForResource,
-          modelForSupplier, tocRoot.toc, tocRoot.title));
-
       childDocuments.forEach(sd -> sd.toOutputPaths(env, res));
+      
     } else if (depth == env.maxDepth) {// cutoff point
+      
       renderChildDocuments(env, model).forEach(sb::append);
-
-      String includeAllResult = sb.toString();
-      
-      Map<String, Object> modelForSupplier =
-          ModelPreparer.prepare(env.root, env.configuration, env.locale, virtualResource,
-              finalOutputPathForResource, env.taxonomy,
-              Collections.singletonMap("includeAllResult", includeAllResult));
-
-      TocAndMainTitle tocRoot =
-          extractTocFrom(depth, includeAllResult, finalOutputPathForResource);
-      
-      
-      res.add(new FlattenedStructuredDocument(depth, finalOutputPathForResource,
-          modelForSupplier, tocRoot.toc, tocRoot.title));
+      addFlattenedStructuredDocument(env, res, virtualResource, finalOutputPathForResource, sb.toString());
     }
+  }
+
+  private void addFlattenedStructuredDocument(OutputPathsEnv env,
+      List<FlattenedStructuredDocument> res, FileResource virtualResource,
+      Path finalOutputPathForResource, String includeAllResult) {
+    
+    Map<String, Object> modelForSupplier = ModelPreparer.prepare(env.root, env.configuration, env.locale, virtualResource,
+            finalOutputPathForResource, env.taxonomy,
+            Collections.singletonMap("includeAllResult", includeAllResult));
+
+    TocAndMainTitle tocRoot = extractTocFrom(depth, includeAllResult, finalOutputPathForResource);
+    
+    res.add(new FlattenedStructuredDocument(depth, finalOutputPathForResource,
+        modelForSupplier, tocRoot.toc, tocRoot.title));
   }
 
   private String renderFile(OutputPathsEnv env, Map<String, Object> model) {
@@ -128,9 +118,7 @@ public class StructuredDocument {
   private List<String> renderChildDocuments(OutputPathsEnv env, Map<String, Object> model) {
     return childDocuments
         .stream()
-        .map(
-            c -> c.renderFile(env, model)
-                + c.renderChildDocuments(env, model).stream().collect(Collectors.joining()))
+        .map(c -> c.renderFile(env, model) + c.renderChildDocuments(env, model).stream().collect(Collectors.joining()))
         .collect(toList());
   }
 
@@ -139,7 +127,7 @@ public class StructuredDocument {
     List<StructuredDocument> res = new ArrayList<>();
 
     return directory.map(
-        (d) -> {
+        d -> {
 
           Set<Path> alreadyVisisted = new HashSet<>();
 
@@ -162,7 +150,7 @@ public class StructuredDocument {
 
           Collections.sort(
               res,
-              Comparator.comparing((StructuredDocument sd) -> sd.fileResource.map(
+              Comparator.comparing(sd -> sd.fileResource.map(
                   FileResource::getFileNameWithoutExtensions).orElseGet(
                   () -> sd.directory.map(Directory::getName).orElse(""))));
 

@@ -55,7 +55,7 @@ public class ModelPreparer {
     
     model.putAll(additionalData);
     
-    staticResources(configuration).ifPresent((staticRootResource) -> model.put("static", staticRootResource));
+    staticResources(configuration).ifPresent(staticRootResource -> model.put("static", staticRootResource));
     
     
     return model;

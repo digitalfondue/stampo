@@ -54,7 +54,7 @@ public class PebbleRenderer implements Renderer {
 
     extensionProcessor.put(
         "peb",
-        (lParam) -> {
+        lParam -> {
           try {
             StringWriter sw = new StringWriter();
             engine.getTemplate(lParam.layoutTemplate.get().toString()).evaluate(sw, lParam.model,
@@ -73,7 +73,7 @@ public class PebbleRenderer implements Renderer {
       StampoGlobalConfiguration configuration,
       Map<String, Function<FileResourceParameters, FileResourceProcessorOutput>> extensionProcessor) {
     PebbleEngine pebble = build(root, configuration);
-    extensionProcessor.put("peb", (params) -> {
+    extensionProcessor.put("peb", params -> {
       try {
         Writer writer = new StringWriter();
         pebble.getTemplate(params.fileResource.getPath().toString())//

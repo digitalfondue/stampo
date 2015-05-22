@@ -31,7 +31,6 @@ import io.undertow.websockets.core.AbstractReceiveListener;
 import io.undertow.websockets.core.StreamSourceFrameChannel;
 import io.undertow.websockets.core.WebSocketChannel;
 import io.undertow.websockets.core.WebSockets;
-import io.undertow.websockets.spi.WebSocketHttpExchange;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -128,7 +127,7 @@ public class ServeAndWatch {
                   try {
                     triggerBuild.run();
                     activeChannels.stream().filter(WebSocketChannel::isOpen)
-                        .forEach((wsc) -> WebSockets.sendText("change", wsc, null));
+                        .forEach(wsc -> WebSockets.sendText("change", wsc, null));
                   } catch (Throwable e) {
                     e.printStackTrace();
                   }
@@ -210,7 +209,7 @@ public class ServeAndWatch {
   }
 
   private static HttpHandler websocketHandler(Set<WebSocketChannel> activeChannels) {
-    return Handlers.websocket((WebSocketHttpExchange exchange, WebSocketChannel channel) -> {
+    return Handlers.websocket((exchange, channel) -> {
       activeChannels.add(channel);
       channel.getReceiveSetter().set(new WebsocketReceiveListener(activeChannels));
       channel.resumeReceives();
@@ -232,7 +231,7 @@ public class ServeAndWatch {
   }
 
   private HttpHandler staticResourcesHandler() {
-    return (ex) -> {
+    return ex -> {
       System.out.println("requested url: " + ex.getRequestURI());
       String req = ex.getRequestURI().toString().substring(1);
       Path p = configuration.getBaseOutputDir().resolve(req);

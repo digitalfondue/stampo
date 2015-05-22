@@ -145,7 +145,7 @@ public class StampoGlobalConfiguration {
   @SuppressWarnings("unchecked")
   private static Set<String> extractTaxonomies(Map<String, Object> configuration) {
     Optional<Object> maybeTaxonomies = ofNullable(configuration.get(CONF_TAXONOMIES));
-    return maybeTaxonomies.map((taxonomies) -> {
+    return maybeTaxonomies.map(taxonomies -> {
       if(taxonomies instanceof String) {
         return singleton(taxonomies.toString());
       } else if (taxonomies instanceof Collection) {
@@ -182,7 +182,7 @@ public class StampoGlobalConfiguration {
         return Files.walk(dataDir).filter(p -> {
           String fileName = p.getFileName().toString();
           return Files.isRegularFile(p) && (fileName.endsWith(".yaml") || fileName.endsWith(".yml"));
-        }).map((p) -> {
+        }).map(p -> {
           String keyName = PathUtils.relativePathTo(p, dataDir).replace('/', '.').replaceFirst("\\.ya{0,1}ml$", "");
           try (InputStream is = newInputStream(p)) {
             List<Object> o = StreamSupport.stream(new Yaml().loadAll(is).spliterator(), false).filter(Objects::nonNull).collect(Collectors.toList());

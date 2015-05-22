@@ -47,7 +47,7 @@ public class LocaleAwareDirectory implements Directory {
       FileMetadata metadata = file.getMetadata();
 
       Optional<Boolean> includeByMetadata = metadata.getOnlyForLocales()//
-          .map((l) -> l.contains(locale));
+          .map(l -> l.contains(locale));
       
       String formattedLocale = locale.toString();
       

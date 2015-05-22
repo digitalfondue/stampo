@@ -48,8 +48,7 @@ class FileResourceProcessor {
 
     Map<String, Function<FileResourceParameters, FileResourceProcessorOutput>> p = new HashMap<>();
 
-    configuration.getRenderers().forEach(
-        (renderer) -> renderer.registerResourceRenderer(root, configuration, p));
+    configuration.getRenderers().forEach(renderer -> renderer.registerResourceRenderer(root, configuration, p));
 
     processors = Collections.unmodifiableMap(p);
   }
@@ -107,7 +106,7 @@ class FileResourceProcessor {
     
     List<Function<FileResourceParameters, FileResourceProcessorOutput>> processorsToApply = processorsExt.stream().map(processors::get).collect(Collectors.toList());
     if(processorsToApply.isEmpty()) {
-      processorsToApply = Collections.singletonList((x) -> {
+      processorsToApply = Collections.singletonList(x -> {
         return new FileResourceProcessorOutput(fileResource.getContent().orElseThrow(IllegalArgumentException::new), fileResource.getPath(), "none", locale);
       });
     }

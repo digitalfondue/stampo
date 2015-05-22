@@ -63,7 +63,7 @@ public class ResourceProcessor {
     this.layoutProcessor = new LayoutProcessor(configuration, root, fileResourceProcessor);
 
     
-    Function<Locale, BiFunction<FileResource, Map<String, Object>, FileResourceProcessorOutput>> resourceProcessor = (locale) -> (f, m) -> fileResourceProcessor.applyProcessors(f, locale, m);
+    Function<Locale, BiFunction<FileResource, Map<String, Object>, FileResourceProcessorOutput>> resourceProcessor = locale -> (f, m) -> fileResourceProcessor.applyProcessors(f, locale, m);
     
     this.directives =
         Arrays

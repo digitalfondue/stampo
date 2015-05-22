@@ -38,30 +38,28 @@ public class Toc {
     StringBuilder sb = new StringBuilder();
     int lvl = 0;
     int opened = 0;
-    for(Header h : headers) {
-      if(h.level > lvl) {
+    for (Header h : headers) {
+      if (h.level > lvl) {
         opened++;
         sb.append("<ol>");
         lvl = h.level;
-      }
-      else if(h.level < lvl) {
+      } else if (h.level < lvl) {
         sb.append("</ol>");
         opened--;
         lvl = h.level;
       }
-      sb.append("<li>").append("<a href=\"").append(PathUtils.relativePathTo(h.outputPath, path));
-      
-      sb.append("\">").append(h.name).append("</a>").append("</li>");
+      sb.append("<li>").append("<a href=\"").append(PathUtils.relativePathTo(h.outputPath, path))
+          .append("\">").append(h.name).append("</a>").append("</li>");
     }
-    
-    for(int i = 0; i< opened;i++) {
+
+    for (int i = 0; i < opened; i++) {
       sb.append("</ol>");
     }
 
     return sb.toString();
   }
 
-  public static class Header {
+  static class Header {
     final int level;
     final String name;
     final Path outputPath;
