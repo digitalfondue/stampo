@@ -21,6 +21,7 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import org.pegdown.Extensions;
 import org.pegdown.PegDownProcessor;
 
 import ch.digitalfondue.stampo.StampoGlobalConfiguration;
@@ -36,7 +37,8 @@ public class MarkdownRenderer implements Renderer {
   private static final List<String> EXTENSIONS = Arrays.asList("markdown", "mdown", "mkdn", "mkd", "md");
 
   private static Function<FileResourceParameters, FileResourceProcessorOutput> fileResourceProcessor() {
-    PegDownProcessor pegDownProcessor = new PegDownProcessor();
+    
+    PegDownProcessor pegDownProcessor = new PegDownProcessor(Extensions.ALL);
     return params -> new FileResourceProcessorOutput(pegDownProcessor.markdownToHtml(params.fileResource.getContent().orElseThrow(IllegalArgumentException::new)), params.fileResource.getPath(), "markdown", params.locale);
   }
 

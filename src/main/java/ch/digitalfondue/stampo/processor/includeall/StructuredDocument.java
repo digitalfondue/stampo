@@ -36,6 +36,7 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import ch.digitalfondue.stampo.processor.ModelPreparer;
+import ch.digitalfondue.stampo.processor.includeall.Toc.Header;
 import ch.digitalfondue.stampo.resource.Directory;
 import ch.digitalfondue.stampo.resource.FileResource;
 
@@ -165,12 +166,10 @@ public class StructuredDocument {
   
   private static TocAndMainTitle extractTocFrom(int depth, String s, Path finalOutputPathForResource) {
     Elements titles = Jsoup.parseBodyFragment(s).select("h1,h2,h3,h4,h5,h6");
-
-    Toc root = new Toc();
-    for (Element e : titles) {
-      // FIXME add id, use path + e.text() as a id
-      root.add(headerLevel(e.tagName()), e.text(), "", finalOutputPathForResource); 
-    }
+    List<Header> headers = titles.stream()
+        .map(e -> new Header(headerLevel(e.tagName()), e.text(), e.getElementsByTag("a").attr("name"), finalOutputPathForResource))
+        .collect(Collectors.toList());
+    Toc root = new Toc(headers);
     return new TocAndMainTitle(root, titles.stream().findFirst().map(Element::text));
   }
 }

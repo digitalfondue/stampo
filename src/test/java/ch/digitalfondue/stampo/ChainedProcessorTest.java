@@ -38,7 +38,7 @@ public class ChainedProcessorTest {
       Stampo stampo = new Stampo(iod.inputDir, iod.outputDir);
       stampo.build();
 
-      Assert.assertEquals("<h1>test</h1>", TestUtils.fileOutputAsString(iod, "test/index.html"));
+      Assert.assertEquals("<h1><a href=\"#test\" name=\"test\">test</a></h1>", TestUtils.fileOutputAsString(iod, "test/index.html"));
     }
   }
   

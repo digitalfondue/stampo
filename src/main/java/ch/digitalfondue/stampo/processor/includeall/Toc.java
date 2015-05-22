@@ -24,14 +24,14 @@ import ch.digitalfondue.stampo.PathUtils;
 public class Toc {
   private final List<Header> headers = new ArrayList<>();
   
+  public Toc(List<Header> headers) {
+    this.headers.addAll(headers);
+  }
+  
 
   // for adding another toc root
   public void add(Toc toc) {
     headers.addAll(toc.headers);
-  }
-
-  public void add(int headerLevel, String name, String id, Path outputPath) {
-    headers.add(new Header(headerLevel, name, outputPath));
   }
 
   public String toHtml(Path path) {
@@ -49,6 +49,7 @@ public class Toc {
         lvl = h.level;
       }
       sb.append("<li>").append("<a href=\"").append(PathUtils.relativePathTo(h.outputPath, path))
+          .append("#").append(h.id)
           .append("\">").append(h.name).append("</a>").append("</li>");
     }
 
@@ -62,11 +63,13 @@ public class Toc {
   static class Header {
     final int level;
     final String name;
+    final String id;
     final Path outputPath;
 
-    Header(int level, String name, Path outputPath) {
+    Header(int level, String name, String id, Path outputPath) {
       this.level = level;
       this.name = name;
+      this.id = id;
       this.outputPath = outputPath;
     }
   }

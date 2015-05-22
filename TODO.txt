@@ -10,8 +10,6 @@ TODO:
 
 - support a "documentation use case". WIP:
 	- TBD:
-	    - check multi language doc generation
-	    - id generation for header
 		- tests
 
     - see http://www.mkdocs.org/
