@@ -34,14 +34,20 @@
 
 
 	
-	 <developers>
-    	<developer>
-	      	<name>Sylvain Jermini</name>
-	      	<email>sylvain.jermini@syjer.com</email>
-	      	<organization>digitalfondue</organization>
-	      	<organizationUrl>http://digitalfondue.ch</organizationUrl>
-    	</developer>
-  	</developers>
+    <developers>
+        <developer>
+            <name>Sylvain Jermini</name>
+            <email>sylvain.jermini@syjer.com</email>
+            <organization>digitalfondue</organization>
+            <organizationUrl>http://digitalfondue.ch</organizationUrl>
+        </developer>
+        <developer>
+            <name>Eros Taborelli</name>
+            <email>eros.taborelli@erost.net</email>
+            <organization>digitalfondue</organization>
+            <organizationUrl>http://digitalfondue.ch</organizationUrl>
+        </developer>
+    </developers>
 
 	<prerequisites>
 		<maven>3.0.1</maven>
