@@ -12,8 +12,10 @@ TODO:
 	- TBD:
 		- tests
 		- export a breadcrumb variable (should contain link + document title)
+		- export global toc
 		- export a start number variable for OL http://stackoverflow.com/a/779052 so the numbers are coherent
 		  with the main ToC (/!\ some possible issue when there is no attached document with a directory)
+		- add an option "ignore-depth-0: true/false" : if true it will not generate the file with depth 0 
 	
     - see http://www.mkdocs.org/
 	- we want to generate something like http://docs.jboss.org/seam/3/latest/reference/en-US/html/
