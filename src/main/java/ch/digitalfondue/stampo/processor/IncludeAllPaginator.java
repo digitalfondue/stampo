@@ -86,10 +86,17 @@ public class IncludeAllPaginator implements Directive {
       throw new IllegalArgumentException(p + " must be inside of the basedirectory: "
           + baseDirectory);// cannot be outside
     }
+    
+    
 
-    Directory toIncludeAllDir =
-        new LocaleAwareDirectory(locale, new RootResource(resourceFactory, p),
-            FileResourceWithMetadataSection::new);
+    final Directory toIncludeAllDir;
+    
+    if(configuration.getLocales().size() > 1) {
+      toIncludeAllDir = new LocaleAwareDirectory(locale, new RootResource(resourceFactory, p),
+          FileResourceWithMetadataSection::new);
+    } else {
+      toIncludeAllDir = new RootResource(resourceFactory, p);
+    }
 
     StructuredDocument doc = new StructuredDocument(0, toIncludeAllDir, p);
 
@@ -137,7 +144,7 @@ public class IncludeAllPaginator implements Directive {
         nextPageUrl = PathUtils.relativePathTo(res.get(i + 1).path, current.path);
         nextPageTitle = res.get(i + 1).title.orElse(null);
       }
-      current.model.put("pagination", new Pagination(i + 1, resCount, previousPageUrl,
+      current.model.put("pagination", new Pagination(i + 1, resCount, current.depth, previousPageUrl,
           previousPageTitle, nextPageUrl, nextPageTitle));
       current.model.put("toc", current.tocRoot.toHtml(current.path));
     }

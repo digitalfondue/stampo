@@ -71,7 +71,7 @@ public class StructuredDocument {
     FileResource v = fileResource.orElseGet(() -> new FileResourcePlaceHolder(relativeToBasePath,
             env.configuration));
 
-    Path virtualPath = env.resource.getPath().getParent().resolve(this.relativeToBasePath.toString());
+    Path virtualPath = depth == 0 ? env.resource.getPath() : env.resource.getPath().getParent().resolve(this.relativeToBasePath.toString());
 
     FileResource virtualResource = new VirtualPathFileResource(virtualPath, v);
     Path finalOutputPathForResource = env.outputPathExtractor.apply(virtualResource);

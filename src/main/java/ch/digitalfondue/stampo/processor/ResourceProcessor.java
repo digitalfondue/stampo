@@ -87,6 +87,12 @@ public class ResourceProcessor {
 
     Path defaultOutputPath = extractOutputPath(resource);
 
+    
+    if(!directives.containsKey(metadata.getDirective())) {
+      throw new IllegalArgumentException("Directive '" + metadata.getDirective() + "' in file "
+          + resource.getPath() + " does not exists");
+    }
+    
     List<PathAndModelSupplier> outputPaths =
         directives.get(metadata.getDirective()).generateOutputPaths(resource, finalLocale,
             defaultOutputPath);

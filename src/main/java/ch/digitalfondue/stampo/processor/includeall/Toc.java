@@ -50,7 +50,7 @@ public class Toc {
       }
       sb.append("<li>").append("<a href=\"").append(PathUtils.relativePathTo(h.outputPath, path))
           .append("#").append(h.id)
-          .append("\">").append(h.name).append("</a>").append("</li>");
+          .append("\">").append(h.name).append("</a>");
     }
 
     for (int i = 0; i < opened; i++) {

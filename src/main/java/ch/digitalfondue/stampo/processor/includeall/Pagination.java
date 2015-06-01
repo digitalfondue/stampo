@@ -18,15 +18,17 @@ package ch.digitalfondue.stampo.processor.includeall;
 public class Pagination {
   private final int page;
   private final int total;
+  private final int depth;
   private final String previousPageUrl;
   private final String previousPageTitle;
   private final String nextPageUrl;
   private final String nextPageTitle;
 
-  public Pagination(int page, int total, String previousPageUrl, String previousPageTitle,
+  public Pagination(int page, int total, int depth, String previousPageUrl, String previousPageTitle,
       String nextPageUrl, String nextPageTitle) {
     this.page = page;
     this.total = total;
+    this.depth = depth;
     this.previousPageUrl = previousPageUrl;
     this.previousPageTitle = previousPageTitle;
     this.nextPageUrl = nextPageUrl;
@@ -39,6 +41,10 @@ public class Pagination {
 
   public int getTotal() {
     return total;
+  }
+  
+  public int getDepth() {
+    return depth;
   }
 
   public String getPreviousPageUrl() {
