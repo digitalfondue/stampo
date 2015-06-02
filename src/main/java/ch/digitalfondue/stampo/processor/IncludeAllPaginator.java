@@ -146,6 +146,11 @@ public class IncludeAllPaginator implements Directive {
       }
       current.model.put("pagination", new Pagination(i + 1, resCount, current.depth, previousPageUrl,
           previousPageTitle, nextPageUrl, nextPageTitle));
+      
+      //the first element is _always_ the initial page with the whole ToC
+      current.model.put("globalToc", res.get(0).tocRoot.toHtml(current.path));
+      
+      //toc of the current page (and childs)
       current.model.put("toc", current.tocRoot.toHtml(current.path));
     }
   }
