@@ -106,7 +106,11 @@ public class IncludeAllPaginator implements Directive {
     List<FlattenedStructuredDocument> res = new ArrayList<>();
     doc.toOutputPaths(new OutputPathsEnv(maxDepth, locale, resource, configuration, root, outputPathExtractor, resourceProcessor, taxonomy), res);
 
-    addPaginationInfoToModel(res);
+    
+    boolean skipFirstPage = (boolean) resource.getMetadata().getRawMap().getOrDefault("ignore-depth-0", false);
+    
+    addPaginationInfoToModel(res, skipFirstPage);
+    
 
     return res.stream().map(f -> new PathAndModelSupplier(f.path, () -> f.model)).collect(toList());
   }
@@ -123,13 +127,23 @@ public class IncludeAllPaginator implements Directive {
     }
   }
 
-  private void addPaginationInfoToModel(List<FlattenedStructuredDocument> res) {
+  private void addPaginationInfoToModel(List<FlattenedStructuredDocument> res, boolean skipFirstPage) {
+    
+    FlattenedStructuredDocument first = res.get(0);
+    
+    for (int i = 0; i < res.size(); i++) {
+      generateToc(res, i);
+    }
+    
+    if (skipFirstPage) {
+      res.remove(0);
+    }
+    
+    
     final int resCount = res.size();
     for (int i = 0; i < resCount; i++) {
       FlattenedStructuredDocument current = res.get(i);
       
-      generateToc(res, i);
-
       String previousPageUrl = null;
       String previousPageTitle = null;
 
@@ -148,7 +162,7 @@ public class IncludeAllPaginator implements Directive {
           previousPageTitle, nextPageUrl, nextPageTitle));
       
       //the first element is _always_ the initial page with the whole ToC
-      current.model.put("globalToc", res.get(0).tocRoot.toHtml(current.path));
+      current.model.put("globalToc", first.tocRoot.toHtml(current.path));
       
       //toc of the current page (and childs)
       current.model.put("toc", current.tocRoot.toHtml(current.path));
