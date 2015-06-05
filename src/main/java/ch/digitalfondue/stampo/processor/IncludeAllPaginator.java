@@ -51,6 +51,8 @@ import ch.digitalfondue.stampo.resource.RootResource;
 import ch.digitalfondue.stampo.taxonomy.Taxonomy;
 
 public class IncludeAllPaginator implements Directive {
+  
+  private static Comparator<FileOrDir> FILE_OR_DIR_COMPARATOR = Comparator.comparing(FileOrDir::getName, new AlphaNumericStringComparator(Locale.ENGLISH));
 
   private final Directory root;
   private final StampoGlobalConfiguration configuration;
@@ -103,18 +105,21 @@ public class IncludeAllPaginator implements Directive {
     int maxDepth = (Integer) resource.getMetadata().getRawMap().getOrDefault("paginate-at-depth", 1);
 
 
-    List<IncludeAllPage> includeAllPage = flattenAndGroupRecursively(toIncludeAllDir, maxDepth, 1);
+    List<IncludeAllPage> pages = flattenAndGroupRecursively(toIncludeAllDir, maxDepth, 1);
     
-    List<IncludeAllPage> includeAllPagesWithDepth0Handled = handleDepth0Page(includeAllPage, resource, maxDepth, defaultOutputPath);
+    List<IncludeAllPage> pagesWithDepth0Handled = handleDepth0Page(pages, resource, maxDepth, defaultOutputPath);
     
-    List<IncludeAllPageWithOutput> flattenedResources = includeAllPagesWithDepth0Handled.stream()
+    List<IncludeAllPageWithOutput> pagesWithOutput = pagesWithDepth0Handled.stream()
             .map(iap -> addOutputInformation(iap, defaultOutputPath, includeAllBasePath, locale))
             .collect(Collectors.toList());
     
-    List<IncludeAllPageWithPagination> processedResources = addPaginationInformation(flattenedResources);
-    return processedResources.stream().map(fl -> toPathAndModuleSupplier(fl, locale)).collect(Collectors.toList());
+    List<IncludeAllPageWithPagination> pagesWithPagination = addPaginationInformation(pagesWithOutput);
+    return pagesWithPagination.stream().map(fl -> toPathAndModuleSupplier(fl, locale)).collect(Collectors.toList());
   }
 
+  /*
+   * From a given directory, it will flatten the file hierarchy in a list of "pages" (That can contain more than one FileResource)
+   */
   private List<IncludeAllPage> flattenAndGroupRecursively(Directory dir, int maxDepth, int depth) {
 
     List<FileOrDir> fileOrDirs = new ArrayList<>();
@@ -158,8 +163,7 @@ public class IncludeAllPaginator implements Directive {
         fd.file.ifPresent(fileRes.files::add);
 
         List<IncludeAllPage> pairedFiles =
-            fd.dir.map(d -> flattenAndGroupRecursively(d, maxDepth, depth + 1)).orElse(
-                Collections.emptyList());
+            fd.dir.map(d -> flattenAndGroupRecursively(d, maxDepth, depth + 1)).orElse(Collections.emptyList());
         if (depth >= maxDepth) {
           pairedFiles.forEach(iap -> fileRes.files.addAll(iap.files));
         } else {
@@ -176,34 +180,54 @@ public class IncludeAllPaginator implements Directive {
    * is 0, we should transfer the IncludeAllPage object under the page that have the include-all
    * directive.
    */
-  private List<IncludeAllPage> handleDepth0Page(List<IncludeAllPage> includeAllPages,
-      FileResource resource, int maxDepth, Path defaultOutputPath) {
-    boolean skipDepth0 =
-        (boolean) resource.getMetadata().getRawMap().getOrDefault("ignore-depth-0-page", false);
+  private List<IncludeAllPage> handleDepth0Page(List<IncludeAllPage> pages, FileResource resource, int maxDepth, Path defaultOutputPath) {
+    
+    boolean skipDepth0 = (boolean) resource.getMetadata().getRawMap().getOrDefault("ignore-depth-0-page", false);
 
     if (maxDepth == 0) {
       List<FileResource> files = new ArrayList<FileResource>();
       files.add(new FileResourcePlaceHolder(defaultOutputPath, configuration));
-      files.addAll(includeAllPages.get(0).files);// we know that it has size 1
+      files.addAll(pages.get(0).files);// we know that it has size 1
       return Collections.singletonList(new IncludeAllPage(0, files));
       
     } else if (!skipDepth0) {
-      includeAllPages.add(0, new IncludeAllPage(0, Collections.singletonList(new FileResourcePlaceHolder(defaultOutputPath, configuration))));
+      pages.add(0, new IncludeAllPage(0, Collections.singletonList(new FileResourcePlaceHolder(defaultOutputPath, configuration))));
     }
 
-    return includeAllPages;
+    return pages;
+  }
+  
+  
+  // generate the final output path
+  private IncludeAllPageWithOutput addOutputInformation(IncludeAllPage pages, Path defaultBaseOutputPath, Path includeAllBasePath, Locale locale) {
+
+    // depth = 0 is the file that has the include-all directive
+    if (pages.depth == 0) {
+      return new IncludeAllPageWithOutput(pages, pages.files.get(0), pages.files.get(0).getPath(), locale);
+    }
+
+    Path parentDefaultOutputPath = defaultBaseOutputPath.getParent();
+    FileResource virtualResource = pages.files.stream().findFirst()
+        .map(fr -> new VirtualPathFileResource(parentDefaultOutputPath.resolve(includeAllBasePath.relativize(fr.getPath()).toString()), fr))
+        .orElseThrow(IllegalStateException::new);
+
+    Path finalOutputPath = outputPathExtractor.apply(virtualResource).normalize();
+
+    return new IncludeAllPageWithOutput(pages, virtualResource, finalOutputPath, locale);
   }
 
-  private List<IncludeAllPageWithPagination> addPaginationInformation(
-      List<IncludeAllPageWithOutput> flattenedResources) {
+  /*
+   * Augment the objects with pagination information. It's done in a separate step as we need the previous and next page reference. 
+   */
+  private List<IncludeAllPageWithPagination> addPaginationInformation(List<IncludeAllPageWithOutput> pages) {
 
     List<Header> globalToc = new ArrayList<>();
 
     List<IncludeAllPageWithPagination> processedResources = new ArrayList<>();
-    for (int i = 0; i < flattenedResources.size(); i++) {
-      if (!flattenedResources.get(i).files.isEmpty()) {
+    for (int i = 0; i < pages.size(); i++) {
+      if (!pages.get(i).files.isEmpty()) {
 
-        IncludeAllPageWithOutput current = flattenedResources.get(i);
+        IncludeAllPageWithOutput current = pages.get(i);
         globalToc.addAll(current.summary);
 
         String previousPageUrl = null;
@@ -211,125 +235,22 @@ public class IncludeAllPaginator implements Directive {
         String nextPageUrl = null;
         String nextPageTitle = null;
         if (i > 0) {
-          previousPageUrl = PathUtils.relativePathTo(flattenedResources.get(i - 1).outputPath, current.outputPath);
-          previousPageTitle = flattenedResources.get(i - 1).title.orElse(null);
+          previousPageUrl = PathUtils.relativePathTo(pages.get(i - 1).outputPath, current.outputPath);
+          previousPageTitle = pages.get(i - 1).title.orElse(null);
         }
-        if (i < flattenedResources.size() - 1) {
-          nextPageUrl = PathUtils.relativePathTo(flattenedResources.get(i + 1).outputPath, current.outputPath);
-          nextPageTitle = flattenedResources.get(i + 1).title.orElse(null);
+        if (i < pages.size() - 1) {
+          nextPageUrl = PathUtils.relativePathTo(pages.get(i + 1).outputPath, current.outputPath);
+          nextPageTitle = pages.get(i + 1).title.orElse(null);
         }
 
-        Pagination pagination = new Pagination(i + 1, flattenedResources.size(), current.depth, previousPageUrl, 
+        Pagination pagination = new Pagination(i + 1, pages.size(), current.depth, previousPageUrl, 
             previousPageTitle, nextPageUrl, nextPageTitle, current.title.orElse(null));
         processedResources.add(new IncludeAllPageWithPagination(current, pagination, globalToc));
       }
     }
     return processedResources;
   }
-
-
-  private IncludeAllPageWithOutput addOutputInformation(IncludeAllPage includeAllPage,
-      Path defaultBaseOutputPath, Path includeAllBasePath, Locale locale) {
-
-    // depth = 0 is the file that has the include-all directive
-    if (includeAllPage.depth == 0) {
-      return new IncludeAllPageWithOutput(includeAllPage, includeAllPage.files.get(0),
-          includeAllPage.files.get(0).getPath(), locale);
-    }
-
-    Path parentDefaultOutputPath = defaultBaseOutputPath.getParent();
-    FileResource virtualResource = includeAllPage.files.stream().findFirst()
-        .map(fr -> new VirtualPathFileResource(parentDefaultOutputPath.resolve(includeAllBasePath.relativize(fr.getPath()).toString()), fr))
-        .orElseThrow(IllegalStateException::new);
-
-    Path finalOutputPath = outputPathExtractor.apply(virtualResource).normalize();
-
-    return new IncludeAllPageWithOutput(includeAllPage, virtualResource, finalOutputPath, locale);
-  }
-
-  private PathAndModelSupplier toPathAndModuleSupplier(IncludeAllPageWithPagination fl,
-      Locale locale) {
-
-    Supplier<Map<String, Object>> supplier = () -> {
-          Map<String, Object> additionalModel = new HashMap<>();
-          additionalModel.put("includeAllResult", fl.page.content());
-          additionalModel.put("pagination", fl.pagination);
-          additionalModel.put("summary", htmlSummary(fl.page.summary, fl.page.outputPath));
-          additionalModel.put("globalToc", htmlSummary(fl.globalToc, fl.page.outputPath));
-          return ModelPreparer.prepare(root, configuration, locale, fl.page.virtualResource,
-              fl.page.outputPath, taxonomy, additionalModel);
-        };
-    return new PathAndModelSupplier(fl.page.outputPath, supplier);
-  }
-
-  private static class FileOrDir {
-    final Optional<FileResource> file;
-    final Optional<Directory> dir;
-    final String name;
-
-    FileOrDir(Optional<FileResource> file, Optional<Directory> dir) {
-      this.file = file;
-      this.dir = dir;
-      // we are sure that at least one of the two is present
-      this.name = file.map(FileResource::getFileNameWithoutExtensions).orElseGet(() -> dir.get().getName());
-    }
-
-    String getName() {
-      return name;
-    }
-  }
-
-  private static Comparator<FileOrDir> FILE_OR_DIR_COMPARATOR = Comparator.comparing(
-      FileOrDir::getName, new AlphaNumericStringComparator(Locale.ENGLISH));
-
-  private static class IncludeAllPage {
-    final int depth;
-    final List<FileResource> files;
-
-    IncludeAllPage(int depth, List<FileResource> files) {
-      this.depth = depth;
-      this.files = files;
-    }
-  }
-
-  private class IncludeAllPageWithOutput extends IncludeAllPage {
-
-    final FileResource virtualResource;
-    final Path outputPath;
-    final Locale locale;
-    final Optional<String> title;
-    final List<Header> summary;
-
-
-    IncludeAllPageWithOutput(IncludeAllPage includeAllPage, FileResource virtualResource,
-        Path outputPath, Locale locale) {
-      super(includeAllPage.depth, includeAllPage.files);
-      this.virtualResource = virtualResource;
-      this.outputPath = outputPath;
-      this.locale = locale;
-
-      Elements titles = Jsoup.parseBodyFragment(content()).select("h1,h2,h3,h4,h5,h6");
-      this.title = titles.stream().findFirst().map(Element::text);
-      this.summary =
-          titles
-              .stream()
-              .map(
-                  e -> new Header(headerLevel(e.tagName()), e.text(), e.getElementsByTag("a").attr(
-                      "name"), outputPath)).collect(Collectors.toList());
-    }
-
-    int headerLevel(String name) {
-      return Integer.parseInt(name.substring(1));
-    }
-
-    String content() {
-      Map<String, Object> modelForIncludeAllPage = ModelPreparer.prepare(root, configuration, locale, virtualResource, outputPath, taxonomy);
-      return files.stream()
-          .map(f -> resourceProcessor.apply(locale).apply(f, modelForIncludeAllPage))
-          .map(FileResourceProcessorOutput::getContent).collect(Collectors.joining());
-    }
-  }
-
+  
   // refactor
   private static String htmlSummary(List<Header> summary, Path path) {
     StringBuilder sb = new StringBuilder();
@@ -359,6 +280,81 @@ public class IncludeAllPaginator implements Directive {
     }
 
     return sb.toString();
+  }
+
+
+  private PathAndModelSupplier toPathAndModuleSupplier(IncludeAllPageWithPagination page, Locale locale) {
+
+    Supplier<Map<String, Object>> supplier = () -> {
+          Map<String, Object> additionalModel = new HashMap<>();
+          additionalModel.put("includeAllResult", page.page.content());
+          additionalModel.put("pagination", page.pagination);
+          additionalModel.put("summary", htmlSummary(page.page.summary, page.page.outputPath));
+          additionalModel.put("globalToc", htmlSummary(page.globalToc, page.page.outputPath));
+          return ModelPreparer.prepare(root, configuration, locale, page.page.virtualResource,
+              page.page.outputPath, taxonomy, additionalModel);
+        };
+    return new PathAndModelSupplier(page.page.outputPath, supplier);
+  }
+
+  private static class FileOrDir {
+    final Optional<FileResource> file;
+    final Optional<Directory> dir;
+    final String name;
+
+    FileOrDir(Optional<FileResource> file, Optional<Directory> dir) {
+      this.file = file;
+      this.dir = dir;
+      // we are sure that at least one of the two is present
+      this.name = file.map(FileResource::getFileNameWithoutExtensions).orElseGet(() -> dir.get().getName());
+    }
+
+    String getName() {
+      return name;
+    }
+  }
+
+  private static class IncludeAllPage {
+    final int depth;
+    final List<FileResource> files;
+
+    IncludeAllPage(int depth, List<FileResource> files) {
+      this.depth = depth;
+      this.files = files;
+    }
+  }
+
+  private class IncludeAllPageWithOutput extends IncludeAllPage {
+
+    final FileResource virtualResource;
+    final Path outputPath;
+    final Locale locale;
+    final Optional<String> title;
+    final List<Header> summary;
+
+
+    IncludeAllPageWithOutput(IncludeAllPage includeAllPage, FileResource virtualResource,
+        Path outputPath, Locale locale) {
+      super(includeAllPage.depth, includeAllPage.files);
+      this.virtualResource = virtualResource;
+      this.outputPath = outputPath;
+      this.locale = locale;
+
+      Elements titles = Jsoup.parseBodyFragment(content()).select("h1,h2,h3,h4,h5,h6");
+      this.title = titles.stream().findFirst().map(Element::text);
+      this.summary = titles.stream().map(e -> new Header(headerLevel(e.tagName()), e.text(), e.getElementsByTag("a").attr("name"), outputPath)).collect(Collectors.toList());
+    }
+
+    int headerLevel(String name) {
+      return Integer.parseInt(name.substring(1));
+    }
+
+    String content() {
+      Map<String, Object> modelForIncludeAllPage = ModelPreparer.prepare(root, configuration, locale, virtualResource, outputPath, taxonomy);
+      return files.stream()
+          .map(f -> resourceProcessor.apply(locale).apply(f, modelForIncludeAllPage))
+          .map(FileResourceProcessorOutput::getContent).collect(Collectors.joining());
+    }
   }
 
   private static class IncludeAllPageWithPagination {
