@@ -25,6 +25,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -256,7 +257,7 @@ public class IncludeAllPaginator implements Directive {
   }
   
   private List<Link> extractBreadcrumbs(List<IncludeAllPageWithOutput> pages, int currentPosition, Path outputPath) {
-    List<Link> breadcrumbs = new ArrayList<>();
+    LinkedList<Link> breadcrumbs = new LinkedList<>();
     
     int currentDepth = pages.get(currentPosition).depth;
     
@@ -264,7 +265,7 @@ public class IncludeAllPaginator implements Directive {
       
       IncludeAllPageWithOutput curr = pages.get(i);
       if (curr.depth < currentDepth && curr.title.isPresent()) {
-        breadcrumbs.add(new Link(PathUtils.relativePathTo(curr.outputPath, pages.get(currentPosition).outputPath), curr.title.get()));
+        breadcrumbs.addFirst(new Link(PathUtils.relativePathTo(curr.outputPath, pages.get(currentPosition).outputPath), curr.title.get()));
         currentDepth = curr.depth;
       }
     }
