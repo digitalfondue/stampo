@@ -234,6 +234,10 @@ public class IncludeAllPaginator implements Directive {
         String previousPageTitle = null;
         String nextPageUrl = null;
         String nextPageTitle = null;
+        
+        
+        List<Link> breadcrumbs = extractBreadcrumbs(pages, i, current.outputPath);
+        
         if (i > 0) {
           previousPageUrl = PathUtils.relativePathTo(pages.get(i - 1).outputPath, current.outputPath);
           previousPageTitle = pages.get(i - 1).title.orElse(null);
@@ -243,13 +247,32 @@ public class IncludeAllPaginator implements Directive {
           nextPageTitle = pages.get(i + 1).title.orElse(null);
         }
 
-        Pagination pagination = new Pagination(i + 1, pages.size(), current.depth, previousPageUrl, 
-            previousPageTitle, nextPageUrl, nextPageTitle, current.title.orElse(null));
+        Pagination pagination = new Pagination(i + 1, pages.size(), current.depth, new Link(previousPageUrl, 
+            previousPageTitle), new Link(nextPageUrl, nextPageTitle), current.title.orElse(null), breadcrumbs);
         processedResources.add(new IncludeAllPageWithPagination(current, pagination, globalToc));
       }
     }
     return processedResources;
   }
+  
+  private List<Link> extractBreadcrumbs(List<IncludeAllPageWithOutput> pages, int currentPosition, Path outputPath) {
+    List<Link> breadcrumbs = new ArrayList<>();
+    
+    int currentDepth = pages.get(currentPosition).depth;
+    
+    for(int i = currentPosition; i >= 0; i--) {
+      
+      IncludeAllPageWithOutput curr = pages.get(i);
+      if (curr.depth < currentDepth && curr.title.isPresent()) {
+        breadcrumbs.add(new Link(PathUtils.relativePathTo(curr.outputPath, pages.get(currentPosition).outputPath), curr.title.get()));
+        currentDepth = curr.depth;
+      }
+    }
+    
+    return breadcrumbs;
+  }
+  
+  
   
   // refactor
   private static String htmlSummary(List<Header> summary, Path path) {
@@ -356,6 +379,24 @@ public class IncludeAllPaginator implements Directive {
           .map(FileResourceProcessorOutput::getContent).collect(Collectors.joining());
     }
   }
+  
+  public static class Link {
+    private final String url;
+    private final String title;
+    
+    private Link(String url, String title) {
+      this.url = url;
+      this.title = title;
+    }
+
+    public String getUrl() {
+      return url;
+    }
+
+    public String getTitle() {
+      return title;
+    }
+  }
 
   private static class IncludeAllPageWithPagination {
     final IncludeAllPageWithOutput page;
@@ -388,22 +429,19 @@ public class IncludeAllPaginator implements Directive {
     private final int page;
     private final int total;
     private final int depth;
-    private final String previousPageUrl;
-    private final String previousPageTitle;
-    private final String nextPageUrl;
-    private final String nextPageTitle;
+    private final Link previousPage;
+    private final Link nextPage;
     private final String pageTitle;
+    private final List<Link> breadcrumbs;
 
-    public Pagination(int page, int total, int depth, String previousPageUrl,
-        String previousPageTitle, String nextPageUrl, String nextPageTitle, String pageTitle) {
+    public Pagination(int page, int total, int depth, Link previousPage, Link nextPage, String pageTitle, List<Link> breadcrumbs) {
       this.page = page;
       this.total = total;
       this.depth = depth;
-      this.previousPageUrl = previousPageUrl;
-      this.previousPageTitle = previousPageTitle;
-      this.nextPageUrl = nextPageUrl;
-      this.nextPageTitle = nextPageTitle;
+      this.previousPage = previousPage;
+      this.nextPage = nextPage;
       this.pageTitle = pageTitle;
+      this.breadcrumbs = breadcrumbs;
     }
 
     public int getPage() {
@@ -419,23 +457,27 @@ public class IncludeAllPaginator implements Directive {
     }
 
     public String getPreviousPageUrl() {
-      return previousPageUrl;
+      return previousPage.url;
     }
 
     public String getNextPageUrl() {
-      return nextPageUrl;
+      return nextPage.url;
     }
 
     public String getPreviousPageTitle() {
-      return previousPageTitle;
+      return previousPage.title;
     }
 
     public String getNextPageTitle() {
-      return nextPageTitle;
+      return nextPage.title;
     }
 
     public String getPageTitle() {
       return pageTitle;
+    }
+
+    public List<Link> getBreadcrumbs() {
+      return breadcrumbs;
     }
   }
 }
