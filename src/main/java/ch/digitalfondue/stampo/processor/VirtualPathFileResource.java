@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ch.digitalfondue.stampo.processor.includeall;
+package ch.digitalfondue.stampo.processor;
 
 import java.nio.file.Path;
 import java.util.Optional;

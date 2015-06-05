@@ -8,15 +8,20 @@ TODO:
 
 - refactor the whole rendering pipeline
 
-- support a "documentation use case". WIP:
+- support a "documentation use case".
+	- rewrite:
+		- include child summary in parent summary (option, default n)
+
 	- TBD:
 		- tests
-		- export a breadcrumb variable (should contain link + document title)
-		- export a start number variable for OL http://stackoverflow.com/a/779052 so the numbers are coherent
-		  with the main ToC (/!\ some possible issue when there is no attached document with a directory) 
+		- export a breadcrumb variable (should contain links)
+		- set explicitly the number variable for OL http://stackoverflow.com/a/779052 so the numbers are coherent
+		- in the title add a <span>1.2.4</span> chapter numbering (as a option)
 	
     - see http://www.mkdocs.org/
-	- we want to generate something like http://docs.jboss.org/seam/3/latest/reference/en-US/html/
+	- we want to generate something like 
+	  - http://docs.jboss.org/seam/3/latest/reference/en-US/html/
+	  - http://ratpack.io/manual/current/intro.html
 
 - draft support
 
