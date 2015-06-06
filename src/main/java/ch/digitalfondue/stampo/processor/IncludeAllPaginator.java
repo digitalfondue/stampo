@@ -31,6 +31,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.Stack;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -104,6 +105,8 @@ public class IncludeAllPaginator implements Directive {
     }
 
     int maxDepth = (Integer) resource.getMetadata().getRawMap().getOrDefault("paginate-at-depth", 1);
+    
+    boolean includeChildSummary = (Boolean) resource.getMetadata().getRawMap().getOrDefault("include-child-summary", false); 
 
 
     List<IncludeAllPage> pages = flattenAndGroupRecursively(toIncludeAllDir, maxDepth, 1);
@@ -114,7 +117,7 @@ public class IncludeAllPaginator implements Directive {
             .map(iap -> addOutputInformation(iap, defaultOutputPath, includeAllBasePath, locale))
             .collect(Collectors.toList());
     
-    List<IncludeAllPageWithPagination> pagesWithPagination = addPaginationInformation(pagesWithOutput);
+    List<IncludeAllPageWithPagination> pagesWithPagination = addPaginationInformation(pagesWithOutput, includeChildSummary);
     return pagesWithPagination.stream().map(fl -> toPathAndModuleSupplier(fl, locale)).collect(Collectors.toList());
   }
 
@@ -220,7 +223,7 @@ public class IncludeAllPaginator implements Directive {
   /*
    * Augment the objects with pagination information. It's done in a separate step as we need the previous and next page reference. 
    */
-  private List<IncludeAllPageWithPagination> addPaginationInformation(List<IncludeAllPageWithOutput> pages) {
+  private List<IncludeAllPageWithPagination> addPaginationInformation(List<IncludeAllPageWithOutput> pages, boolean includeChildSummary) {
 
     List<Header> globalToc = new ArrayList<>();
 
@@ -230,6 +233,16 @@ public class IncludeAllPaginator implements Directive {
 
         IncludeAllPageWithOutput current = pages.get(i);
         globalToc.addAll(current.summary);
+        
+        if(includeChildSummary) {
+          for (int j = i+1; j < pages.size(); j++) {
+            if(pages.get(j).depth > current.depth) {
+              current.summary.addAll(pages.get(j).summary);
+            } else {
+              break;
+            }
+          }
+        }
 
         String previousPageUrl = null;
         String previousPageTitle = null;
@@ -273,37 +286,30 @@ public class IncludeAllPaginator implements Directive {
     return breadcrumbs;
   }
   
-  
-  
-  // refactor
+  //
   private static String htmlSummary(List<Header> summary, Path path) {
-    StringBuilder sb = new StringBuilder();
-    int lvl = 0;
-    int opened = 0;
+    Stack<Integer> stack = new Stack<>();
+    StringBuilder sbStack = new StringBuilder();
     for (Header h : summary) {
-      if (h.level > lvl) {
-        opened++;
-        sb.append("<ol>");
-        lvl = h.level;
-      } else if (h.level < lvl) {
-
-        int diffOpened = lvl - h.level;
-
-        for (int i = 0; i < diffOpened; i++) {
-          sb.append("</ol>");
-          opened--;
+      if (stack.isEmpty() || stack.peek().intValue() < h.level) {
+        stack.push(h.level);
+        sbStack.append("<ol>");
+      } else if (!stack.isEmpty()) {
+        while (!stack.isEmpty() && stack.peek().intValue() > h.level) {
+          stack.pop();
+          sbStack.append("</ol>\n");
         }
-        lvl = h.level;
       }
-      sb.append("<li>").append("<a href=\"").append(PathUtils.relativePathTo(h.outputPath, path))
-          .append("#").append(h.id).append("\">").append(h.name).append("</a>");
+      sbStack.append("<li>").append("<a href=\"")
+          .append(PathUtils.relativePathTo(h.outputPath, path)).append("#").append(h.id)
+          .append("\">").append(h.name).append("</a>\n");
     }
-
-    for (int i = 0; i < opened; i++) {
-      sb.append("</ol>");
+    //
+    for (int i = 0; i < stack.size(); i++) {
+      sbStack.append("</ol>\n");
     }
-
-    return sb.toString();
+    
+    return sbStack.toString();
   }
 
 
