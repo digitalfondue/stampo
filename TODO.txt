@@ -10,13 +10,11 @@ TODO:
 
 - support a "documentation use case".
 	- rewrite:
-		- include child summary in parent summary (option, default n)
+		- add a chapter/section numbering as an addition (<span class="stampo-toc-number">1.2.3</span>)in the matched h elements (as an option)
 
 	- TBD:
 		- tests
-		- export a breadcrumb variable (should contain links)
-		- set explicitly the number variable for OL http://stackoverflow.com/a/779052 so the numbers are coherent
-		- in the title add a <span>1.2.4</span> chapter numbering (as a option)
+		
 	
     - see http://www.mkdocs.org/
 	- we want to generate something like 

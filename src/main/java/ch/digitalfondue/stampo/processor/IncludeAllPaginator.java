@@ -232,17 +232,23 @@ public class IncludeAllPaginator implements Directive {
       if (!pages.get(i).files.isEmpty()) {
 
         IncludeAllPageWithOutput current = pages.get(i);
+        
+        int summaryPositionBegin = globalToc.size();
+        
         globalToc.addAll(current.summary);
         
+        int includedChildCount = 0;
         if(includeChildSummary) {
           for (int j = i+1; j < pages.size(); j++) {
             if(pages.get(j).depth > current.depth) {
-              current.summary.addAll(pages.get(j).summary);
+              includedChildCount += pages.get(j).summary.size();
             } else {
               break;
             }
           }
         }
+        
+        int summaryPositionEnd = globalToc.size() + includedChildCount;
 
         String previousPageUrl = null;
         String previousPageTitle = null;
@@ -263,7 +269,7 @@ public class IncludeAllPaginator implements Directive {
 
         Pagination pagination = new Pagination(i + 1, pages.size(), current.depth, new Link(previousPageUrl, 
             previousPageTitle), new Link(nextPageUrl, nextPageTitle), current.title.orElse(null), breadcrumbs);
-        processedResources.add(new IncludeAllPageWithPagination(current, pagination, globalToc));
+        processedResources.add(new IncludeAllPageWithPagination(current, pagination, globalToc, summaryPositionBegin, summaryPositionEnd));
       }
     }
     return processedResources;
@@ -287,9 +293,24 @@ public class IncludeAllPaginator implements Directive {
   }
   
   //
-  private static String htmlSummary(List<Header> summary, Path path) {
+  private static String htmlSummary(List<Header> globalToc, int positionStart, int positionEnd, Path path) {
     Stack<Integer> stack = new Stack<>();
     StringBuilder sbStack = new StringBuilder();
+    
+    //get the relative position of the first header element
+    int startCnt = 1;
+    final int firstLevel = globalToc.get(positionStart).level;
+    for (int i = positionStart - 1; i >= 0; i--) {
+      Header current = globalToc.get(i);
+      if(current.level == firstLevel) {
+        startCnt++;
+      } else if(current.level < firstLevel) {
+        break;
+      }
+    }
+   
+    List<Header> summary = globalToc.subList(positionStart, positionEnd);
+    
     for (Header h : summary) {
       if (stack.isEmpty() || stack.peek().intValue() < h.level) {
         stack.push(h.level);
@@ -309,6 +330,9 @@ public class IncludeAllPaginator implements Directive {
       sbStack.append("</ol>\n");
     }
     
+    //add attribute start to first ol
+    sbStack.replace(3, 3, " start=\"" + startCnt + "\"");
+    
     return sbStack.toString();
   }
 
@@ -319,8 +343,8 @@ public class IncludeAllPaginator implements Directive {
           Map<String, Object> additionalModel = new HashMap<>();
           additionalModel.put("includeAllResult", page.page.content());
           additionalModel.put("pagination", page.pagination);
-          additionalModel.put("summary", htmlSummary(page.page.summary, page.page.outputPath));
-          additionalModel.put("globalToc", htmlSummary(page.globalToc, page.page.outputPath));
+          additionalModel.put("summary", htmlSummary(page.globalToc, page.summaryPositionStart, page.summaryPositionEnd, page.page.outputPath));
+          additionalModel.put("globalToc", htmlSummary(page.globalToc, 0, page.globalToc.size(), page.page.outputPath));
           return ModelPreparer.prepare(root, configuration, locale, page.page.virtualResource,
               page.page.outputPath, taxonomy, additionalModel);
         };
@@ -409,12 +433,16 @@ public class IncludeAllPaginator implements Directive {
     final IncludeAllPageWithOutput page;
     final Pagination pagination;
     final List<Header> globalToc;
+    final int summaryPositionStart;
+    final int summaryPositionEnd;
 
     IncludeAllPageWithPagination(IncludeAllPageWithOutput page, Pagination pagination,
-        List<Header> globalToc) {
+        List<Header> globalToc, int summaryPositionStart, int summaryPositionEnd) {
       this.page = page;
       this.pagination = pagination;
       this.globalToc = globalToc;
+      this.summaryPositionStart = summaryPositionStart;
+      this.summaryPositionEnd = summaryPositionEnd;
     }
   }
 
