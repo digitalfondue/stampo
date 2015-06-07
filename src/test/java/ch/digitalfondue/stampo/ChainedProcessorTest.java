@@ -20,6 +20,7 @@ import static java.nio.file.Files.write;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.util.Collections;
 
 import org.junit.Assert;
 import org.junit.Test;
@@ -35,7 +36,7 @@ public class ChainedProcessorTest {
       Files.createDirectories(iod.inputDir.resolve("content/test"));
       write(iod.inputDir.resolve("content/test/index.peb.md"),
           "#{{outputPath}}".getBytes(StandardCharsets.UTF_8));
-      Stampo stampo = new Stampo(iod.inputDir, iod.outputDir);
+      Stampo stampo = new Stampo(iod.inputDir, iod.outputDir, Collections.emptyMap());
       stampo.build();
 
       Assert.assertEquals("<h1><a href=\"#test\" name=\"test\">test</a></h1>", TestUtils.fileOutputAsString(iod, "test/index.html"));

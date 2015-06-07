@@ -23,6 +23,7 @@ import static java.nio.file.Files.write;
 
 import java.io.IOException;
 import java.nio.file.Files;
+import java.util.Collections;
 
 import org.junit.Assert;
 import org.junit.Test;
@@ -41,7 +42,7 @@ public class ContentPaginationTest {
       writePosts(iod);
 
 
-      Stampo stampo = new Stampo(iod.inputDir, iod.outputDir);
+      Stampo stampo = new Stampo(iod.inputDir, iod.outputDir, Collections.emptyMap());
       stampo.build();
 
       Assert.assertEquals(fromTestResourceAsString("pagination/result/pagination/index.html"),
@@ -75,7 +76,7 @@ public class ContentPaginationTest {
       writePosts(iod);
 
 
-      Stampo stampo = new Stampo(iod.inputDir, iod.outputDir);
+      Stampo stampo = new Stampo(iod.inputDir, iod.outputDir, Collections.emptyMap());
       stampo.build();
 
       Assert.assertEquals(fromTestResourceAsString("pagination/result/recursive/index.html"),
@@ -94,7 +95,7 @@ public class ContentPaginationTest {
       write(iod.inputDir.resolve("content/index.html.peb"),
           fromTestResource("pagination/index-recursive.html.peb"));
       Files.createDirectories(iod.inputDir.resolve("content/post"));
-      Stampo stampo = new Stampo(iod.inputDir, iod.outputDir);
+      Stampo stampo = new Stampo(iod.inputDir, iod.outputDir, Collections.emptyMap());
       stampo.build();
 
       Assert.assertEquals(fromTestResourceAsString("pagination/result/emptydir/index.html"),
@@ -107,7 +108,7 @@ public class ContentPaginationTest {
     try (InputOutputDirs iod = get()) {
       write(iod.inputDir.resolve("content/index.html"),
           fromTestResource("pagination/index-recursive.html.peb"));
-      Stampo stampo = new Stampo(iod.inputDir, iod.outputDir);
+      Stampo stampo = new Stampo(iod.inputDir, iod.outputDir, Collections.emptyMap());
       stampo.build();
     }
   }

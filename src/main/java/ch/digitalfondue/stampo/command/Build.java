@@ -31,6 +31,6 @@ public class Build extends Command {
 
   @Override
   void runWithPaths(String inputPath, String outputPath) {
-    getBuildRunnable(inputPath, outputPath).run();
+    getBuildRunnable(inputPath, outputPath, getConfigurationOverride()).run();
   }
 }

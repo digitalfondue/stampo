@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.Arrays;
+import java.util.Collections;
 
 import org.junit.Assert;
 import org.junit.Test;
@@ -48,7 +49,7 @@ public class I18nTest {
       write(iod.inputDir.resolve("content/index2.html.ftl"),
           "${message('hello')} : ${messageWithBundle('custom_messages', 'hello', 'param')}".getBytes(StandardCharsets.UTF_8));
 
-      Stampo stampo = new Stampo(iod.inputDir, iod.outputDir);
+      Stampo stampo = new Stampo(iod.inputDir, iod.outputDir, Collections.emptyMap());
       stampo.build();
 
       Assert.assertEquals("Hello world! : Custom Hello param world!",
@@ -82,7 +83,7 @@ public class I18nTest {
       write(iod.inputDir.resolve("content/index2.html.ftl"),
           "${message('hello')}".getBytes(StandardCharsets.UTF_8));
 
-      Stampo stampo = new Stampo(iod.inputDir, iod.outputDir);
+      Stampo stampo = new Stampo(iod.inputDir, iod.outputDir, Collections.emptyMap());
       stampo.build();
       
       for (String loc : Arrays.asList("en", "en-US", "fr")) {

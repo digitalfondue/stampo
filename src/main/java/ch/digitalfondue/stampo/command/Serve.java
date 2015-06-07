@@ -62,7 +62,7 @@ public class Serve extends Command {
 
   @Override
   void runWithPaths(String inputPath, String outputPath) {
-    Runnable triggerBuild = getBuildRunnable(inputPath, outputPath);
+    Runnable triggerBuild = getBuildRunnable(inputPath, outputPath, getConfigurationOverride());
     triggerBuild.run();
     System.out.println("stampo serving at " + hostname + ":" + port);
     if (disableAutoReload) {
@@ -72,7 +72,7 @@ public class Serve extends Command {
       System.out.println("rebuild on change is disabled");
     }
     new ServeAndWatch(hostname, port, !disableRebuildOnChange, !disableAutoReload, 
-        new Stampo(Paths.get(inputPath), Paths.get(outputPath)).getConfiguration(), triggerBuild, blockingOnStart)
+        new Stampo(Paths.get(inputPath), Paths.get(outputPath), getConfigurationOverride()).getConfiguration(), triggerBuild, blockingOnStart)
         .start();
   }
 

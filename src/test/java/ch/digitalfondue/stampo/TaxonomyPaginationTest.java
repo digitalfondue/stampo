@@ -24,6 +24,7 @@ import static java.nio.file.Files.write;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.util.Collections;
 
 import org.junit.Assert;
 import org.junit.Test;
@@ -56,7 +57,7 @@ public class TaxonomyPaginationTest {
       }
 
 
-      Stampo stampo = new Stampo(iod.inputDir, iod.outputDir);
+      Stampo stampo = new Stampo(iod.inputDir, iod.outputDir, Collections.emptyMap());
       stampo.build();
       
       Assert.assertEquals(fromTestResourceAsString("pagination/result/taxonomy/tags-index.html"),

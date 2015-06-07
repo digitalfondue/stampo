@@ -8,21 +8,12 @@ TODO:
 
 - refactor the whole rendering pipeline
 
-- support a "documentation use case".
-	- rewrite:
-		- add a chapter/section numbering as an addition (<span class="stampo-toc-number">1.2.3</span>)in the matched h elements (as an option)
+- draft support
 
+- support a "documentation use case".
 	- TBD:
 		- tests
 		
-	
-    - see http://www.mkdocs.org/
-	- we want to generate something like 
-	  - http://docs.jboss.org/seam/3/latest/reference/en-US/html/
-	  - http://ratpack.io/manual/current/intro.html
-
-- draft support
-
 - archetype support (blog, doc, multi language standard website)
 
 

@@ -23,6 +23,7 @@ import static java.nio.file.Files.write;
 
 import java.io.IOException;
 import java.nio.file.Files;
+import java.util.Collections;
 
 import org.junit.Assert;
 import org.junit.Test;
@@ -43,7 +44,7 @@ public class StaticPaginationTest {
         write(iod.inputDir.resolve("static/gallery/" + i + ".jpg"), new byte[] {});
       }
       
-      Stampo stampo = new Stampo(iod.inputDir, iod.outputDir);
+      Stampo stampo = new Stampo(iod.inputDir, iod.outputDir, Collections.emptyMap());
       stampo.build();
       
       Assert.assertEquals(fromTestResourceAsString("pagination/result/staticpagination/index.html"),

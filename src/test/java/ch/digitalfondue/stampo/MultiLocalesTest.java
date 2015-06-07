@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.Arrays;
+import java.util.Collections;
 
 import org.junit.Assert;
 import org.junit.Test;
@@ -39,7 +40,7 @@ public class MultiLocalesTest {
       write(iod.inputDir.resolve("configuration.yaml"),
           "locales: ['en', 'de','fr']".getBytes(StandardCharsets.UTF_8));
 
-      Stampo stampo = new Stampo(iod.inputDir, iod.outputDir);
+      Stampo stampo = new Stampo(iod.inputDir, iod.outputDir, Collections.emptyMap());
 
       stampo.build();
 
@@ -60,7 +61,7 @@ public class MultiLocalesTest {
       write(iod.inputDir.resolve("configuration.yaml"), ("locales: ['en', 'de','fr']\n"
           + "default-locale: en").getBytes(StandardCharsets.UTF_8));
 
-      Stampo stampo = new Stampo(iod.inputDir, iod.outputDir);
+      Stampo stampo = new Stampo(iod.inputDir, iod.outputDir, Collections.emptyMap());
 
       stampo.build();
 

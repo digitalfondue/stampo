@@ -20,6 +20,7 @@ import static java.nio.file.Files.write;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.util.Collections;
 
 import org.junit.Assert;
 import org.junit.Test;
@@ -33,7 +34,7 @@ public class SimpleUseCaseTest {
     try (InputOutputDirs iod = TestUtils.get()) {
       write(iod.inputDir.resolve("content/index.html"),
           "<h1>Hello World</h1>".getBytes(StandardCharsets.UTF_8));
-      Stampo stampo = new Stampo(iod.inputDir, iod.outputDir);
+      Stampo stampo = new Stampo(iod.inputDir, iod.outputDir, Collections.emptyMap());
       stampo.build();
 
       Assert.assertEquals("<h1>Hello World</h1>", TestUtils.fileOutputAsString(iod, "index.html"));
@@ -45,7 +46,7 @@ public class SimpleUseCaseTest {
     try (InputOutputDirs iod = TestUtils.get()) {
       write(iod.inputDir.resolve("content/index"),
           "<h1>Hello World</h1>".getBytes(StandardCharsets.UTF_8));
-      Stampo stampo = new Stampo(iod.inputDir, iod.outputDir);
+      Stampo stampo = new Stampo(iod.inputDir, iod.outputDir, Collections.emptyMap());
       stampo.build();
 
       Assert.assertEquals("<h1>Hello World</h1>", TestUtils.fileOutputAsString(iod, "index"));
@@ -58,7 +59,7 @@ public class SimpleUseCaseTest {
     try (InputOutputDirs iod = TestUtils.get()) {
       String content = "<h1>Hello World</h1>\n this is a test\n\nthis\nis\n\n";
       write(iod.inputDir.resolve("content/index.html"), content.getBytes(StandardCharsets.UTF_8));
-      Stampo stampo = new Stampo(iod.inputDir, iod.outputDir);
+      Stampo stampo = new Stampo(iod.inputDir, iod.outputDir, Collections.emptyMap());
       stampo.build();
 
       Assert.assertEquals(content, TestUtils.fileOutputAsString(iod, "index.html"));
@@ -73,7 +74,7 @@ public class SimpleUseCaseTest {
           "---\n" + //
           "<h1>The answer is {{metadata.rawMap.answer}}</h1>";
       write(iod.inputDir.resolve("content/index.html.peb"), content.getBytes(StandardCharsets.UTF_8));
-      Stampo stampo = new Stampo(iod.inputDir, iod.outputDir);
+      Stampo stampo = new Stampo(iod.inputDir, iod.outputDir, Collections.emptyMap());
       stampo.build();
 
       Assert.assertEquals("<h1>The answer is 42</h1>", TestUtils.fileOutputAsString(iod, "index.html"));
@@ -88,7 +89,7 @@ public class SimpleUseCaseTest {
           "---\r\n" + //
           "<h1>The answer is {{metadata.rawMap.answer}}</h1>\r\n";
       write(iod.inputDir.resolve("content/index.html.peb"), content.getBytes(StandardCharsets.UTF_8));
-      Stampo stampo = new Stampo(iod.inputDir, iod.outputDir);
+      Stampo stampo = new Stampo(iod.inputDir, iod.outputDir, Collections.emptyMap());
       stampo.build();
 
       Assert.assertEquals("<h1>The answer is 42</h1>\r\n", TestUtils.fileOutputAsString(iod, "index.html"));
@@ -104,7 +105,7 @@ public class SimpleUseCaseTest {
           "---\n" + //
           "<h1>The answer is {{metadata.rawMap.answer}}</h1>";
       write(iod.inputDir.resolve("content/index.html.peb"), content.getBytes(StandardCharsets.UTF_8));
-      Stampo stampo = new Stampo(iod.inputDir, iod.outputDir);
+      Stampo stampo = new Stampo(iod.inputDir, iod.outputDir, Collections.emptyMap());
       stampo.build();
 
       Assert.assertFalse(Files.exists(iod.outputDir.resolve("index.html")));
@@ -121,7 +122,7 @@ public class SimpleUseCaseTest {
           "---\n" + //
           "<h1>The answer is ${metadata.rawMap['answer']}</h1>";
       write(iod.inputDir.resolve("content/index.html.ftl"), content.getBytes(StandardCharsets.UTF_8));
-      Stampo stampo = new Stampo(iod.inputDir, iod.outputDir);
+      Stampo stampo = new Stampo(iod.inputDir, iod.outputDir, Collections.emptyMap());
       stampo.build();
 
       Assert.assertEquals("<h1>The answer is 42</h1>", TestUtils.fileOutputAsString(iod, "index.html"));

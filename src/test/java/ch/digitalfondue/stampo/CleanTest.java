@@ -20,6 +20,7 @@ import static java.nio.file.Files.write;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.util.Collections;
 
 import org.junit.Assert;
 import org.junit.Test;
@@ -34,7 +35,7 @@ public class CleanTest {
       Files.createDirectories(iod.inputDir.resolve("content/a/directory/inside/"));
       write(iod.inputDir.resolve("content/a/directory/inside/index.html"),
           "<h1>Hello World</h1>".getBytes(StandardCharsets.UTF_8));
-      Stampo stampo = new Stampo(iod.inputDir, iod.outputDir);
+      Stampo stampo = new Stampo(iod.inputDir, iod.outputDir, Collections.emptyMap());
       
       Assert.assertFalse(Files.exists(iod.outputDir));
       

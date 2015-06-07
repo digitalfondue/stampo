@@ -18,6 +18,7 @@ package ch.digitalfondue.stampo;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Collections;
 
 import org.junit.Assert;
 import org.junit.Test;
@@ -40,7 +41,7 @@ public class StaticDirectoryTest {
       Assert.assertFalse(Files.exists(iod.outputDir.resolve("test.txt")));
       Assert.assertFalse(Files.exists(iod.outputDir.resolve("css/test.css")));
       
-      Stampo stampo = new Stampo(iod.inputDir, iod.outputDir);
+      Stampo stampo = new Stampo(iod.inputDir, iod.outputDir, Collections.emptyMap());
       stampo.build();
 
       Assert.assertTrue(Files.exists(iod.outputDir.resolve("test.txt")));

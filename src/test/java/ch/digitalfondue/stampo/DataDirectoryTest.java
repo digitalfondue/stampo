@@ -22,6 +22,7 @@ import static java.nio.file.Files.write;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.util.Collections;
 
 import org.junit.Assert;
 import org.junit.Test;
@@ -51,7 +52,7 @@ public class DataDirectoryTest {
       //multiple yaml object separated with "---"
       write(iod.inputDir.resolve("data/test/test-multiple.yaml"), "---\nkey: value3\n---\nkey: value4\n---".getBytes(StandardCharsets.UTF_8));
       
-      Stampo stampo = new Stampo(iod.inputDir, iod.outputDir);
+      Stampo stampo = new Stampo(iod.inputDir, iod.outputDir, Collections.emptyMap());
       stampo.build();
       
       Assert.assertEquals("value1 value2 value3 value4 ",

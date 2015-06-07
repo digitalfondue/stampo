@@ -38,6 +38,7 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
@@ -52,6 +53,7 @@ import ch.digitalfondue.stampo.resource.ResourceFactory;
 import ch.digitalfondue.stampo.resource.RootResource;
 import ch.digitalfondue.stampo.taxonomy.Taxonomy;
 
+//TODO: refactor, cleanup...
 public class IncludeAllPaginator implements Directive {
   
   private static Comparator<FileOrDir> FILE_OR_DIR_COMPARATOR = Comparator.comparing(FileOrDir::getName, new AlphaNumericStringComparator(Locale.ENGLISH));
@@ -107,6 +109,7 @@ public class IncludeAllPaginator implements Directive {
     int maxDepth = (Integer) resource.getMetadata().getRawMap().getOrDefault("paginate-at-depth", 1);
     
     boolean includeChildSummary = (Boolean) resource.getMetadata().getRawMap().getOrDefault("include-child-summary", false); 
+    boolean addNumberingToTitles = (Boolean) resource.getMetadata().getRawMap().getOrDefault("add-numbering-to-titles", false);
 
 
     List<IncludeAllPage> pages = flattenAndGroupRecursively(toIncludeAllDir, maxDepth, 1);
@@ -117,8 +120,9 @@ public class IncludeAllPaginator implements Directive {
             .map(iap -> addOutputInformation(iap, defaultOutputPath, includeAllBasePath, locale))
             .collect(Collectors.toList());
     
-    List<IncludeAllPageWithPagination> pagesWithPagination = addPaginationInformation(pagesWithOutput, includeChildSummary);
-    return pagesWithPagination.stream().map(fl -> toPathAndModuleSupplier(fl, locale)).collect(Collectors.toList());
+    IncludeAllPageAndToc pagesAndToc = addPaginationInformation(pagesWithOutput, includeChildSummary);
+    
+    return pagesAndToc.pages.stream().map(fl -> toPathAndModuleSupplier(fl, locale, pagesAndToc.toc, addNumberingToTitles)).collect(Collectors.toList());
   }
 
   /*
@@ -219,11 +223,22 @@ public class IncludeAllPaginator implements Directive {
 
     return new IncludeAllPageWithOutput(pages, virtualResource, finalOutputPath, locale);
   }
+  
+  private static class IncludeAllPageAndToc {
+    final List<IncludeAllPageWithPagination> pages;
+    final List<HeaderWithPosition> toc;
+    
+    
+    IncludeAllPageAndToc(List<IncludeAllPageWithPagination> pages, List<HeaderWithPosition> toc) {
+      this.pages = pages;
+      this.toc = toc;
+    }
+  }
 
   /*
    * Augment the objects with pagination information. It's done in a separate step as we need the previous and next page reference. 
    */
-  private List<IncludeAllPageWithPagination> addPaginationInformation(List<IncludeAllPageWithOutput> pages, boolean includeChildSummary) {
+  private IncludeAllPageAndToc addPaginationInformation(List<IncludeAllPageWithOutput> pages, boolean includeChildSummary) {
 
     List<Header> globalToc = new ArrayList<>();
 
@@ -232,6 +247,8 @@ public class IncludeAllPaginator implements Directive {
       if (!pages.get(i).files.isEmpty()) {
 
         IncludeAllPageWithOutput current = pages.get(i);
+        
+        System.err.println(current.outputPath);
         
         int summaryPositionBegin = globalToc.size();
         
@@ -269,10 +286,41 @@ public class IncludeAllPaginator implements Directive {
 
         Pagination pagination = new Pagination(i + 1, pages.size(), current.depth, new Link(previousPageUrl, 
             previousPageTitle), new Link(nextPageUrl, nextPageTitle), current.title.orElse(null), breadcrumbs);
-        processedResources.add(new IncludeAllPageWithPagination(current, pagination, globalToc, summaryPositionBegin, summaryPositionEnd));
+        processedResources.add(new IncludeAllPageWithPagination(current, pagination, summaryPositionBegin, summaryPositionEnd));
       }
     }
-    return processedResources;
+    return new IncludeAllPageAndToc(processedResources, addPositionsToGlobalToc(globalToc));
+  }
+  
+  private List<HeaderWithPosition> addPositionsToGlobalToc(List<Header> globalToc) {
+    
+    List<HeaderWithPosition> res = new ArrayList<>();
+    
+    for(int i = 0; i < globalToc.size(); i++) {
+      
+      
+      //get the relative position of the first header element
+      int startCnt = 1;
+      final int firstLevel = globalToc.get(i).level;
+      
+      List<Integer> positions = new ArrayList<Integer>();
+      
+      for (int j = i - 1; j >= 0; j--) {
+        Header current = globalToc.get(j);
+        if(current.level == firstLevel) {
+          startCnt++;
+        } else if(current.level < firstLevel) {
+          positions.addAll(res.get(j).positions);
+          break;
+        }
+      }
+      
+      positions.add(startCnt);
+      
+      res.add(new HeaderWithPosition(globalToc.get(i), positions));
+    }
+    
+    return res;
   }
   
   private List<Link> extractBreadcrumbs(List<IncludeAllPageWithOutput> pages, int currentPosition, Path outputPath) {
@@ -293,25 +341,13 @@ public class IncludeAllPaginator implements Directive {
   }
   
   //
-  private static String htmlSummary(List<Header> globalToc, int positionStart, int positionEnd, Path path) {
+  private static String htmlSummary(List<HeaderWithPosition> globalToc, int positionStart, int positionEnd, Path path, boolean addNumberingToTitles) {
     Stack<Integer> stack = new Stack<>();
     StringBuilder sbStack = new StringBuilder();
-    
-    //get the relative position of the first header element
-    int startCnt = 1;
-    final int firstLevel = globalToc.get(positionStart).level;
-    for (int i = positionStart - 1; i >= 0; i--) {
-      Header current = globalToc.get(i);
-      if(current.level == firstLevel) {
-        startCnt++;
-      } else if(current.level < firstLevel) {
-        break;
-      }
-    }
    
-    List<Header> summary = globalToc.subList(positionStart, positionEnd);
+    List<HeaderWithPosition> summary = globalToc.subList(positionStart, positionEnd);
     
-    for (Header h : summary) {
+    for (HeaderWithPosition h : summary) {
       if (stack.isEmpty() || stack.peek().intValue() < h.level) {
         stack.push(h.level);
         sbStack.append("<ol>");
@@ -321,9 +357,17 @@ public class IncludeAllPaginator implements Directive {
           sbStack.append("</ol>\n");
         }
       }
-      sbStack.append("<li>").append("<a href=\"")
+      sbStack.append("<li>");
+      if(addNumberingToTitles) {
+        sbStack.append("<span class=\"stampo-heading-li-number\">")
+            .append(h.positions.stream().map(Object::toString).collect(Collectors.joining(".")))
+            .append("</span>");
+      }
+      
+      sbStack.append("<a href=\"")
           .append(PathUtils.relativePathTo(h.outputPath, path)).append("#").append(h.id)
-          .append("\">").append(h.name).append("</a>\n");
+          .append("\">")
+          .append(h.name).append("</a>\n");
     }
     //
     for (int i = 0; i < stack.size(); i++) {
@@ -331,20 +375,20 @@ public class IncludeAllPaginator implements Directive {
     }
     
     //add attribute start to first ol
-    sbStack.replace(3, 3, " start=\"" + startCnt + "\"");
+    sbStack.replace(3, 3, " start=\"" + summary.stream().findFirst().filter(hwp -> !hwp.positions.isEmpty()).map(hwp -> hwp.positions.get(hwp.positions.size() -1)).orElse(1) + "\"");
     
     return sbStack.toString();
   }
 
 
-  private PathAndModelSupplier toPathAndModuleSupplier(IncludeAllPageWithPagination page, Locale locale) {
+  private PathAndModelSupplier toPathAndModuleSupplier(IncludeAllPageWithPagination page, Locale locale, List<HeaderWithPosition> globalToc, boolean addNumberingToTitles) {
 
     Supplier<Map<String, Object>> supplier = () -> {
           Map<String, Object> additionalModel = new HashMap<>();
-          additionalModel.put("includeAllResult", page.page.content());
+          additionalModel.put("includeAllResult", page.contentWithTransformedHeading(globalToc, addNumberingToTitles));
           additionalModel.put("pagination", page.pagination);
-          additionalModel.put("summary", htmlSummary(page.globalToc, page.summaryPositionStart, page.summaryPositionEnd, page.page.outputPath));
-          additionalModel.put("globalToc", htmlSummary(page.globalToc, 0, page.globalToc.size(), page.page.outputPath));
+          additionalModel.put("summary", htmlSummary(globalToc, page.summaryPositionStart, page.summaryPositionEnd, page.page.outputPath, addNumberingToTitles));
+          additionalModel.put("globalToc", htmlSummary(globalToc, 0, globalToc.size(), page.page.outputPath, addNumberingToTitles));
           return ModelPreparer.prepare(root, configuration, locale, page.page.virtualResource,
               page.page.outputPath, taxonomy, additionalModel);
         };
@@ -432,18 +476,40 @@ public class IncludeAllPaginator implements Directive {
   private static class IncludeAllPageWithPagination {
     final IncludeAllPageWithOutput page;
     final Pagination pagination;
-    final List<Header> globalToc;
     final int summaryPositionStart;
     final int summaryPositionEnd;
 
-    IncludeAllPageWithPagination(IncludeAllPageWithOutput page, Pagination pagination,
-        List<Header> globalToc, int summaryPositionStart, int summaryPositionEnd) {
+    IncludeAllPageWithPagination(IncludeAllPageWithOutput page, Pagination pagination, int summaryPositionStart, int summaryPositionEnd) {
       this.page = page;
       this.pagination = pagination;
-      this.globalToc = globalToc;
       this.summaryPositionStart = summaryPositionStart;
       this.summaryPositionEnd = summaryPositionEnd;
     }
+    
+    String contentWithTransformedHeading(List<HeaderWithPosition> globalToc, boolean addNumberingToTitles) {
+      
+      if (addNumberingToTitles) {
+
+        List<HeaderWithPosition> summary = globalToc.subList(summaryPositionStart, summaryPositionEnd);
+
+        Document doc = Jsoup.parse(page.content());
+        Elements titles = doc.select("h1,h2,h3,h4,h5,h6");
+        for (int i = 0; i < summary.size() && i < titles.size(); i++) {
+          Element h = titles.get(i);
+          String tocNumber = "<span class=\"stampo-heading-toc-number\">"+ summary.get(i).positions.stream().map(Object::toString).collect(Collectors.joining(".")) + "</span>";
+          if(h.childNodeSize() > 0) {
+            h.childNode(0).before(tocNumber);
+          } else {
+            h.append(tocNumber);
+          }
+        }
+
+        return doc.html();
+      } else {
+        return page.content();
+      }
+    }
+    
   }
 
   static class Header {
@@ -457,6 +523,16 @@ public class IncludeAllPaginator implements Directive {
       this.name = name;
       this.id = id;
       this.outputPath = outputPath;
+    }
+  }
+  
+  static class HeaderWithPosition extends Header {
+    
+    final List<Integer> positions;
+
+    HeaderWithPosition(Header header, List<Integer> positions) {
+      super(header.level, header.name, header.id, header.outputPath);
+      this.positions = positions;
     }
   }
 

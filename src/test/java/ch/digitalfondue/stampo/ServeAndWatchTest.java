@@ -24,6 +24,7 @@ import java.io.IOException;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.util.Collections;
 import java.util.concurrent.CountDownLatch;
 
 import org.junit.Assert;
@@ -71,13 +72,13 @@ public class ServeAndWatchTest {
       //
 
 
-      Stampo stampo = new Stampo(iod.inputDir, iod.outputDir);
+      Stampo stampo = new Stampo(iod.inputDir, iod.outputDir, Collections.emptyMap());
       
       CountDownLatch cdl = new CountDownLatch(1);
 
       ServeAndWatch sw =
           new ServeAndWatch(address, port, true, true, stampo.getConfiguration(), () -> {
-            new Stampo(iod.inputDir, iod.outputDir).build();
+            new Stampo(iod.inputDir, iod.outputDir, Collections.emptyMap()).build();
             cdl.countDown();
           }, false);
       sw.start();

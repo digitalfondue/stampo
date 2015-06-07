@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.FileSystem;
 import java.nio.file.Path;
+import java.util.Collections;
 
 import org.junit.Test;
 
@@ -45,7 +46,7 @@ public class ExpectedErrorsTest {
       createDirectories(baseInputDir);
       createDirectories(outputDir);
 
-      Stampo stampo = new Stampo(baseInputDir, outputDir);
+      Stampo stampo = new Stampo(baseInputDir, outputDir, Collections.emptyMap());
       stampo.build();
     }
   }
@@ -57,7 +58,7 @@ public class ExpectedErrorsTest {
       write(iod.inputDir.resolve("configuration.yaml"), asList("wrong=yamlformat"),
           StandardCharsets.UTF_8);
 
-      Stampo stampo = new Stampo(iod.inputDir, iod.outputDir);
+      Stampo stampo = new Stampo(iod.inputDir, iod.outputDir, Collections.emptyMap());
       stampo.build();
     }
   }
@@ -72,7 +73,7 @@ public class ExpectedErrorsTest {
           StandardCharsets.UTF_8);
       write(iod.inputDir.resolve("content/index.md"), asList("*content as markdown*"),
           StandardCharsets.UTF_8);
-      Stampo stampo = new Stampo(iod.inputDir, iod.outputDir);
+      Stampo stampo = new Stampo(iod.inputDir, iod.outputDir, Collections.emptyMap());
 
       stampo.build();
     }
@@ -87,7 +88,7 @@ public class ExpectedErrorsTest {
           StandardCharsets.UTF_8);
       write(iod.inputDir.resolve("content/index.md"), asList("*content as markdown*"),
           StandardCharsets.UTF_8);
-      Stampo stampo = new Stampo(iod.inputDir, iod.outputDir);
+      Stampo stampo = new Stampo(iod.inputDir, iod.outputDir, Collections.emptyMap());
 
       stampo.build();
     }
@@ -100,7 +101,7 @@ public class ExpectedErrorsTest {
       // error in template: unclosed output expression
       write(iod.inputDir.resolve("content/index.html.peb"), asList("{{metadata"),
           StandardCharsets.UTF_8);
-      Stampo stampo = new Stampo(iod.inputDir, iod.outputDir);
+      Stampo stampo = new Stampo(iod.inputDir, iod.outputDir, Collections.emptyMap());
 
       stampo.build();
     }
@@ -112,7 +113,7 @@ public class ExpectedErrorsTest {
       // error in template: unclosed output expression
       write(iod.inputDir.resolve("content/index.html.ftl"), asList("${metadata"),
           StandardCharsets.UTF_8);
-      Stampo stampo = new Stampo(iod.inputDir, iod.outputDir);
+      Stampo stampo = new Stampo(iod.inputDir, iod.outputDir, Collections.emptyMap());
 
       stampo.build();
     }

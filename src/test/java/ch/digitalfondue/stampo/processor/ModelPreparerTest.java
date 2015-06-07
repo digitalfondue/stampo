@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import org.junit.Assert;
@@ -48,7 +49,7 @@ public class ModelPreparerTest {
         fileNames.add(name);
       }
 
-      Stampo stampo = new Stampo(iod.inputDir, iod.outputDir);
+      Stampo stampo = new Stampo(iod.inputDir, iod.outputDir, Collections.emptyMap());
       RootResource staticDirResource =
           ModelPreparer.staticResources(stampo.getConfiguration()).get();
 

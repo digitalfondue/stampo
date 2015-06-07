@@ -17,7 +17,9 @@ package ch.digitalfondue.stampo.command;
 
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import ch.digitalfondue.stampo.Stampo;
@@ -50,6 +52,13 @@ public abstract class Command implements Runnable {
       distPath.add(path);
     }
   }
+  
+  @Parameter(description = "hide draft", names = "--hide-draft")
+  protected boolean hideDraft = false;
+  
+  public void setHideDraft(boolean hideDraft) {
+    this.hideDraft = hideDraft;
+  }
 
   @Parameter(description = "print stack trace", names = "--debug")
   protected boolean printStackTrace = false;
@@ -81,14 +90,20 @@ public abstract class Command implements Runnable {
       System.exit(1);
     }
   }
+  
+  public Map<String, Object> getConfigurationOverride() {
+    Map<String, Object> conf = new HashMap<>();
+    conf.put("hide-draft", hideDraft);
+    return conf;
+  }
 
   abstract void runWithPaths(String inputPath, String outputhPath);
   
   
-  static Runnable getBuildRunnable(String inputPath, String outputPath) {
+  static Runnable getBuildRunnable(String inputPath, String outputPath, Map<String, Object> configurationOverride) {
     return () -> {
       long start = System.currentTimeMillis();
-      Stampo s = new Stampo(Paths.get(inputPath), Paths.get(outputPath));
+      Stampo s = new Stampo(Paths.get(inputPath), Paths.get(outputPath), configurationOverride);
       s.build();
       long end = System.currentTimeMillis();
       System.out.println("built in " + (end - start) + "ms, output in "

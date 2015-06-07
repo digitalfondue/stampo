@@ -22,6 +22,7 @@ import static java.nio.file.Files.write;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.util.Collections;
 
 import org.junit.Assert;
 import org.junit.Test;
@@ -43,7 +44,7 @@ public class LayoutTest {
       write(iod.inputDir.resolve("content/index.md"),
           "*content as markdown*".getBytes(StandardCharsets.UTF_8));
 
-      Stampo stampo = new Stampo(iod.inputDir, iod.outputDir);
+      Stampo stampo = new Stampo(iod.inputDir, iod.outputDir, Collections.emptyMap());
       stampo.build();
       
       Assert.assertEquals("layout here <p><em>content as markdown</em></p> layout here",
@@ -59,7 +60,7 @@ public class LayoutTest {
           "layout here ${content} layout here".getBytes(StandardCharsets.UTF_8));
       write(iod.inputDir.resolve("content/index.md"),
           "*content as markdown*".getBytes(StandardCharsets.UTF_8));
-      Stampo stampo = new Stampo(iod.inputDir, iod.outputDir);
+      Stampo stampo = new Stampo(iod.inputDir, iod.outputDir, Collections.emptyMap());
       stampo.build();
       
       Assert.assertEquals("layout here <p><em>content as markdown</em></p> layout here",

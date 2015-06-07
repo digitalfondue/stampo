@@ -35,6 +35,7 @@ import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -71,28 +72,34 @@ public class Stampo {
 
   
   @SuppressWarnings("unchecked")
-  public Stampo(Path baseInputDir, Path outputDir, List<Renderer> renderers) {
+  public Stampo(Path baseInputDir, Path outputDir, List<Renderer> renderers, Map<String, Object> configurationOverride) {
     Path configFile = baseInputDir.resolve("configuration.yaml");
+    
+    Map<String, Object> finalConf = new HashMap<>();
     
     if (exists(configFile)) {
       Yaml yaml = new Yaml();
       try (InputStream is = newInputStream(configFile)) {
         Map<String, Object> c = ofNullable((Map<String, Object>) yaml.loadAs(is, Map.class)).orElse(emptyMap());
-        this.configuration = new StampoGlobalConfiguration(c, baseInputDir, outputDir, renderers);
+        
+        finalConf.putAll(c);
+        finalConf.putAll(configurationOverride);
+        
+        this.configuration = new StampoGlobalConfiguration(finalConf, baseInputDir, outputDir, renderers);
       } catch (IOException ioe) {
         throw new IllegalArgumentException(ioe);
       } catch (YAMLException pe) {
         throw new YamlParserException(configFile, pe);
       }
     } else {
-      this.configuration =
-          new StampoGlobalConfiguration(emptyMap(), baseInputDir, outputDir, renderers);
+      finalConf.putAll(configurationOverride);
+      this.configuration = new StampoGlobalConfiguration(finalConf, baseInputDir, outputDir, renderers);
     }
   }
 
   
-  public Stampo(Path baseInputDir, Path outputDir) {
-    this(baseInputDir, outputDir, Arrays.asList(new PebbleRenderer(), new MarkdownRenderer(), new FreemarkerRenderer()));
+  public Stampo(Path baseInputDir, Path outputDir, Map<String, Object> configurationOverride) {
+    this(baseInputDir, outputDir, Arrays.asList(new PebbleRenderer(), new MarkdownRenderer(), new FreemarkerRenderer()), configurationOverride);
   }
 
   public StampoGlobalConfiguration getConfiguration() {

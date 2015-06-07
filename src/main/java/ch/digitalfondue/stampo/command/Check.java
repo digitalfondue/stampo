@@ -43,7 +43,7 @@ public class Check extends Command {
 
   private void buildAndPrintResult(String inputPath, FileSystem fs) {
     Path output = fs.getPath("output");
-    Stampo stampo = new Stampo(Paths.get(inputPath), output);
+    Stampo stampo = new Stampo(Paths.get(inputPath), output, getConfigurationOverride());
     
     stampo.build((file, layout) -> {
       return String.format(
