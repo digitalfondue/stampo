@@ -8,8 +8,6 @@ TODO:
 
 - refactor the whole rendering pipeline
 
-- draft support
-
 - support a "documentation use case".
 	- TBD:
 		- tests

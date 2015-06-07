@@ -15,27 +15,10 @@
  */
 package ch.digitalfondue.stampo.command;
 
-import java.util.List;
-
+import joptsimple.OptionParser;
 import joptsimple.OptionSet;
 
-public class Build extends Command {
-  
-  public Build() {
-    super();
-  }
-  
-  public Build(List<String> args) {
-    this.srcPath = args;
-  }
-
-  @Override
-  void runWithPaths(String inputPath, String outputPath) {
-    getBuildRunnable(inputPath, outputPath, getConfigurationOverride()).run();
-  }
-
-  @Override
-  public void assign(OptionSet optionSet) {
-    super.assign(optionSet);
-  }
+public interface Opts extends Runnable {
+  OptionParser getOptionParser();
+  void assign(OptionSet optionSet);
 }

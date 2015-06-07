@@ -15,10 +15,10 @@
  */
 package ch.digitalfondue.stampo.command;
 
-import com.beust.jcommander.Parameters;
+import joptsimple.OptionParser;
+import joptsimple.OptionSet;
 
-@Parameters(separators = "=")
-public class Help implements Runnable {
+public class Help implements Opts {
 
   @Override
   public void run() {
@@ -33,6 +33,15 @@ public class Help implements Runnable {
                      + "                        listen to localhost:8080");
     System.out.println("  check                 Check if the site build correctly");
     System.out.println("  help                  This help");
+  }
+
+  @Override
+  public OptionParser getOptionParser() {
+    return new OptionParser();
+  }
+
+  @Override
+  public void assign(OptionSet optionSet) {
   }
   
 }

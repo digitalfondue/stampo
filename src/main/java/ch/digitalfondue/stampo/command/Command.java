@@ -22,6 +22,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import joptsimple.OptionParser;
+import joptsimple.OptionSet;
+import joptsimple.OptionSpec;
 import ch.digitalfondue.stampo.Stampo;
 import ch.digitalfondue.stampo.exception.ConfigurationException;
 import ch.digitalfondue.stampo.exception.LayoutException;
@@ -29,14 +32,44 @@ import ch.digitalfondue.stampo.exception.MissingDirectoryException;
 import ch.digitalfondue.stampo.exception.TemplateException;
 import ch.digitalfondue.stampo.exception.YamlParserException;
 
-import com.beust.jcommander.Parameter;
-import com.beust.jcommander.Parameters;
-
-@Parameters(separators = "=")
-public abstract class Command implements Runnable {
+public abstract class Command implements Opts {
   
-  @Parameter(description = "src path", arity = 1)
+  protected final OptionParser optionParser = new OptionParser();
+  
+  //TODO: refactor away the List for src and dist
   protected List<String> srcPath = new ArrayList<>();
+  protected List<String> distPath = new ArrayList<>();
+  
+  protected boolean hideDraft = false;
+  protected boolean printStackTrace = false;
+  
+  //
+  private final OptionSpec<String> srcParam;
+  private final OptionSpec<String> distParam;
+  private final OptionSpec<Boolean> hideDraftParam;
+  private final OptionSpec<Boolean> debugParam;
+  
+  Command() {
+    srcParam = optionParser.accepts("src").withRequiredArg().ofType(String.class);
+    distParam = optionParser.accepts("dist").withRequiredArg().ofType(String.class);
+    hideDraftParam = optionParser.accepts("hide-draft").withRequiredArg().ofType(Boolean.class).defaultsTo(false);
+    debugParam = optionParser.accepts("debug").withRequiredArg().ofType(Boolean.class).defaultsTo(false);
+  }
+  
+  @Override
+  public void assign(OptionSet optionSet) {
+    
+    if(optionSet.hasArgument(srcParam)) {
+      setSrcPath(optionSet.valueOf(srcParam));
+    }
+    
+    if(optionSet.hasArgument(distParam)) {
+      setDistPath(optionSet.valueOf(distParam));
+    }
+    
+    hideDraft = optionSet.valueOf(hideDraftParam);
+    printStackTrace = optionSet.valueOf(debugParam);
+  }
   
   public void setSrcPath(String path) {
     if(srcPath.size() == 0) {
@@ -44,8 +77,7 @@ public abstract class Command implements Runnable {
     }
   }
   
-  @Parameter(description = "dist path", names = "--dist")
-  protected List<String> distPath = new ArrayList<>();
+  
   
   public void setDistPath(String path) {
     if(distPath.size() == 0) {
@@ -53,15 +85,13 @@ public abstract class Command implements Runnable {
     }
   }
   
-  @Parameter(description = "hide draft", names = "--hide-draft")
-  protected boolean hideDraft = false;
+  
   
   public void setHideDraft(boolean hideDraft) {
     this.hideDraft = hideDraft;
   }
 
-  @Parameter(description = "print stack trace", names = "--debug")
-  protected boolean printStackTrace = false;
+  
 
   private String inputPath() {
     return Paths.get(this.srcPath.stream().findFirst().orElse("."))
@@ -121,5 +151,14 @@ public abstract class Command implements Runnable {
 
   public boolean isPrintStackTrace() {
     return printStackTrace;
+  }
+  
+  @Override
+  public OptionParser getOptionParser() {
+    return optionParser;
+  }
+
+  public boolean isHideDraft() {
+    return hideDraft;
   }
 }

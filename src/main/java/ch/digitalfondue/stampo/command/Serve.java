@@ -17,44 +17,62 @@ package ch.digitalfondue.stampo.command;
 
 import java.nio.file.Paths;
 
+import joptsimple.OptionSet;
+import joptsimple.OptionSpec;
 import ch.digitalfondue.stampo.ServeAndWatch;
 import ch.digitalfondue.stampo.Stampo;
 
-import com.beust.jcommander.Parameter;
-import com.beust.jcommander.Parameters;
-
-@Parameters(separators = "=")
 public class Serve extends Command {
-  @Parameter(description = "port", names = "--port")
+  
+  public Serve() {
+    super();
+    portParam = optionParser.accepts("port").withRequiredArg().ofType(Integer.class).defaultsTo(8080);
+    hostnameParam = optionParser.accepts("hostname").withRequiredArg().ofType(String.class).defaultsTo("localhost");
+    disableRebuildOnChangeParam = optionParser.accepts("disable-rebuild-on-change").withRequiredArg().ofType(Boolean.class).defaultsTo(false);
+    disableAutoReloadParam = optionParser.accepts("disable-auto-reload").withRequiredArg().ofType(Boolean.class).defaultsTo(false);
+    blockingOnStartParam = optionParser.accepts("blocking-on-start").withRequiredArg().ofType(Boolean.class).defaultsTo(false);
+  }
+  
   private int port = 8080;
+  private String hostname = "localhost";
+  private boolean disableRebuildOnChange = false;
+  private boolean disableAutoReload = false;
+  private boolean blockingOnStart = false;
+  
+  //
+  private final OptionSpec<Integer> portParam;
+  private final OptionSpec<String> hostnameParam;
+  private final OptionSpec<Boolean> disableRebuildOnChangeParam;
+  private final OptionSpec<Boolean> disableAutoReloadParam;
+  private final OptionSpec<Boolean> blockingOnStartParam;
+  //
+  
+  @Override
+  public void assign(OptionSet optionSet) {
+    super.assign(optionSet);
+    port = optionSet.valueOf(portParam);
+    hostname = optionSet.valueOf(hostnameParam);
+    disableRebuildOnChange = optionSet.valueOf(disableRebuildOnChangeParam);
+    disableAutoReload = optionSet.valueOf(disableAutoReloadParam);
+    blockingOnStart = optionSet.valueOf(blockingOnStartParam);
+  }
   
   public void setPort(int port) {
     this.port = port;
   }
-
-  @Parameter(description = "hostname", names = "--hostname")
-  private String hostname = "localhost";
   
   public void setHostname(String hostname) {
     this.hostname = hostname;
   }
-
-  @Parameter(description = "disable rebuild on change", names = "--disable-rebuild-on-change")
-  private boolean disableRebuildOnChange = false;
   
   public void setDisableRebuildOnChange(boolean flag) {
     disableRebuildOnChange = flag;
   }
   
-  @Parameter(description = "disable auto reload", names = "--disable-auto-reload")
-  private boolean disableAutoReload = false;
-  
   public void setDisableAutoReload(boolean flag) {
     disableAutoReload = flag;
   }
   
-  @Parameter(description = "block thread on start", names = "--blocking-on-start")
-  private boolean blockingOnStart = false;
   
   public void setBlockingOnStart(boolean flag) {
 	  blockingOnStart = flag;

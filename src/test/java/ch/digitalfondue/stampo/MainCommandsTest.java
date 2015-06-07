@@ -42,7 +42,7 @@ public class MainCommandsTest {
 
   @Test
   public void callDefaultWithPath() {
-    Runnable r = StampoMain.fromParameters(of("/my/path"));
+    Runnable r = StampoMain.fromParameters(of("--src=/my/path"));
     Build b = (Build) r;
     Assert.assertTrue(b.getSrcPath().size() == 1);
     Assert.assertEquals("/my/path", b.getSrcPath().get(0));
@@ -55,9 +55,15 @@ public class MainCommandsTest {
     Assert.assertTrue(r instanceof Build);
     Assert.assertTrue(((Build) r).getSrcPath().isEmpty());
     
-    Runnable r2 = StampoMain.fromParameters(of("build", "/my/path"));
+    Runnable r2 = StampoMain.fromParameters(of("build", "--src=/my/path"));
     Assert.assertTrue(r2 instanceof Build);
     Assert.assertEquals("/my/path", ((Build) r2).getSrcPath().get(0));
+    Assert.assertEquals(false, ((Build) r2).isHideDraft());
+    
+    Runnable r3 = StampoMain.fromParameters(of("build", "--src=/my/path", "--hide-draft=true"));
+    Assert.assertTrue(r3 instanceof Build);
+    Assert.assertEquals("/my/path", ((Build) r3).getSrcPath().get(0));
+    Assert.assertEquals(true, ((Build) r3).isHideDraft());
   }
   
   
@@ -73,7 +79,7 @@ public class MainCommandsTest {
     Assert.assertTrue(r instanceof Check);
     Assert.assertTrue(((Check) r).getSrcPath().isEmpty());
     
-    Runnable r2 = StampoMain.fromParameters(of("check", "/my/path"));
+    Runnable r2 = StampoMain.fromParameters(of("check", "--src=/my/path"));
     Assert.assertTrue(r2 instanceof Check);
     Assert.assertEquals("/my/path", ((Check) r2).getSrcPath().get(0));
   }
@@ -85,16 +91,16 @@ public class MainCommandsTest {
     Assert.assertTrue(r instanceof Serve);
     checkServeParams(((Serve) r), Collections.emptyList(), 8080, "localhost", false, false);
     
-    checkServeParams(((Serve) StampoMain.fromParameters(of("serve", "/my/path"))), Collections.singletonList("/my/path"), 8080, "localhost", false, false);
+    checkServeParams(((Serve) StampoMain.fromParameters(of("serve", "--src=/my/path"))), Collections.singletonList("/my/path"), 8080, "localhost", false, false);
     
-    checkServeParams(((Serve) StampoMain.fromParameters(of("serve", "--port=4242", "/my/path"))), Collections.singletonList("/my/path"), 4242, "localhost", false, false);
+    checkServeParams(((Serve) StampoMain.fromParameters(of("serve", "--port=4242", "--src=/my/path"))), Collections.singletonList("/my/path"), 4242, "localhost", false, false);
     
-    checkServeParams(((Serve) StampoMain.fromParameters(of("serve", "--port=4242", "--hostname=derpderp", "/my/path"))), Collections.singletonList("/my/path"), 4242, "derpderp", false, false);
+    checkServeParams(((Serve) StampoMain.fromParameters(of("serve", "--port=4242", "--hostname=derpderp", "--src=/my/path"))), Collections.singletonList("/my/path"), 4242, "derpderp", false, false);
     
     
-    checkServeParams(((Serve) StampoMain.fromParameters(of("serve", "--disable-rebuild-on-change"))), Collections.emptyList(), 8080, "localhost", true, false);
+    checkServeParams(((Serve) StampoMain.fromParameters(of("serve", "--disable-rebuild-on-change=true"))), Collections.emptyList(), 8080, "localhost", true, false);
     
-    checkServeParams(((Serve) StampoMain.fromParameters(of("serve", "--disable-rebuild-on-change", "--disable-auto-reload"))), Collections.emptyList(), 8080, "localhost", true, true);
+    checkServeParams(((Serve) StampoMain.fromParameters(of("serve", "--disable-rebuild-on-change=true", "--disable-auto-reload=true"))), Collections.emptyList(), 8080, "localhost", true, true);
     
   }
   
