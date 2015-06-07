@@ -15,36 +15,45 @@
  */
 package ch.digitalfondue.stampo;
 
-import static java.util.Optional.ofNullable;
-
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.logging.LogManager;
+import java.util.stream.Collectors;
 
+import joptsimple.OptionSet;
 import ch.digitalfondue.stampo.command.Build;
 import ch.digitalfondue.stampo.command.Check;
 import ch.digitalfondue.stampo.command.Help;
+import ch.digitalfondue.stampo.command.Opts;
 import ch.digitalfondue.stampo.command.Serve;
-
-import com.beust.jcommander.JCommander;
 
 public class StampoMain {
   
   static Runnable fromParameters(String[] args) {
-    Map<String, Runnable> commands = new HashMap<>();
+    Map<String, Opts> commands = new HashMap<>();
 
     commands.put("serve", new Serve());
     commands.put("check", new Check());
     commands.put("build", new Build());
     commands.put("help", new Help());
-
-    JCommander jc = new JCommander();
-    commands.forEach((k, v) -> jc.addCommand(k, v));
-
-    jc.parseWithoutValidation(args);
-
-    return ofNullable(jc.getParsedCommand()).map(commands::get).orElse(new Build(Arrays.asList(args)));
+    
+    
+    List<String> params = new ArrayList<>(args.length == 0 ? Arrays.asList("build") : Arrays.asList(args));
+    params.stream().findFirst().ifPresent(command -> {
+      if(!commands.containsKey(command)) {
+        params.add(0, "build");
+      }
+    });
+    
+    Opts command = commands.get(params.get(0));
+    
+    OptionSet parsed = command.getOptionParser().parse(params.stream().skip(1).collect(Collectors.toList()).toArray(new String[] {}));
+    command.assign(parsed);
+    
+    return command;
   }
 
 
