@@ -117,7 +117,7 @@ public class IncludeAllPaginator implements Directive {
     List<IncludeAllPage> pagesWithDepth0Handled = handleDepth0Page(pages, resource, maxDepth, defaultOutputPath);
     
     List<IncludeAllPageWithOutput> pagesWithOutput = pagesWithDepth0Handled.stream()
-            .map(iap -> addOutputInformation(iap, defaultOutputPath, includeAllBasePath, locale))
+            .map(iap -> addOutputInformation(iap, resource, includeAllBasePath, locale))
             .collect(Collectors.toList());
     
     IncludeAllPageAndToc pagesAndToc = addPaginationInformation(pagesWithOutput, includeChildSummary);
@@ -207,16 +207,16 @@ public class IncludeAllPaginator implements Directive {
   
   
   // generate the final output path
-  private IncludeAllPageWithOutput addOutputInformation(IncludeAllPage pages, Path defaultBaseOutputPath, Path includeAllBasePath, Locale locale) {
+  private IncludeAllPageWithOutput addOutputInformation(IncludeAllPage pages, FileResource baseResource, Path includeAllBasePath, Locale locale) {
 
     // depth = 0 is the file that has the include-all directive
     if (pages.depth == 0) {
       return new IncludeAllPageWithOutput(pages, pages.files.get(0), pages.files.get(0).getPath(), locale);
     }
 
-    Path parentDefaultOutputPath = defaultBaseOutputPath.getParent();
+    Path baseResourceParentPath = baseResource.getPath().getParent();
     FileResource virtualResource = pages.files.stream().findFirst()
-        .map(fr -> new VirtualPathFileResource(parentDefaultOutputPath.resolve(includeAllBasePath.relativize(fr.getPath()).toString()), fr))
+        .map(fr -> new VirtualPathFileResource(baseResourceParentPath.resolve(includeAllBasePath.relativize(fr.getPath()).toString()), fr))
         .orElseThrow(IllegalStateException::new);
 
     Path finalOutputPath = outputPathExtractor.apply(virtualResource).normalize();
@@ -247,8 +247,6 @@ public class IncludeAllPaginator implements Directive {
       if (!pages.get(i).files.isEmpty()) {
 
         IncludeAllPageWithOutput current = pages.get(i);
-        
-        System.err.println(current.outputPath);
         
         int summaryPositionBegin = globalToc.size();
         
@@ -375,7 +373,9 @@ public class IncludeAllPaginator implements Directive {
     }
     
     //add attribute start to first ol
-    sbStack.replace(3, 3, " start=\"" + summary.stream().findFirst().filter(hwp -> !hwp.positions.isEmpty()).map(hwp -> hwp.positions.get(hwp.positions.size() -1)).orElse(1) + "\"");
+    if(sbStack.length() >= 3) {
+      sbStack.replace(3, 3, " start=\"" + summary.stream().findFirst().filter(hwp -> !hwp.positions.isEmpty()).map(hwp -> hwp.positions.get(hwp.positions.size() -1)).orElse(1) + "\"");
+    }
     
     return sbStack.toString();
   }

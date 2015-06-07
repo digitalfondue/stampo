@@ -1,0 +1,38 @@
+---
+directive: include-all
+include-all: doc/
+paginate-at-depth: 2
+---
+
+{{globalToc|raw}}
+
+<hr>
+
+<h1>
+	{% for link in pagination.breadcrumbs %}<a href="{{link.url}}">{{link.title}}</a>{% endfor %}
+	{{pagination.pageTitle}}
+</h1>
+
+<div>
+{{summary|raw}}
+</div>
+
+<div>
+{{includeAllResult|raw}}
+</div>
+
+<div>{{pagination.page}} / {{pagination.total}}</div>
+
+<div>
+    <div>
+    {% if pagination.previousPageUrl != null %}
+      <a href="{{pagination.previousPageUrl}}">Previous  {{pagination.previousPageTitle}}</a> 
+    {% endif %}
+  </div>
+
+  <div>
+    {% if pagination.nextPageUrl != null %}
+      <a href="{{pagination.nextPageUrl}}">Next {{pagination.nextPageTitle}}</a>
+    {% endif %}
+  </div>
+</div>

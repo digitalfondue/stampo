@@ -1,0 +1,17 @@
+---
+directive: include-all
+include-all: doc/
+paginate-at-depth: 0
+---
+
+<hr>
+
+<div>
+{{summary|raw}}
+</div>
+
+<div>
+{{includeAllResult|raw}}
+</div>
+
+<div>{{pagination.page}} / {{pagination.total}}</div>

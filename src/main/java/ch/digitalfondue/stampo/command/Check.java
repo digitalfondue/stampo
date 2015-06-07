@@ -23,7 +23,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
 
-import joptsimple.OptionSet;
 import ch.digitalfondue.stampo.Stampo;
 
 import com.google.common.jimfs.Configuration;
@@ -33,11 +32,6 @@ public class Check extends Command {
   
   public Check() {
     super();
-  }
-  
-  @Override
-  public void assign(OptionSet optionSet) {
-    super.assign(optionSet);
   }
 
   @Override

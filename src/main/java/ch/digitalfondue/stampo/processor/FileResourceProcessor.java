@@ -182,6 +182,7 @@ class FileResourceProcessor {
    * @return
    */
   public Path normalizeOutputPath(FileResource resource) {
+    
     Path resourcePath = resource.getPath();
 
     Path rel = Optional.ofNullable((contentDir.relativize(resourcePath)).getParent())//

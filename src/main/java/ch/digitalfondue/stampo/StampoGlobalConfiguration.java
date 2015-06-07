@@ -24,7 +24,9 @@ import static java.util.Collections.singletonList;
 import static java.util.Collections.unmodifiableMap;
 import static java.util.Collections.unmodifiableSet;
 import static java.util.Optional.ofNullable;
+import static java.util.stream.Collectors.toCollection;
 import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toSet;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -86,7 +88,7 @@ public class StampoGlobalConfiguration {
     this.configuration = configuration;
     this.renderers = renderers;
     this.locales = extractLocales(configuration);
-    this.localesAsString = unmodifiableSet(locales.stream().map(Object::toString).collect(Collectors.toSet()));
+    this.localesAsString = unmodifiableSet(locales.stream().map(Object::toString).collect(toSet()));
     this.defaultLocale = defaultLocale(configuration);
     this.ignorePatterns = extractIgnorePatterns(configuration);
     this.taxonomies = extractTaxonomies(configuration);
@@ -150,7 +152,7 @@ public class StampoGlobalConfiguration {
       if(taxonomies instanceof String) {
         return singleton(taxonomies.toString());
       } else if (taxonomies instanceof Collection) {
-        return ((Collection<Object>) taxonomies).stream().map(Object::toString).collect(Collectors.toCollection(LinkedHashSet::new));
+        return ((Collection<Object>) taxonomies).stream().map(Object::toString).collect(toCollection(LinkedHashSet::new));
       } else {
         throw new IllegalArgumentException("wrong type for taxonomies: " + taxonomies);
       }
@@ -186,7 +188,7 @@ public class StampoGlobalConfiguration {
         }).map(p -> {
           String keyName = PathUtils.relativePathTo(p, dataDir).replace('/', '.').replaceFirst("\\.ya{0,1}ml$", "");
           try (InputStream is = newInputStream(p)) {
-            List<Object> o = StreamSupport.stream(new Yaml().loadAll(is).spliterator(), false).filter(Objects::nonNull).collect(Collectors.toList());
+            List<Object> o = StreamSupport.stream(new Yaml().loadAll(is).spliterator(), false).filter(Objects::nonNull).collect(toList());
             return new KeyValue(keyName, o.size() == 0 ? null : o.size() == 1 ? o.get(0) : o);
           } catch (IOException e) {
             throw new IllegalStateException(e);

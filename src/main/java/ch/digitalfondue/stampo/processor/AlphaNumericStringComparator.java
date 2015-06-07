@@ -23,6 +23,7 @@ package ch.digitalfondue.stampo.processor;
 * THE SOFTWARE.
 */
 
+import java.io.Serializable;
 import java.text.DecimalFormatSymbols;
 import java.util.Comparator;
 import java.util.Locale;
@@ -33,9 +34,11 @@ import java.util.regex.Pattern;
  * Compares Strings by human values instead of traditional machine values.
  * @author elberry
  */
-public class AlphaNumericStringComparator implements Comparator<String> {
+public class AlphaNumericStringComparator implements Comparator<String>, Serializable {
 
-   private Pattern alphaNumChunkPattern;
+  private static final long serialVersionUID = 3293163417312475920L;
+  
+  private Pattern alphaNumChunkPattern;
 
 
    public AlphaNumericStringComparator(Locale locale) {

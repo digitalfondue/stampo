@@ -10,7 +10,8 @@ TODO:
 
 - support a "documentation use case".
 	- TBD:
-		- tests
+		- more tests
+		- add warning when h1..h6 don't have the name parameter (due to a "-" in the text value)
 		
 - archetype support (blog, doc, multi language standard website)
 

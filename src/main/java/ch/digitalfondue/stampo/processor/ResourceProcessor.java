@@ -116,8 +116,7 @@ public class ResourceProcessor {
 
   private void processToPath(FileResource resource, ProcessedInputHandler outputHandler,
       Locale finalLocale, Path outputPath, Supplier<Map<String, Object>> additionalData) {
-
-
+    
     if (!outputPath.startsWith(outputDir)) {
       throw new IllegalStateException("output path " + outputPath
           + " must be a child of outputDir: " + outputDir

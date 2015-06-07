@@ -17,8 +17,6 @@ package ch.digitalfondue.stampo.command;
 
 import java.util.List;
 
-import joptsimple.OptionSet;
-
 public class Build extends Command {
   
   public Build() {
@@ -32,10 +30,5 @@ public class Build extends Command {
   @Override
   void runWithPaths(String inputPath, String outputPath) {
     getBuildRunnable(inputPath, outputPath, getConfigurationOverride()).run();
-  }
-
-  @Override
-  public void assign(OptionSet optionSet) {
-    super.assign(optionSet);
   }
 }
