@@ -38,7 +38,7 @@ public class ResourceFactory {
 
 
   public Directory directory(Path path, Resource parent) {
-    return directorySupplier.get(this, path, parent);
+    return directorySupplier.get(this, path, parent, configuration);
   }
 
   public FileResource fileResource(Path path, Resource parent) {
@@ -48,7 +48,7 @@ public class ResourceFactory {
 
   @FunctionalInterface
   public interface DirectorySupplier {
-    Directory get(ResourceFactory factory, Path path, Resource parent);
+    Directory get(ResourceFactory factory, Path path, Resource parent, StampoGlobalConfiguration configuration);
   }
 
   @FunctionalInterface

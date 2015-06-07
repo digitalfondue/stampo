@@ -131,7 +131,7 @@ public class Stampo {
     
     ResourceFactory resourceFactory = new ResourceFactory(DirectoryResource::new, FileResourceWithMetadataSection::new, newFileFirst, configuration);
     
-    Directory root = new RootResource(resourceFactory, configuration.getContentDir());
+    Directory root = new RootResource(resourceFactory, configuration.getContentDir(), configuration);
     Directory rootWithOverrideHidden = new PathOverrideAwareDirectory(Mode.HIDE, root, FileResourceWithMetadataSection::new);
     Directory rootWithOnlyOverride =
         new PathOverrideAwareDirectory(Mode.SHOW_ONLY_PATH_OVERRIDE, root, FileResourceWithMetadataSection::new);

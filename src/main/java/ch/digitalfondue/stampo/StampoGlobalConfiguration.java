@@ -55,6 +55,7 @@ public class StampoGlobalConfiguration {
   public static final String CONF_DEFAULT_LOCALES = "default-locale";
   public static final String CONF_USE_UGLY_URL = "use-ugly-url";
   public static final String CONF_TAXONOMIES = "taxonomies";
+  public static final String CONF_HIDE_DRAFT = "hide-draft";
 
   private final Map<String, Object> configuration;
   private final List<Locale> locales;
@@ -225,6 +226,10 @@ public class StampoGlobalConfiguration {
   
   public boolean useUglyUrl() {
     return ofNullable(configuration.get(CONF_USE_UGLY_URL)).map(Boolean.class::cast).orElse(false);
+  }
+  
+  public boolean hideDraft() {
+    return ofNullable(configuration.get(CONF_HIDE_DRAFT)).map(Boolean.class::cast).orElse(false);
   }
 
   public Path getBaseDirectory() {

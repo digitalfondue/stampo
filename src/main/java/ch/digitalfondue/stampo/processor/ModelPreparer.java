@@ -65,7 +65,7 @@ public class ModelPreparer {
     if(Files.exists(configuration.getStaticDir())) {
       Comparator<FileResource> comparator = Comparator.comparing(FileResource::getName, new AlphaNumericStringComparator(Locale.ENGLISH));
       ResourceFactory resourceFactory = new ResourceFactory(DirectoryResource::new, StaticFileResource::new, comparator, configuration);
-      return Optional.of(new RootResource(resourceFactory, configuration.getStaticDir()));
+      return Optional.of(new RootResource(resourceFactory, configuration.getStaticDir(), configuration));
     } else {
       return Optional.empty();
     }

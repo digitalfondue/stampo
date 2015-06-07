@@ -21,23 +21,29 @@ import java.nio.file.DirectoryStream.Filter;
 import java.nio.file.FileSystem;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
+import ch.digitalfondue.stampo.StampoGlobalConfiguration;
+
 public class RootResource implements Resource, Directory {
 
+  private final StampoGlobalConfiguration configuration;
   private final Path path;
   private final ResourceFactory resourceFactory;
   
 
-  public RootResource(ResourceFactory resourceFactory, Path path) {
+  public RootResource(ResourceFactory resourceFactory, Path path, StampoGlobalConfiguration configuration) {
     this.path = path;
     this.resourceFactory = resourceFactory;
+    this.configuration = configuration;
   }
 
   private static boolean mustBeIgnored(Path p, Set<String> pathMatchers) {
@@ -59,11 +65,23 @@ public class RootResource implements Resource, Directory {
   }
 
   public Map<String, FileResource> getFiles() {
-    
-    return fromDirectoryStream(
+    Map<String, FileResource> files = fromDirectoryStream(
         p -> Files.isRegularFile(p) && !mustBeIgnored(p, resourceFactory.getConfiguration().getIgnorePatterns()), 
         p -> resourceFactory.fileResource(p, this), 
         resourceFactory.getFileResourceComparator());
+    
+    if(configuration.hideDraft()) {
+      List<String> draft = new ArrayList<>();
+      files.forEach((k, v) -> {
+        if(Boolean.TRUE.equals(v.getMetadata().getRawMap().get("draft"))) {
+          draft.add(k);
+        }
+      });
+      
+      draft.forEach(files::remove);
+    }
+    
+    return files;
   }
 
   public Map<String, Directory> getDirectories() {

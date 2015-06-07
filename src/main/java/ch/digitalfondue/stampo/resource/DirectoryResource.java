@@ -17,12 +17,14 @@ package ch.digitalfondue.stampo.resource;
 
 import java.nio.file.Path;
 
+import ch.digitalfondue.stampo.StampoGlobalConfiguration;
+
 public class DirectoryResource extends RootResource {
 
   private final Resource parent;
 
-  public DirectoryResource(ResourceFactory resourceFactory, Path path, Resource parent) {
-    super(resourceFactory, path);
+  public DirectoryResource(ResourceFactory resourceFactory, Path path, Resource parent, StampoGlobalConfiguration configuration) {
+    super(resourceFactory, path, configuration);
     this.parent = parent;
   }
 

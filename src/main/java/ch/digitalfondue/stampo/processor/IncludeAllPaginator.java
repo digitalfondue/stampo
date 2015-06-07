@@ -101,9 +101,9 @@ public class IncludeAllPaginator implements Directive {
     final Directory toIncludeAllDir;
 
     if (configuration.getLocales().size() > 1) {
-      toIncludeAllDir = new LocaleAwareDirectory(locale, new RootResource(resourceFactory, includeAllBasePath), FileResourceWithMetadataSection::new);
+      toIncludeAllDir = new LocaleAwareDirectory(locale, new RootResource(resourceFactory, includeAllBasePath, configuration), FileResourceWithMetadataSection::new);
     } else {
-      toIncludeAllDir = new RootResource(resourceFactory, includeAllBasePath);
+      toIncludeAllDir = new RootResource(resourceFactory, includeAllBasePath, configuration);
     }
 
     int maxDepth = (Integer) resource.getMetadata().getRawMap().getOrDefault("paginate-at-depth", 1);
