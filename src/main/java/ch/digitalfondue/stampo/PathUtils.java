@@ -17,14 +17,20 @@ package ch.digitalfondue.stampo;
 
 import java.nio.file.Path;
 
+import com.google.common.io.Files;
+
 public class PathUtils {
+  
+  public static boolean isHtml(Path path) {
+    return "html".equalsIgnoreCase(Files.getFileExtension(path.toString()));
+  }
 
   public static String relativePathTo(Path path, Path basePath) {
-    if ("index.html".equals(path.getFileName().toString())) {
+    if ("index.html".equalsIgnoreCase(path.getFileName().toString())) {
       path = path.getParent();
     }
 
-    if ("index.html".equals(basePath.getFileName().toString())) {
+    if ("index.html".equalsIgnoreCase(basePath.getFileName().toString())) {
       basePath = basePath.getParent();
     }
 

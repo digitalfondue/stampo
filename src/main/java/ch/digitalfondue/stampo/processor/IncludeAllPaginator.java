@@ -195,7 +195,9 @@ public class IncludeAllPaginator implements Directive {
     if (maxDepth == 0) {
       List<FileResource> files = new ArrayList<FileResource>();
       files.add(new FileResourcePlaceHolder(defaultOutputPath, configuration));
-      files.addAll(pages.get(0).files);// we know that it has size 1
+      if(!pages.isEmpty()) {
+        files.addAll(pages.get(0).files);// we know that it has size 1
+      }
       return Collections.singletonList(new IncludeAllPage(0, files));
       
     } else if (!skipDepth0) {
@@ -387,8 +389,13 @@ public class IncludeAllPaginator implements Directive {
           Map<String, Object> additionalModel = new HashMap<>();
           additionalModel.put("includeAllResult", page.contentWithTransformedHeading(globalToc, addNumberingToTitles));
           additionalModel.put("pagination", page.pagination);
-          additionalModel.put("summary", htmlSummary(globalToc, page.summaryPositionStart, page.summaryPositionEnd, page.page.outputPath, addNumberingToTitles));
-          additionalModel.put("globalToc", htmlSummary(globalToc, 0, globalToc.size(), page.page.outputPath, addNumberingToTitles));
+          
+          if(PathUtils.isHtml(page.page.outputPath)) {
+            additionalModel.put("summary", htmlSummary(globalToc, page.summaryPositionStart, page.summaryPositionEnd, page.page.outputPath, addNumberingToTitles));
+            additionalModel.put("globalToc", htmlSummary(globalToc, 0, globalToc.size(), page.page.outputPath, addNumberingToTitles));
+          }
+          
+          
           return ModelPreparer.prepare(root, configuration, locale, page.page.virtualResource,
               page.page.outputPath, taxonomy, additionalModel);
         };
@@ -438,9 +445,14 @@ public class IncludeAllPaginator implements Directive {
       this.outputPath = outputPath;
       this.locale = locale;
 
-      Elements titles = Jsoup.parseBodyFragment(content()).select("h1,h2,h3,h4,h5,h6");
-      this.title = titles.stream().findFirst().map(Element::text);
-      this.summary = titles.stream().map(e -> new Header(headerLevel(e.tagName()), e.text(), e.getElementsByTag("a").attr("name"), outputPath)).collect(Collectors.toList());
+      if(PathUtils.isHtml(outputPath)) {
+        Elements titles = Jsoup.parseBodyFragment(content()).select("h1,h2,h3,h4,h5,h6");
+        this.title = titles.stream().findFirst().map(Element::text);
+        this.summary = titles.stream().map(e -> new Header(headerLevel(e.tagName()), e.text(), e.getElementsByTag("a").attr("name"), outputPath)).collect(Collectors.toList());
+      } else {
+        this.title = Optional.empty();
+        this.summary = new ArrayList<>();
+      }
     }
 
     int headerLevel(String name) {
@@ -488,7 +500,7 @@ public class IncludeAllPaginator implements Directive {
     
     String contentWithTransformedHeading(List<HeaderWithPosition> globalToc, boolean addNumberingToTitles) {
       
-      if (addNumberingToTitles) {
+      if (addNumberingToTitles && PathUtils.isHtml(page.outputPath)) {
 
         List<HeaderWithPosition> summary = globalToc.subList(summaryPositionStart, summaryPositionEnd);
 

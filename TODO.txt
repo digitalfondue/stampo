@@ -10,6 +10,7 @@ TODO:
 
 - support a "documentation use case".
 	- TBD:
+	    - fix windows failure: http://pastebin.com/QYbRY80K for the 2 new tests
 		- more tests
 		- add warning when h1..h6 don't have the name parameter (due to a "-" in the text value)
 		
