@@ -354,7 +354,7 @@ public class IncludeAllPaginator implements Directive {
       } else if (!stack.isEmpty()) {
         while (!stack.isEmpty() && stack.peek().intValue() > h.level) {
           stack.pop();
-          sbStack.append("</ol>\n");
+          sbStack.append("</ol>");
         }
       }
       sbStack.append("<li>");
@@ -367,11 +367,11 @@ public class IncludeAllPaginator implements Directive {
       sbStack.append("<a href=\"")
           .append(PathUtils.relativePathTo(h.outputPath, path)).append("#").append(h.id)
           .append("\">")
-          .append(h.name).append("</a>\n");
+          .append(h.name).append("</a>");
     }
     //
     for (int i = 0; i < stack.size(); i++) {
-      sbStack.append("</ol>\n");
+      sbStack.append("</ol>");
     }
     
     //add attribute start to first ol
