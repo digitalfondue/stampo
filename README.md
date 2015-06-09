@@ -30,7 +30,7 @@ If you want to include stampo as a library, it's available from maven central:
  - pagination over "pages" (for blog posts), over taxonomy values, over "static content" (for galleries).
  - draft support
  - support multiple template/rendering engine: markdown, pebble template, freemarker
- - support for recursive inclusion and structured pages, with Table of Content extracted from the html: useful for documentations
+ - support for recursive inclusion and structured pages, with Table of Contents extracted from the html: useful for documentations
  - layout system
  - embedded web server with auto reload on change
 
