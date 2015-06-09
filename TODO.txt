@@ -22,6 +22,8 @@ TODO:
 
 - replace all syserr with java.util.logging : it's more sane if we want to use it as a lib...
 
+- smarter output directory cleanup/sync.
+
 - support
 	- iterate-over-static-directory: a special case for paginate with a page size of 1 for static dir
 		- page name is generated from the static file name

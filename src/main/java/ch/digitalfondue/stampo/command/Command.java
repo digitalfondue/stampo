@@ -16,9 +16,7 @@
 package ch.digitalfondue.stampo.command;
 
 import java.nio.file.Paths;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -36,9 +34,8 @@ public abstract class Command implements Opts {
   
   protected final OptionParser optionParser = new OptionParser();
   
-  //TODO: refactor away the List for src and dist
-  protected List<String> srcPath = new ArrayList<>();
-  protected List<String> distPath = new ArrayList<>();
+  protected Optional<String> srcPath = Optional.empty();
+  protected Optional<String> distPath = Optional.empty();
   
   protected boolean hideDraft = false;
   protected boolean printStackTrace = false;
@@ -72,17 +69,13 @@ public abstract class Command implements Opts {
   }
   
   public void setSrcPath(String path) {
-    if(srcPath.size() == 0) {
-      srcPath.add(path);
-    }
+    srcPath = Optional.of(path);
   }
   
   
   
   public void setDistPath(String path) {
-    if(distPath.size() == 0) {
-      distPath.add(path);
-    }
+    distPath = Optional.of(path);
   }
   
   
@@ -94,12 +87,12 @@ public abstract class Command implements Opts {
   
 
   private String inputPath() {
-    return Paths.get(this.srcPath.stream().findFirst().orElse("."))
+    return Paths.get(this.srcPath.orElse("."))
         .toAbsolutePath().normalize().toString();
   }
   
   private String outputPath(String inputPath) {
-    return Paths.get(this.distPath.stream().findFirst().orElse(inputPath.concat("/output")))
+    return Paths.get(this.distPath.orElse(inputPath.concat("/output")))
         .toAbsolutePath().normalize().toString();
   }
 
@@ -141,11 +134,11 @@ public abstract class Command implements Opts {
     };
   }
 
-  public List<String> getSrcPath() {
+  public Optional<String> getSrcPath() {
     return srcPath;
   }
   
-  public List<String> getDistPath() {
+  public Optional<String> getDistPath() {
     return distPath;
   }
 

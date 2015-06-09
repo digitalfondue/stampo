@@ -15,16 +15,11 @@
  */
 package ch.digitalfondue.stampo.command;
 
-import java.util.List;
 
 public class Build extends Command {
   
   public Build() {
     super();
-  }
-  
-  public Build(List<String> args) {
-    this.srcPath = args;
   }
 
   @Override

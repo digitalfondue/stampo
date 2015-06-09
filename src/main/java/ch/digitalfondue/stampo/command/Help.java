@@ -15,33 +15,118 @@
  */
 package ch.digitalfondue.stampo.command;
 
+import java.util.List;
+
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
 
 public class Help implements Opts {
 
+  
+  private enum CommandName {
+    BUILD {
+      @Override
+      void printHelp() {
+        System.out.println("Build the site");
+        System.out.println("Usage:");
+        System.out.println("  stampo build [options]");
+        System.out.println();
+        System.out.println("Options");
+        printCommonOptions();
+      }
+    }, 
+    SERVE {
+      @Override
+      void printHelp() {
+        System.out.println("Launch a webserver and trigger a build");
+        System.out.println("Usage:");
+        System.out.println("  stampo serve [options]");
+        System.out.println();
+        System.out.println("Options");
+        printCommonOptions();
+        System.out.println("  --port=[portnumber]      Port number, default 8080");
+        System.out.println("  --hostname=[hostname]    Hostname, default localhost");
+        System.out.println();
+        System.out.println("  --disable-rebuild-on-change=true/false    Rebuild on change, default false");
+        System.out.println("  --disable-auto-reload=true/false          Disable autoreload, default false");
+      }
+    }, 
+    CHECK {
+      @Override
+      void printHelp() {
+        System.out.println("Check if the website build correctly");
+        System.out.println("Usage:");
+        System.out.println("  stampo check [options]");
+        System.out.println();
+        System.out.println("Options");
+        printCommonOptions();
+      }
+    },
+    HELP {
+      @Override
+      void printHelp() {
+        System.out.println();
+        System.out.println("Usage:");
+        System.out.println("  stampo [command] [options]");
+        System.out.println();
+        System.out.println("Available Commands:");
+        System.out.println("  build                    Build the site, use the current working\n"
+                         + "                           directory if not specified");
+        System.out.println("  serve                    Build and serve the site, as a default, it will\n"
+                   + "                           listen to localhost:8080");
+        System.out.println("  check                    Check if the site build correctly");
+        System.out.println("  help                     This help");
+        System.out.println();
+        System.out.println();
+        System.out.println("Global Options");
+        printCommonOptions();
+        System.out.println();
+        System.out.println("Use \"stampo help [command]\" for a detailed information about the command");
+      }
+    };
+
+    void printHelp() {}
+  }
+  private final OptionParser optionParser = new OptionParser();
+  
+  private CommandName selected = CommandName.HELP;
+  
+  
+  public Help() {
+  }
+
   @Override
   public void run() {
-    System.out.println();
-    System.out.println("Usage:");
-    System.out.println("  stampo [command] <source>");
-    System.out.println();
-    System.out.println("Available Commands:");
-    System.out.println("  build                 Build the site, use the current working\n"
-                     + "                        directory if not specified");
-    System.out.println("  serve                 Build and serve the site, as a default, it will\n"
-                     + "                        listen to localhost:8080");
-    System.out.println("  check                 Check if the site build correctly");
-    System.out.println("  help                  This help");
+    selected.printHelp();
   }
 
   @Override
   public OptionParser getOptionParser() {
-    return new OptionParser();
+    return optionParser;
   }
 
   @Override
   public void assign(OptionSet optionSet) {
+    List<?> nonOpts= optionSet.nonOptionArguments();
+    if (nonOpts.contains("build")) {
+      selected = CommandName.BUILD;
+    } else if (nonOpts.contains("serve")) {
+      selected = CommandName.SERVE;
+    } else if (nonOpts.contains("check")) {
+      selected = CommandName.CHECK;
+    } else {
+      selected = CommandName.HELP;
+    }
+  }
+  
+  private static void printCommonOptions() {
+    System.out.println();
+    System.out.println("  --src=[path]             Path of the source directory");
+    System.out.println("  --dist=[path]            Path of the output directory \n"
+        + "                           /!\\ BEWARE: it will cleanup the content /!\\");
+    System.out.println("  --hide-draft=true/false  Hide draft files (default value is false)");
+    System.out.println("  --debug=true/false       Will show the stacktraces on error");
+    System.out.println();
   }
   
 }
