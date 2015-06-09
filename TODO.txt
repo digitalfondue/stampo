@@ -6,6 +6,8 @@ TODO:
 - test on windows
 - test on mac
 
+- add option for hiding files with a date in the future
+
 - refactor the whole rendering pipeline
 
 - support a "documentation use case".

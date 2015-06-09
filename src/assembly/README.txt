@@ -19,8 +19,27 @@ This archive contain:
  - /LICENSE.txt: license file (APACHE 2)
  - /NOTICE.txt: third party licenses file
  
- 
-Running the application
------------------------
 
-TBD
+Install
+------------
+Add in your PATH the bin directory. Or, if you move the shell/bat script, 
+adjust the paths to the lib/stampo.jar accordingly.
+ 
+ 
+Use
+-----------------------
+In your stampo project, for processing the site:
+
+> stampo
+
+For running the embedded web server (it will listen to localhost:8080)
+
+> stampo serve
+
+For checking the correctness
+
+> stampo check
+
+For calling the help
+
+> stampo help

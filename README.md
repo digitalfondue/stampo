@@ -11,6 +11,36 @@ A full distribution with all the dependencies and shell/bat script is available 
 
 Current release is stampo 1.1. [Download zip](https://repo1.maven.org/maven2/ch/digitalfondue/stampo/stampo/1.1/stampo-1.1.zip)
 
+## Install
+
+Add in your PATH the bin directory. Or, if you move the shell/bat script, adjust the paths to the lib/stampo.jar accordingly.
+
+## Use
+
+In your stampo project, for processing the site:
+
+```sh
+stampo
+```
+
+For running the embedded web server (it will listen to localhost:8080):
+
+```sh
+stampo serve
+```
+
+For checking the correctness:
+
+```sh
+stampo check
+```
+
+For visualizing the help:
+
+```sh
+stampo help
+```
+
 ## As a maven dependency
 
 If you want to include stampo as a library, it's available from maven central:
