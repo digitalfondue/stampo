@@ -9,7 +9,7 @@ A static website/documentation generator with an emphasis on multi language webs
 
 A full distribution with all the dependencies and shell/bat script is available in maven central.
 
-Current release is stampo 1.1. [Download zip](https://central.maven.org/maven2/ch/digitalfondue/stampo/stampo/1.1/stampo-1.1.zip)
+Current release is stampo 1.1. [Download zip](https://repo1.maven.org/maven2/ch/digitalfondue/stampo/stampo/1.1/stampo-1.1.zip)
 
 ## As a maven dependency
 
