@@ -15,7 +15,7 @@ Current release is stampo 1.1. [Download zip](https://central.maven.org/maven2/c
 
 If you want to include stampo as a library, it's available from maven central:
 
-```
+```XML
 <dependency>
 	<groupId>ch.digitalfondue.stampo</groupId>
 	<artifactId>stampo</artifactId>
