@@ -70,16 +70,16 @@ public class MultiLocalesTest {
       }
 
       Assert.assertTrue(Files.exists(iod.outputDir.resolve("index.html")));
-      Assert.assertEquals("<h1>Hello World en</h1>",
+      Assert.assertEquals("<h1>Hello World en</h1>[] []",
           TestUtils.fileOutputAsString(iod, "index.html"));
 
 
       Assert.assertTrue(Files.exists(iod.outputDir.resolve("post/first/index.html")));
-      Assert.assertEquals("<h1>First en</h1>",
+      Assert.assertEquals("<h1>First en</h1>[../..] [../..]",
           TestUtils.fileOutputAsString(iod, "post/first/index.html"));
 
       Assert.assertTrue(Files.exists(iod.outputDir.resolve("post/second/index.html")));
-      Assert.assertEquals("<h1>Second en</h1>",
+      Assert.assertEquals("<h1>Second en</h1>[../..] [../..]",
           TestUtils.fileOutputAsString(iod, "post/second/index.html"));
     }
   }
@@ -87,41 +87,41 @@ public class MultiLocalesTest {
 
   private void createFiles(InputOutputDirs iod) throws IOException {
     write(iod.inputDir.resolve("content/index.html.peb"),
-        "<h1>Hello World {{locale}}</h1>".getBytes(StandardCharsets.UTF_8));
+        "<h1>Hello World {{locale}}</h1>[{{relativeRootPath}}] [{{relativeRootPathLocalized}}]".getBytes(StandardCharsets.UTF_8));
 
     Files.createDirectories(iod.inputDir.resolve("content/post"));
 
     write(iod.inputDir.resolve("content/post/first.html.peb"),
-        "<h1>First {{locale}}</h1>".getBytes(StandardCharsets.UTF_8));
+        "<h1>First {{locale}}</h1>[{{relativeRootPath}}] [{{relativeRootPathLocalized}}]".getBytes(StandardCharsets.UTF_8));
 
     write(iod.inputDir.resolve("content/post/second.html.peb"),
-        "<h1>Second {{locale}}</h1>".getBytes(StandardCharsets.UTF_8));
+        "<h1>Second {{locale}}</h1>[{{relativeRootPath}}] [{{relativeRootPathLocalized}}]".getBytes(StandardCharsets.UTF_8));
     
     //this file will generate a third.peb and will only be present for the english locale
     write(iod.inputDir.resolve("content/post/third.en.peb"),
-        "<h1>Third {{locale}}</h1>".getBytes(StandardCharsets.UTF_8));
+        "<h1>Third {{locale}}</h1>[{{relativeRootPath}}] [{{relativeRootPathLocalized}}]".getBytes(StandardCharsets.UTF_8));
     
     
     write(iod.inputDir.resolve("content/post/fourth.fr.de.peb"),
-        "<h1>Fourth {{locale}}</h1>".getBytes(StandardCharsets.UTF_8));
+        "<h1>Fourth {{locale}}</h1>[{{relativeRootPath}}] [{{relativeRootPathLocalized}}]".getBytes(StandardCharsets.UTF_8));
   }
 
   private void checkForLocale(InputOutputDirs iod, String locale) throws IOException {
     Assert.assertTrue(Files.exists(iod.outputDir.resolve(locale + "/index.html")));
-    Assert.assertEquals("<h1>Hello World " + locale + "</h1>",
+    Assert.assertEquals("<h1>Hello World " + locale + "</h1>[..] []",
         TestUtils.fileOutputAsString(iod, locale + "/index.html"));
 
     Assert.assertTrue(Files.exists(iod.outputDir.resolve(locale + "/post/first/index.html")));
-    Assert.assertEquals("<h1>First " + locale + "</h1>",
+    Assert.assertEquals("<h1>First " + locale + "</h1>[../../..] [../..]",
         TestUtils.fileOutputAsString(iod, locale + "/post/first/index.html"));
 
     Assert.assertTrue(Files.exists(iod.outputDir.resolve(locale + "/post/second/index.html")));
-    Assert.assertEquals("<h1>Second " + locale + "</h1>",
+    Assert.assertEquals("<h1>Second " + locale + "</h1>[../../..] [../..]",
         TestUtils.fileOutputAsString(iod, locale + "/post/second/index.html"));
     
     if("en".equals(locale)) {
       Assert.assertTrue(Files.exists(iod.outputDir.resolve(locale + "/post/third")));
-      Assert.assertEquals("<h1>Third " + locale + "</h1>",
+      Assert.assertEquals("<h1>Third " + locale + "</h1>[../../..] [../..]",
           TestUtils.fileOutputAsString(iod, locale + "/post/third"));
       
       Assert.assertFalse(Files.exists(iod.outputDir.resolve(locale + "/post/fourth")));
@@ -129,7 +129,7 @@ public class MultiLocalesTest {
       Assert.assertFalse(Files.exists(iod.outputDir.resolve(locale + "/post/third")));
       
       Assert.assertTrue(Files.exists(iod.outputDir.resolve(locale + "/post/fourth")));
-      Assert.assertEquals("<h1>Fourth " + locale + "</h1>",
+      Assert.assertEquals("<h1>Fourth " + locale + "</h1>[../../..] [../..]",
           TestUtils.fileOutputAsString(iod, locale + "/post/fourth"));
     }
   }

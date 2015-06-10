@@ -1,0 +1,14 @@
+---
+directive: include-all
+include-all: include/
+paginate-at-depth: 0
+---
+<!doctype html>
+<html>
+<head>
+</head>
+<body>
+{{globalToc|raw}}
+{{includeAllResult|raw}}
+</body>
+</html>

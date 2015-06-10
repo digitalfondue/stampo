@@ -48,6 +48,13 @@ public class ModelPreparer {
     model.put("resource", resource);
     model.put("metadata", resource.getMetadata());
     model.put("relativeRootPath", PathUtils.relativePathTo(configuration.getBaseOutputDir(), outputPath));
+    
+    if(configuration.getLocales().size() > 1 && !configuration.getDefaultLocale().map(locale::equals).orElse(false)) {
+      model.put("relativeRootPathLocalized", PathUtils.relativePathTo(configuration.getBaseOutputDir().resolve(locale.toLanguageTag()), outputPath));
+    } else {
+      model.put("relativeRootPathLocalized", model.get("relativeRootPath"));
+    }
+    
     model.put("outputPath", PathUtils.relativePathTo(outputPath, configuration.getBaseOutputDir()));
     model.put("taxonomy", taxonomy);
     

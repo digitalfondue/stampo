@@ -148,9 +148,7 @@ public class Stampo {
         taxonomy.add(localeAwareRoot);
         
 
-        Path finalOutputDir =
-            defaultLocale.flatMap(
-                l -> l.equals(locale) ? of(configuration.getBaseOutputDir()) : empty())//
+        Path finalOutputDir = defaultLocale.flatMap(l -> l.equals(locale) ? of(configuration.getBaseOutputDir()) : empty())//
                 .orElse(configuration.getBaseOutputDir().resolve(locale.toLanguageTag()));
 
 
