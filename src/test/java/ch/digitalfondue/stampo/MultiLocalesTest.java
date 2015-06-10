@@ -70,7 +70,7 @@ public class MultiLocalesTest {
       }
 
       Assert.assertTrue(Files.exists(iod.outputDir.resolve("index.html")));
-      Assert.assertEquals("<h1>Hello World en</h1>[] []",
+      Assert.assertEquals("<h1>Hello World en</h1>[.] [.]",
           TestUtils.fileOutputAsString(iod, "index.html"));
 
 
@@ -108,7 +108,7 @@ public class MultiLocalesTest {
 
   private void checkForLocale(InputOutputDirs iod, String locale) throws IOException {
     Assert.assertTrue(Files.exists(iod.outputDir.resolve(locale + "/index.html")));
-    Assert.assertEquals("<h1>Hello World " + locale + "</h1>[..] []",
+    Assert.assertEquals("<h1>Hello World " + locale + "</h1>[..] [.]",
         TestUtils.fileOutputAsString(iod, locale + "/index.html"));
 
     Assert.assertTrue(Files.exists(iod.outputDir.resolve(locale + "/post/first/index.html")));

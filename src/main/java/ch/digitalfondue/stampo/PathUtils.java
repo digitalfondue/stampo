@@ -33,7 +33,7 @@ public class PathUtils {
     if ("index.html".equalsIgnoreCase(basePath.getFileName().toString())) {
       basePath = basePath.getParent();
     }
-
-    return basePath.relativize(path).toString();
+    String relUrl = basePath.relativize(path).toString();
+    return "".equals(relUrl) ? "." : relUrl;
   }
 }
