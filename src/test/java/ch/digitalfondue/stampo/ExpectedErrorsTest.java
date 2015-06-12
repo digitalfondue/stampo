@@ -21,35 +21,16 @@ import static java.util.Arrays.asList;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.FileSystem;
-import java.nio.file.Path;
 import java.util.Collections;
 
 import org.junit.Test;
 
 import ch.digitalfondue.stampo.TestUtils.InputOutputDirs;
 import ch.digitalfondue.stampo.exception.LayoutException;
-import ch.digitalfondue.stampo.exception.MissingDirectoryException;
 import ch.digitalfondue.stampo.exception.TemplateException;
 import ch.digitalfondue.stampo.exception.YamlParserException;
 
-import com.google.common.jimfs.Jimfs;
-
 public class ExpectedErrorsTest {
-
-  @Test(expected = MissingDirectoryException.class)
-  public void testMissingContentDirectoryException() throws IOException {
-    try (FileSystem fs = Jimfs.newFileSystem("base")) {
-      Path baseInputDir = fs.getPath("input");
-      Path outputDir = fs.getPath("output");
-
-      createDirectories(baseInputDir);
-      createDirectories(outputDir);
-
-      Stampo stampo = new Stampo(baseInputDir, outputDir, Collections.emptyMap());
-      stampo.build();
-    }
-  }
 
 
   @Test(expected = YamlParserException.class)
