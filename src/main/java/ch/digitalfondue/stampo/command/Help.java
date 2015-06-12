@@ -62,6 +62,21 @@ public class Help implements Opts {
         printCommonOptions();
       }
     },
+    NEW {
+        @Override
+        void printHelp() {
+          System.out.println("Create a basic website, based on existing templates");
+          System.out.println("Usage:");
+          System.out.println("  stampo new [options]");
+          System.out.println();
+          System.out.println("Options");
+          System.out.println("  --dest=[dest-path]      Destination of the template, mandatory if --name is not set");
+          System.out.println("  --name=[project-name]]  Extract the template in the current directory, under the folder [project-name]. Mandatory, Ignored if --dest is set.");
+          System.out.println();
+          System.out.println("  --archetype=[basic|site|blog|doc]      Define the template to extract. default basic");
+          printCommonOptions();
+        }
+      },
     HELP {
       @Override
       void printHelp() {

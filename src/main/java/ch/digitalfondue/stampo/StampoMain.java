@@ -27,6 +27,7 @@ import joptsimple.OptionSet;
 import ch.digitalfondue.stampo.command.Build;
 import ch.digitalfondue.stampo.command.Check;
 import ch.digitalfondue.stampo.command.Help;
+import ch.digitalfondue.stampo.command.New;
 import ch.digitalfondue.stampo.command.Opts;
 import ch.digitalfondue.stampo.command.Serve;
 
@@ -39,6 +40,7 @@ public class StampoMain {
     commands.put("check", new Check());
     commands.put("build", new Build());
     commands.put("help", new Help());
+    commands.put("new", new New());
     
     
     List<String> params = new ArrayList<>(args.length == 0 ? Arrays.asList("build") : Arrays.asList(args));
@@ -52,7 +54,6 @@ public class StampoMain {
     
     OptionSet parsed = command.getOptionParser().parse(params.stream().skip(1).collect(Collectors.toList()).toArray(new String[] {}));
     command.assign(parsed);
-    
     return command;
   }
 
