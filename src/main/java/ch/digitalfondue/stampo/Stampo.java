@@ -45,7 +45,6 @@ import java.util.function.BiConsumer;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.error.YAMLException;
 
-import ch.digitalfondue.stampo.exception.MissingDirectoryException;
 import ch.digitalfondue.stampo.exception.YamlParserException;
 import ch.digitalfondue.stampo.processor.ResourceProcessor;
 import ch.digitalfondue.stampo.renderer.Renderer;
@@ -116,17 +115,22 @@ public class Stampo {
     });
   }
 
-  public void build(ProcessedInputHandler outputHandler,
-      BiConsumer<Path, Path> staticDirectoryAction) {
-
-    if (!exists(configuration.getContentDir())) {
-      throw new MissingDirectoryException(configuration.getContentDir());
-    }
-
-    List<Locale> locales = configuration.getLocales();
+  public void build(ProcessedInputHandler outputHandler, BiConsumer<Path, Path> staticDirectoryAction) {
     
     cleanupBuildDirectory();
 
+    if (exists(configuration.getContentDir())) {
+      buildContentDirectory(outputHandler);
+    }
+
+    copyStaticDirectory(staticDirectoryAction);
+  }
+
+
+  private void buildContentDirectory(ProcessedInputHandler outputHandler) {
+    
+    List<Locale> locales = configuration.getLocales();
+    
     Comparator<FileResource> newFileFirst = Comparator.comparingLong(FileResource::getCreationTime).reversed();
     
     ResourceFactory resourceFactory = new ResourceFactory(DirectoryResource::new, FileResourceWithMetadataSection::new, newFileFirst, configuration);
@@ -173,8 +177,6 @@ public class Stampo {
       render(rootWithOnlyOverride, new ResourceProcessor(configuration.getBaseOutputDir(),
           rootWithOnlyOverride, configuration, taxonomy), locales.get(0), outputHandler);
     }
-
-    copyStaticDirectory(staticDirectoryAction);
   }
 
   private void render(Directory root, ResourceProcessor renderer, Locale locale,

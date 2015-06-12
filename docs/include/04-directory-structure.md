@@ -4,8 +4,28 @@ Stampo expect some conventions. The minimal directory structure is:
 
 ```
 .
-└── content/
 ```
+
+(Yes, empty dir)
+
+## Content directory
+
+All your content that must be processed must be put in the `content` directory.
+
+```
+.
+└── content/index.html.peb
+```
+
+Executing `stampo` in the root directory of the project will generate:
+
+```
+.
+├── content/index.html.peb
+|
+└── output/index.html
+```
+
 
 ## Configuration file
 
@@ -15,7 +35,7 @@ It must be placed in the root directory of the project:
 
 ```
 .
-├── content/
+├── content/*
 |
 └── configuration.yaml
 ```
@@ -30,10 +50,34 @@ Currently in the configuration file you can specify the following properties:
 
 - `use-ugly-url` : By default false. By default, stampo will generate for a file named `test.html` the following file `test/index.html`. With `use-ugly-url` set to true, stampo will generate `test.html`. Note that you can set this value on a single file instead of applying it globally.
 
-- `taxonomies` : TBD
+- `taxonomies` : TODO TBD
 
 
 ## Static directory
+
+If you have files that don't need to be processed (images, ...), you can put them in the directory `static`. The content will be copied directly in the output directory.
+
+For example, if you have:
+
+```
+.
+├── content/index.html.peb
+|
+└── static/images/my-image.png
+```
+
+The output will be:
+
+```
+output
+  |
+  ├── index.html
+  |
+  └── images
+         |
+         └── my-image.png
+```
+
 
 ## Layout directory
 

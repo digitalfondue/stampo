@@ -26,7 +26,6 @@ import joptsimple.OptionSpec;
 import ch.digitalfondue.stampo.Stampo;
 import ch.digitalfondue.stampo.exception.ConfigurationException;
 import ch.digitalfondue.stampo.exception.LayoutException;
-import ch.digitalfondue.stampo.exception.MissingDirectoryException;
 import ch.digitalfondue.stampo.exception.TemplateException;
 import ch.digitalfondue.stampo.exception.YamlParserException;
 
@@ -104,8 +103,7 @@ public abstract class Command implements Opts {
     System.out.println("stampo destination path is " + outputPath);
     try {
       runWithPaths(inputPath, outputPath);
-    } catch (MissingDirectoryException | YamlParserException | TemplateException
-        | LayoutException| ConfigurationException e) {
+    } catch (YamlParserException | TemplateException | LayoutException| ConfigurationException e) {
       System.err.println(e.getMessage());
       if (printStackTrace) {
         Optional.ofNullable(e.getCause()).ifPresent(Throwable::printStackTrace);
