@@ -264,6 +264,21 @@
 							<appendAssemblyId>false</appendAssemblyId>
 						</configuration> 
 					</execution>
+					<execution>
+						<id>template-blog</id>
+						<phase>compile</phase>
+						<goals>
+							<goal>single</goal>
+						</goals>
+						<configuration>
+							<descriptors>
+								<descriptor>src/assembly/template-blog.xml</descriptor>
+							</descriptors>
+							<finalName>blog</finalName>
+							<outputDirectory>${project.build.directory}/classes/templates</outputDirectory>
+							<appendAssemblyId>false</appendAssemblyId>
+						</configuration> 
+					</execution>
 				</executions>
 			</plugin>
 			<plugin>

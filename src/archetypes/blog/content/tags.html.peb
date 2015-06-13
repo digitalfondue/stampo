@@ -1,0 +1,34 @@
+---
+directive: taxonomy-pagination
+paginate-over-taxonomy: tags
+paginate-page-size: 5
+---
+
+{% extends "common/base-page.peb" %}
+
+{% block title%}{{message('tag')}}: {{currentTaxonomy}} - {{message('posts.page')}} {{pagination.currentPage}}{% endblock %}
+
+{% block section %}posts/{{currentTaxonomy}}{%endblock %}
+
+{% block content %}
+
+{{outputPath}}
+
+<ul>
+{% for post in pagination.pageContent %}
+  <li>
+    <a href="{{post.relativeUrlToContent}}"><div>{{post.renderedResource | raw}}</div></a>
+{% endfor %}
+</ul>
+
+{% if not pagination.firstPage %}
+<a href="{{pagination.previousPageRelativeLink}}">« Newer Posts</a>
+{% endif %}
+
+{{pagination.currentPage}} / {{pagination.pageCount}}
+
+{% if not pagination.lastPage %}
+<a href="{{pagination.nextPageRelativeLink}}">Older Posts »</a>
+{% endif %}
+
+{% endblock %}

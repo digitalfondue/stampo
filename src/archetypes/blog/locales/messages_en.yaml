@@ -1,0 +1,16 @@
+title: Stampo Blog
+header: Stampo Blog
+footer: This is the footer
+
+anonymous: Anonymous
+
+tag: Tag
+
+posts.page: Page
+posts.pagination.newer: Newer Entries
+posts.pagination.older: Older Entries
+
+post.postedBy: Written by
+post.postedOn: on the
+
+post.tags: Tags

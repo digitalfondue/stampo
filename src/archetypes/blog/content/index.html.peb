@@ -1,0 +1,32 @@
+---
+directive: dir-pagination
+paginate-over-directory: content/posts
+paginate-page-size: 5
+paginate-recursive: true
+paginate-match: ['glob:content/posts/*.md']
+---
+
+{% extends "common/base-page.peb" %}
+
+{% block title%}{{message('posts.page')}} {{pagination.currentPage}}{% endblock %}
+
+{% block content %}
+
+<ul>
+{% for post in pagination.pageContent %}
+  <li>
+    <a href="{{post.relativeUrlToContent}}"><span>{{post.resource.metadata.rawMap.title}}</span></a>
+{% endfor %}
+</ul>
+
+{% if not pagination.firstPage %}
+<a href="{{pagination.previousPageRelativeLink}}">« {{message('posts.pagination.newer')}}</a>
+{% endif %}
+
+{{pagination.currentPage}} / {{pagination.pageCount}}
+
+{% if not pagination.lastPage %}
+<a href="{{pagination.nextPageRelativeLink}}">{{message('posts.pagination.older')}} »</a>
+{% endif %}
+
+{% endblock %}

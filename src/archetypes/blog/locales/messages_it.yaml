@@ -1,0 +1,16 @@
+title: Stampo Blog
+header: Stampo Blog
+footer: Questo è il footer
+
+anonymous: Anonimo
+
+tag: Tag
+
+posts.page: Pagina
+posts.pagination.newer: Posts più recenti
+posts.pagination.older: Posts più vecchi
+
+post.postedBy: Scritto da
+post.postedOn: il giorno
+
+post.tags: Tags

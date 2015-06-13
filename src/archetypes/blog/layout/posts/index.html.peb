@@ -1,0 +1,35 @@
+{%extends "common/base-page.peb" %}
+
+{% block title %}{{metadata.rawMap.title}}{% endblock %}
+
+{% block section %}posts/{{resource.fileNameWithoutExtensions}}{%endblock %}
+
+
+{% block content %}
+<div class="post">
+	<h1>{{metadata.rawMap.title}}</h1>
+	<p class="content">{{content|raw}}</p>
+	
+	<p class="footer">
+		<span>{{message('post.postedBy')}}</span>
+		{% if metadata.rawMap.authors == null %}
+			{{message('anonymous')}}
+		{% else %}
+			{% for author in metadata.rawMap.authors %}
+				<a href="mailto:{{author}}">{{author}}</a>
+			{% endfor %}
+		{% endif %}
+		<span>{{message('post.postedOn')}} </span>
+		{{metadata.rawMap.date | date("dd.MM.yyyy")}}
+	</p>
+	
+	<p class="tags">
+		{% if metadata.rawMap.tags != null %}
+			<span>{{message('post.tags')}}: </span>
+			{% for tag in metadata.rawMap.tags %}
+				<a href="{{relativeRootPathLocalized}}/tags/{{tag}}">{{tag}}</a>
+			{% endfor %}
+		{% endif %}
+	</p>
+</div>
+{%endblock %}

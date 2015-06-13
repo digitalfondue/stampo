@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html class="overflow-y-scroll" lang="{{locale}}">
+	<head>
+	  <meta charset="UTF-8">
+ 	  <title>{{message('title')}} - {% block title %}{%endblock %}</title>
+	</head>
+	<body class="site">
+		<header>
+			<nav class="navbar">
+				<div class="container">
+					  <h1>{{message('header')}}</h1>
+					  <ul class="navbar-list right">
+							<li><a href="/{% block section %}{% endblock %}" hreflang="en">EN</a>
+							<li><a href="/it/{% block section %}{% endblock %}" hreflang="it">IT</a>
+					  </ul>
+				</div>
+			</nav>
+		</header>
+
+		<main class="site-content">
+			<div class="container main-content">
+				<div>{% block content %}{% endblock %}</div>
+			</div>
+		</main>
+		
+		<footer class="footer">
+			<div class="container">
+				{{message('footer')}}
+			</div>
+		</footer>
+	</body>
+</html>
