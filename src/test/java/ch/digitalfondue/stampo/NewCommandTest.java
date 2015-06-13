@@ -21,7 +21,6 @@ import static java.nio.file.Files.isDirectory;
 import static java.nio.file.Files.walkFileTree;
 
 import java.io.ByteArrayOutputStream;
-import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.nio.file.FileVisitResult;
@@ -36,118 +35,120 @@ import org.junit.Test;
 import ch.digitalfondue.stampo.command.New;
 
 public class NewCommandTest {
-	
-	private static String[] of(String... strings) {
-		return strings;
-	}
-	
-	private void cleanUp(Path path) {
-		if (exists(path) && isDirectory(path)) {
-			try {
-				walkFileTree(path, new SimpleFileVisitor<Path>() {
-					@Override
-					public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
-						delete(file);
-						return FileVisitResult.CONTINUE;
-					}
 
-					@Override
-					public FileVisitResult postVisitDirectory(Path dir, IOException exc) throws IOException {
-						delete(dir);
-						return FileVisitResult.CONTINUE;
-					}
-				});
-			} catch (IOException e) {
-				throw new IllegalStateException(e);
-			}
-		}
-	}
-	
-	@Test
-	public void callNewMissingArguments() {
-		Runnable r = StampoMain.fromParameters(of("new"));
-	    Assert.assertTrue(r instanceof New);
-	    New n = (New) r;
-	    Assert.assertFalse(n.getPath().isPresent());
-	    Assert.assertFalse(n.getName().isPresent());
-	}
-	
-	@Test
-	public void callNewWithProjectName() {
-		Runnable r = StampoMain.fromParameters(of("new", "--name=test"));
-	    Assert.assertTrue(r instanceof New);
-	    New n = (New) r;
-	    Assert.assertFalse(n.getPath().isPresent());
-	    Assert.assertTrue(n.getName().isPresent());
-	    
-	    try {
-	    	n.run();
+  private static String[] of(String... strings) {
+    return strings;
+  }
 
-	    	Assert.assertTrue(Paths.get("./test/test.txt").toFile().exists());
-	    	Assert.assertTrue(Paths.get("./test/child").toFile().exists());
-	    	Assert.assertTrue(Paths.get("./test/child").toFile().isDirectory());
-	    	Assert.assertTrue(Paths.get("./test/child/test-child.txt").toFile().exists());
-	    } finally {
-	    	cleanUp(Paths.get("./test"));
-	    }
-	}
-	
-	@Test
-	public void callNewWithPath() {
-		Runnable r = StampoMain.fromParameters(of("new", "--dest=./stampo-path"));
-	    Assert.assertTrue(r instanceof New);
-	    New n = (New) r;
-	    Assert.assertTrue(n.getPath().isPresent());
-	    Assert.assertFalse(n.getName().isPresent());
-	    
-	    try {
-	    	n.run();
-	    
-	    	Assert.assertTrue(Paths.get("./stampo-path/test.txt").toFile().exists());
-	    	Assert.assertTrue(Paths.get("./stampo-path/child").toFile().exists());
-	    	Assert.assertTrue(Paths.get("./stampo-path/child").toFile().isDirectory());
-	    	Assert.assertTrue(Paths.get("./stampo-path/child/test-child.txt").toFile().exists());
-	    } finally {
-	    	cleanUp(Paths.get("./stampo-path"));
-	    }
-	}
-	
-	@Test
-	public void callNewWithPathAndArchetype() {
-		Runnable r = StampoMain.fromParameters(of("new", "--dest=./stampo-path", "--archetype=site"));
-	    Assert.assertTrue(r instanceof New);
-	    New n = (New) r;
-	    Assert.assertTrue(n.getPath().isPresent());
-	    Assert.assertFalse(n.getName().isPresent());
-	    
-	    try {
-		    n.run();
-		    
-		    Assert.assertTrue(Paths.get("./stampo-path/test.txt").toFile().exists());
-		    Assert.assertTrue(Paths.get("./stampo-path/child").toFile().exists());
-		    Assert.assertTrue(Paths.get("./stampo-path/child").toFile().isDirectory());
-		    Assert.assertTrue(Paths.get("./stampo-path/child/test-child.txt").toFile().exists());
-		    Assert.assertTrue(Paths.get("./stampo-path/site").toFile().exists());
-		    Assert.assertTrue(Paths.get("./stampo-path/site").toFile().isDirectory());
-		    Assert.assertTrue(Paths.get("./stampo-path/site/site-test.txt").toFile().exists());
-	    } finally {   
-	    	cleanUp(Paths.get("./stampo-path"));
-	    }
-	}
-	
-	@Test
-	public void callNewWithPathAndWrongArchetype() {
-		Runnable r = StampoMain.fromParameters(of("new", "--dest=./stampo-path", "--archetype=wrong-value"));
-	    Assert.assertTrue(r instanceof New);
-	    New n = (New) r;
-	    Assert.assertTrue(n.getPath().isPresent());
-	    Assert.assertFalse(n.getName().isPresent());
-	    
-	    ByteArrayOutputStream outContent = new ByteArrayOutputStream();
-	    System.setErr(new PrintStream(outContent));
-	    
-	    n.run();
-	    Assert.assertEquals("invalid archetype, specify one of: [basic, site, blog, doc]", outContent.toString().replaceAll("[\r\n]", ""));
-	}
+  private void cleanUp(Path path) {
+    if (exists(path) && isDirectory(path)) {
+      try {
+        walkFileTree(path, new SimpleFileVisitor<Path>() {
+          @Override
+          public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+            delete(file);
+            return FileVisitResult.CONTINUE;
+          }
+
+          @Override
+          public FileVisitResult postVisitDirectory(Path dir, IOException exc) throws IOException {
+            delete(dir);
+            return FileVisitResult.CONTINUE;
+          }
+        });
+      } catch (IOException e) {
+        throw new IllegalStateException(e);
+      }
+    }
+  }
+
+  @Test
+  public void callNewMissingArguments() {
+    Runnable r = StampoMain.fromParameters(of("new"));
+    Assert.assertTrue(r instanceof New);
+    New n = (New) r;
+    Assert.assertFalse(n.getPath().isPresent());
+    Assert.assertFalse(n.getName().isPresent());
+  }
+
+  @Test
+  public void callNewWithProjectName() {
+    Runnable r = StampoMain.fromParameters(of("new", "--name=test"));
+    Assert.assertTrue(r instanceof New);
+    New n = (New) r;
+    Assert.assertFalse(n.getPath().isPresent());
+    Assert.assertTrue(n.getName().isPresent());
+
+    try {
+      n.run();
+
+      Assert.assertTrue(Paths.get("./test/test.txt").toFile().exists());
+      Assert.assertTrue(Paths.get("./test/child").toFile().exists());
+      Assert.assertTrue(Paths.get("./test/child").toFile().isDirectory());
+      Assert.assertTrue(Paths.get("./test/child/test-child.txt").toFile().exists());
+    } finally {
+      cleanUp(Paths.get("./test"));
+    }
+  }
+
+  @Test
+  public void callNewWithPath() {
+    Runnable r = StampoMain.fromParameters(of("new", "--dest=./stampo-path"));
+    Assert.assertTrue(r instanceof New);
+    New n = (New) r;
+    Assert.assertTrue(n.getPath().isPresent());
+    Assert.assertFalse(n.getName().isPresent());
+
+    try {
+      n.run();
+
+      Assert.assertTrue(Paths.get("./stampo-path/test.txt").toFile().exists());
+      Assert.assertTrue(Paths.get("./stampo-path/child").toFile().exists());
+      Assert.assertTrue(Paths.get("./stampo-path/child").toFile().isDirectory());
+      Assert.assertTrue(Paths.get("./stampo-path/child/test-child.txt").toFile().exists());
+    } finally {
+      cleanUp(Paths.get("./stampo-path"));
+    }
+  }
+
+  @Test
+  public void callNewWithPathAndArchetype() {
+    Runnable r = StampoMain.fromParameters(of("new", "--dest=./stampo-path", "--archetype=site"));
+    Assert.assertTrue(r instanceof New);
+    New n = (New) r;
+    Assert.assertTrue(n.getPath().isPresent());
+    Assert.assertFalse(n.getName().isPresent());
+
+    try {
+      n.run();
+
+      Assert.assertTrue(Paths.get("./stampo-path/test.txt").toFile().exists());
+      Assert.assertTrue(Paths.get("./stampo-path/child").toFile().exists());
+      Assert.assertTrue(Paths.get("./stampo-path/child").toFile().isDirectory());
+      Assert.assertTrue(Paths.get("./stampo-path/child/test-child.txt").toFile().exists());
+      Assert.assertTrue(Paths.get("./stampo-path/site").toFile().exists());
+      Assert.assertTrue(Paths.get("./stampo-path/site").toFile().isDirectory());
+      Assert.assertTrue(Paths.get("./stampo-path/site/site-test.txt").toFile().exists());
+    } finally {
+      cleanUp(Paths.get("./stampo-path"));
+    }
+  }
+
+  @Test
+  public void callNewWithPathAndWrongArchetype() {
+    Runnable r =
+        StampoMain.fromParameters(of("new", "--dest=./stampo-path", "--archetype=wrong-value"));
+    Assert.assertTrue(r instanceof New);
+    New n = (New) r;
+    Assert.assertTrue(n.getPath().isPresent());
+    Assert.assertFalse(n.getName().isPresent());
+
+    ByteArrayOutputStream outContent = new ByteArrayOutputStream();
+    System.setErr(new PrintStream(outContent));
+
+    n.run();
+    Assert.assertEquals("invalid archetype, specify one of: [basic, site, blog, doc]", outContent
+        .toString().replaceAll("[\r\n]", ""));
+  }
 
 }
