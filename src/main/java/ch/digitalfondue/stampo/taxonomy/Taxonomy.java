@@ -44,7 +44,7 @@ public class Taxonomy {
 
   public void add(Directory directory) {
     generateGroups(directory);
-    groups.forEach((k, m) -> m.forEach((_ignore, l) ->  Collections.sort(l, fileSorter)));
+    groups.forEach((k, m) -> m.forEach((ignore, l) ->  Collections.sort(l, fileSorter)));
   }
 
   private void generateGroups(Directory dir) {
