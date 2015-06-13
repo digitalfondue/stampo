@@ -71,7 +71,9 @@ public class Help implements Opts {
           System.out.println();
           System.out.println("Options");
           System.out.println("  --dest=[dest-path]      Destination of the template, mandatory if --name is not set");
-          System.out.println("  --name=[project-name]]  Extract the template in the current directory, under the folder [project-name]. Mandatory, Ignored if --dest is set.");
+          System.out.println("  --name=[project-name]]  Extract the template in the current directory,\n"
+                           + "                          under the folder [project-name].\n"
+                           + "                          Mandatory, ignored if --dest is set.");
           System.out.println();
           System.out.println("  --archetype=[basic|site|blog|doc]      Define the template to extract. default basic");
         }
@@ -87,8 +89,9 @@ public class Help implements Opts {
         System.out.println("  build                    Build the site, use the current working\n"
                          + "                           directory if not specified");
         System.out.println("  serve                    Build and serve the site, as a default, it will\n"
-                   + "                           listen to localhost:8080");
+                         + "                           listen to localhost:8080");
         System.out.println("  check                    Check if the site build correctly");
+        System.out.println("  new                      Create a new stampo site using a predefined archetype");
         System.out.println("  help                     This help");
         System.out.println();
         System.out.println();
