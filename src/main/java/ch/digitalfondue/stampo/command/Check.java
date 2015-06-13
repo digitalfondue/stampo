@@ -61,7 +61,7 @@ public class Check extends Command {
           layout.getLayoutEngine(), layout.getLocale());
     }, (in, out) -> {
       try {
-        Files.write(out, Arrays.asList("  from static input " + in), StandardCharsets.UTF_8);
+        Files.write(out, Arrays.asList("  from static input " + in, ""), StandardCharsets.UTF_8);
       } catch (IOException ioe) {
         throw new IllegalStateException(ioe);
       }
