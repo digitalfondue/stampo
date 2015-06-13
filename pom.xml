@@ -148,7 +148,6 @@
 					<header>com/mycila/maven/plugin/license/templates/APACHE-2.txt</header>
 					<includes>
 						<include>**/*.java</include>
-						<include>**/*.js</include>
 					</includes>
 					<excludes>
 						<exclude>**/AlphaNumericStringComparator.java</exclude>

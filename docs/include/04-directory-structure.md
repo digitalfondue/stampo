@@ -81,6 +81,34 @@ output
 
 ## Layout directory
 
+Stampo has a layout mechanism for sharing common parts (TODO: see layout chapter). An override mechanism is present for selecting the layout given the page to render.
+
+For example if you have:
+
+
+```
+.
+├── content/
+|      |
+|      ├── index.md
+|      |
+|      └── post/my-post.md
+|    
+└── layout/
+      |
+      ├── index.html.peb
+      |
+      └── post/index.html.peb
+```
+
+To `content/index.md` the layout `layout/index.html.peb` will be applied and to `content/post/my-post.md` the layout `layout/post/index.html`. The rule for selecting the layout is:
+
+ - is there a layout named `layout/post/my-post.html.*` (we mirror the directories name between content and layout)? If yes, use it.
+ - else, check if `layout/post/index.html.*` is present ? If yes use it.
+ - else go back to the parent directory and check if a layout index.html.* is present? If yes use it or else repeat this rule until the layout dir is reached and there is no layout available 
+ 
+The rendered content will be exported as a variable named `content` in the template.
+
 ## Locales directory
 
 ## Data directory
