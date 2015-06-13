@@ -220,19 +220,50 @@
 			<plugin>
 				<artifactId>maven-assembly-plugin</artifactId>
 				<version>2.5.3</version>
-				<configuration>
-					<descriptors>
-						<descriptor>src/assembly/distribution.xml</descriptor>
-					</descriptors>
-					<finalName>stampo-${project.version}</finalName>
-					<appendAssemblyId>false</appendAssemblyId>
-				</configuration>
 				<executions>
 					<execution>
+						<id>distribution</id>
 						<phase>package</phase>
 						<goals>
 							<goal>single</goal>
 						</goals>
+						<configuration>
+							<descriptors>
+								<descriptor>src/assembly/distribution.xml</descriptor>
+							</descriptors>
+							<finalName>stampo-${project.version}</finalName>
+							<appendAssemblyId>false</appendAssemblyId>
+						</configuration>
+					</execution>
+					<execution>
+						<id>template-site</id>
+						<phase>compile</phase>
+						<goals>
+							<goal>single</goal>
+						</goals>
+						<configuration>
+							<descriptors>
+								<descriptor>src/assembly/template-site.xml</descriptor>
+							</descriptors>
+							<finalName>site</finalName>
+							<outputDirectory>${project.build.directory}/classes/templates</outputDirectory>
+							<appendAssemblyId>false</appendAssemblyId>
+						</configuration> 
+					</execution>
+					<execution>
+						<id>template-doc</id>
+						<phase>compile</phase>
+						<goals>
+							<goal>single</goal>
+						</goals>
+						<configuration>
+							<descriptors>
+								<descriptor>src/assembly/template-doc.xml</descriptor>
+							</descriptors>
+							<finalName>doc</finalName>
+							<outputDirectory>${project.build.directory}/classes/templates</outputDirectory>
+							<appendAssemblyId>false</appendAssemblyId>
+						</configuration> 
 					</execution>
 				</executions>
 			</plugin>
