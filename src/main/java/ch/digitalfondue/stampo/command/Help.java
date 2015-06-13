@@ -74,7 +74,6 @@ public class Help implements Opts {
           System.out.println("  --name=[project-name]]  Extract the template in the current directory, under the folder [project-name]. Mandatory, Ignored if --dest is set.");
           System.out.println();
           System.out.println("  --archetype=[basic|site|blog|doc]      Define the template to extract. default basic");
-          printCommonOptions();
         }
       },
     HELP {
@@ -129,6 +128,8 @@ public class Help implements Opts {
       selected = CommandName.SERVE;
     } else if (nonOpts.contains("check")) {
       selected = CommandName.CHECK;
+    } else if (nonOpts.contains("new")) {
+      selected = CommandName.NEW;
     } else {
       selected = CommandName.HELP;
     }
