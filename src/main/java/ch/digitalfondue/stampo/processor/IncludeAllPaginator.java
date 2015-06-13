@@ -359,7 +359,7 @@ public class IncludeAllPaginator implements Directive {
       }
       sbStack.append("<li>");
       if(addNumberingToTitles) {
-        sbStack.append("<span class=\"stampo-heading-li-number\">")
+        sbStack.append("<span class=\"stampo-number-and-heading-container\"><span class=\"stampo-heading-li-number\">")
             .append(h.positions.stream().map(Object::toString).collect(Collectors.joining(".")))
             .append("</span>");
       }
@@ -368,6 +368,10 @@ public class IncludeAllPaginator implements Directive {
           .append(PathUtils.relativePathTo(h.outputPath, path)).append("#").append(h.id)
           .append("\">")
           .append(h.name).append("</a>");
+      
+      if(addNumberingToTitles) {
+        sbStack.append("</span>");
+      }
     }
     //
     for (int i = 0; i < stack.size(); i++) {

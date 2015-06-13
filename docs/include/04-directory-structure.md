@@ -10,7 +10,7 @@ Stampo expect some conventions. The minimal directory structure is:
 
 ## Content directory
 
-All your content that must be processed must be put in the `content` directory.
+All the content that must be processed should be put in the `content` directory.
 
 ```
 .
