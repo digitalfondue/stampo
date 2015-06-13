@@ -45,7 +45,7 @@ public class MultiLocalesTest {
       stampo.build();
 
       for (String locale : Arrays.asList("en", "de", "fr")) {
-        checkForLocale(iod, locale);
+        checkForLocale(iod, locale, " | en-de-fr");
       }
     }
   }
@@ -66,11 +66,11 @@ public class MultiLocalesTest {
       stampo.build();
 
       for (String locale : Arrays.asList("de", "fr")) {
-        checkForLocale(iod, locale);
+        checkForLocale(iod, locale, " | -de-fr");
       }
 
       Assert.assertTrue(Files.exists(iod.outputDir.resolve("index.html")));
-      Assert.assertEquals("<h1>Hello World en</h1>[.] [.]",
+      Assert.assertEquals("<h1>Hello World en</h1>[.] [.] | -de-fr",
           TestUtils.fileOutputAsString(iod, "index.html"));
 
 
@@ -87,7 +87,10 @@ public class MultiLocalesTest {
 
   private void createFiles(InputOutputDirs iod) throws IOException {
     write(iod.inputDir.resolve("content/index.html.peb"),
-        "<h1>Hello World {{locale}}</h1>[{{relativeRootPath}}] [{{relativeRootPathLocalized}}]".getBytes(StandardCharsets.UTF_8));
+        "<h1>Hello World {{locale}}</h1>[{{relativeRootPath}}] [{{relativeRootPathLocalized}}] | {{defaultOrLocale('en')}}-{{defaultOrLocale('de')}}-{{defaultOrLocale('fr')}}".getBytes(StandardCharsets.UTF_8));
+    
+    write(iod.inputDir.resolve("content/index2.html.ftl"),
+        "---\noverride-use-ugly-url: true\n---\n<h1>Hello World ${locale}</h1>[${relativeRootPath}] [${relativeRootPathLocalized}] | ${defaultOrLocale('en')}-${defaultOrLocale('de')}-${defaultOrLocale('fr')}".getBytes(StandardCharsets.UTF_8));
 
     Files.createDirectories(iod.inputDir.resolve("content/post"));
 
@@ -106,10 +109,14 @@ public class MultiLocalesTest {
         "<h1>Fourth {{locale}}</h1>[{{relativeRootPath}}] [{{relativeRootPathLocalized}}]".getBytes(StandardCharsets.UTF_8));
   }
 
-  private void checkForLocale(InputOutputDirs iod, String locale) throws IOException {
+  private void checkForLocale(InputOutputDirs iod, String locale, String defaultOrLocale) throws IOException {
     Assert.assertTrue(Files.exists(iod.outputDir.resolve(locale + "/index.html")));
-    Assert.assertEquals("<h1>Hello World " + locale + "</h1>[..] [.]",
+    Assert.assertEquals("<h1>Hello World " + locale + "</h1>[..] [.]" + defaultOrLocale,
         TestUtils.fileOutputAsString(iod, locale + "/index.html"));
+    
+    Assert.assertTrue(Files.exists(iod.outputDir.resolve(locale + "/index2.html")));
+    Assert.assertEquals("<h1>Hello World " + locale + "</h1>[..] [.]" + defaultOrLocale,
+        TestUtils.fileOutputAsString(iod, locale + "/index2.html"));
 
     Assert.assertTrue(Files.exists(iod.outputDir.resolve(locale + "/post/first/index.html")));
     Assert.assertEquals("<h1>First " + locale + "</h1>[../../..] [../..]",
@@ -121,7 +128,7 @@ public class MultiLocalesTest {
     
     if("en".equals(locale)) {
       Assert.assertTrue(Files.exists(iod.outputDir.resolve(locale + "/post/third")));
-      Assert.assertEquals("<h1>Third " + locale + "</h1>[../../..] [../..]",
+      Assert.assertEquals("<h1>Third " + locale + "</h1>[../..] [..]",
           TestUtils.fileOutputAsString(iod, locale + "/post/third"));
       
       Assert.assertFalse(Files.exists(iod.outputDir.resolve(locale + "/post/fourth")));
@@ -129,7 +136,7 @@ public class MultiLocalesTest {
       Assert.assertFalse(Files.exists(iod.outputDir.resolve(locale + "/post/third")));
       
       Assert.assertTrue(Files.exists(iod.outputDir.resolve(locale + "/post/fourth")));
-      Assert.assertEquals("<h1>Fourth " + locale + "</h1>[../../..] [../..]",
+      Assert.assertEquals("<h1>Fourth " + locale + "</h1>[../..] [..]",
           TestUtils.fileOutputAsString(iod, locale + "/post/fourth"));
     }
   }

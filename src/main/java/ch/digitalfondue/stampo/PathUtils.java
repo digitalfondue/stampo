@@ -16,6 +16,7 @@
 package ch.digitalfondue.stampo;
 
 import java.nio.file.Path;
+import java.util.Optional;
 
 import com.google.common.io.Files;
 
@@ -30,8 +31,8 @@ public class PathUtils {
       path = path.getParent();
     }
 
-    if ("index.html".equalsIgnoreCase(basePath.getFileName().toString())) {
-      basePath = basePath.getParent();
+    if (!java.nio.file.Files.isDirectory(basePath)) {
+      basePath = Optional.ofNullable(basePath.getParent()).orElse(basePath);
     }
     String relUrl = basePath.relativize(path).toString();
     return "".equals(relUrl) ? "." : relUrl;

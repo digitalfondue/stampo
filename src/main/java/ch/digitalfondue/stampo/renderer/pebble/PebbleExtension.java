@@ -28,6 +28,7 @@ import java.util.ResourceBundle.Control;
 
 import ch.digitalfondue.stampo.StampoGlobalConfiguration;
 
+import com.mitchellbosecke.pebble.error.AttributeNotFoundException;
 import com.mitchellbosecke.pebble.extension.AbstractExtension;
 import com.mitchellbosecke.pebble.extension.Function;
 import com.mitchellbosecke.pebble.template.EvaluationContext;
@@ -46,7 +47,30 @@ class PebbleExtension extends AbstractExtension {
     f.put("messageWithBundle", new MessageFunction(configuration, Optional.empty()));
     f.put("message", new MessageFunction(configuration, Optional.of("messages")));
     f.put("fromMap", new FromMapFunction());
+    f.put("defaultOrLocale", new DefaultOrLocale());
     return f;
+  }
+  
+  private static final class DefaultOrLocale implements Function {
+    @Override
+    public List<String> getArgumentNames() {
+      return Arrays.asList("locale");
+    }
+    
+    @Override
+    public Object execute(Map<String, Object> args) {
+      try {
+        String locale = (String) args.get("locale");
+        EvaluationContext context = (EvaluationContext) args.get("_context");
+        StampoGlobalConfiguration conf = (StampoGlobalConfiguration) context.get("configuration");
+        return conf.getDefaultLocale().map(l -> l.toLanguageTag().equals(locale) ? "" : locale)
+            .orElse(locale);
+      } catch (AttributeNotFoundException e) {
+        throw new IllegalStateException(e);
+      }
+    }
+    
+    
   }
   
   private static final class FromMapFunction implements Function {
