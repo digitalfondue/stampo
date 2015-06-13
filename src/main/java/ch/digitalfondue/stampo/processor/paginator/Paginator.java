@@ -62,7 +62,9 @@ public class Paginator {
   }
 
   protected <T, R> List<PathAndModelSupplier> registerPaths(List<T> files, Path defaultOutputPath,
-      long pageSize, FileResource resource, Function<Path, Function<T, R>> contentMapper) {
+      PaginationConfiguration paginationConf, FileResource resource, Function<Path, Function<T, R>> contentMapper) {
+    
+    int pageSize = paginationConf.getPageSize();
 
     Path basePageDir = defaultOutputPath.getParent().resolve(PAGE_DIRECTORY_NAME);
 
@@ -72,16 +74,12 @@ public class Paginator {
     // -1, as we don't count the base page
     long additionalPages = Math.max((count / pageSize + (count % pageSize > 0 ? 1 : 0)) - 1, 0);
 
-    Supplier<Map<String, Object>> indexPageModelSupplier =
-        prepareModelSupplier(1, pageSize, additionalPages, files, defaultOutputPath, resource,
-            contentMapper.apply(defaultOutputPath));
+    Supplier<Map<String, Object>> indexPageModelSupplier = prepareModelSupplier(1, paginationConf, additionalPages, files, defaultOutputPath, resource, contentMapper.apply(defaultOutputPath));
     outpuPaths.add(new PathAndModelSupplier(defaultOutputPath, indexPageModelSupplier));
 
     for (int i = 0; i < additionalPages; i++) {
       Path pageOutputPath = basePageDir.resolve(pageName(i + 2, resource));
-      Supplier<Map<String, Object>> pageModelSupplier =
-          prepareModelSupplier(i + 2, pageSize, additionalPages, files, defaultOutputPath,
-              resource, contentMapper.apply(pageOutputPath));
+      Supplier<Map<String, Object>> pageModelSupplier = prepareModelSupplier(i + 2, paginationConf, additionalPages, files, defaultOutputPath, resource, contentMapper.apply(pageOutputPath));
       outpuPaths.add(new PathAndModelSupplier(pageOutputPath, pageModelSupplier));
     }
 
@@ -89,17 +87,16 @@ public class Paginator {
   }
 
   private <T, T1> Supplier<Map<String, Object>> prepareModelSupplier(long currentPage,
-      long pageSize, long additionalPagesCount, List<T> content, Path defaultOutputPath,
+      PaginationConfiguration paginationConf, long additionalPagesCount, List<T> content, Path defaultOutputPath,
       FileResource fileResource, Function<T, T1> contentMapper) {
     return () -> {
+      int pageSize = paginationConf.getPageSize();
       Map<String, Object> model = new HashMap<>();
-      List<T1> pageContent = content.stream().skip((currentPage - 1) * pageSize)//
-          .limit(pageSize).map(contentMapper).collect(toList());
-      BiFunction<Long, Long, String> paginationFunction =
-          urlPaginationGenerator(defaultOutputPath, fileResource);
-      model.put("pagination",
-          new Page<>(currentPage, pageSize, additionalPagesCount + 1, content.size(),
-              paginationFunction, pageContent));
+      List<T1> pageContent = content.stream().skip((currentPage - 1) * pageSize).limit(pageSize).map(contentMapper).collect(toList());
+      
+      BiFunction<Long, Long, String> paginationFunction = urlPaginationGenerator(defaultOutputPath, fileResource);
+      model.put("pagination", new Page<>(currentPage, pageSize, additionalPagesCount + 1, content.size(), paginationFunction, pageContent));
+      model.put("paginationConfiguration", paginationConf);
       return model;
     };
   }

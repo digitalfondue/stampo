@@ -196,8 +196,7 @@ public class DirPaginator extends Paginator implements Directive {
       return "default".equals(m.getDirective());
     }).filter(f -> patternFilter.test(f.getPath())).collect(toList());
 
-    return registerPaths(files, defaultOutputPath, dirPaginationConf.getPageSize(), resource,
-        path -> (f -> toPageContent(f, locale, path)));
+    return registerPaths(files, defaultOutputPath, dirPaginationConf, resource, path -> (f -> toPageContent(f, locale, path)));
   }
 
   private List<PathAndModelSupplier> handleStaticDir(FileResource resource, Path defaultOutputPath,
@@ -218,9 +217,7 @@ public class DirPaginator extends Paginator implements Directive {
             .map(file -> baseOutputDir.resolve(staticDir.relativize(file).toString()))
             .collect(toList());
 
-    List<PathAndModelSupplier> toAdd =
-        registerPaths(files, defaultOutputPath, dirPaginationConf.getPageSize(), resource,
-            path -> (f -> PathUtils.relativePathTo(f, path)));
+    List<PathAndModelSupplier> toAdd = registerPaths(files, defaultOutputPath, dirPaginationConf, resource, path -> (f -> PathUtils.relativePathTo(f, path)));
     return toAdd;
   }
 

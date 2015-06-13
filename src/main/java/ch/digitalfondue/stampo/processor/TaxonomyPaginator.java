@@ -73,8 +73,7 @@ public class TaxonomyPaginator extends Paginator implements Directive {
     Map<String, Map<String, List<FileResource>>> groups = taxonomy.getGroups();
 
     if (groups.containsKey(conf.getTaxonomy())) {
-      outpuPaths.addAll(handleTaxonomyGroup(resource, locale, parentDir,
-          groups.get(conf.getTaxonomy()), conf));
+      outpuPaths.addAll(handleTaxonomyGroup(resource, locale, parentDir, groups.get(conf.getTaxonomy()), conf));
     }
 
     return outpuPaths;
@@ -88,8 +87,7 @@ public class TaxonomyPaginator extends Paginator implements Directive {
 
     for (Entry<String, List<FileResource>> tagFiles : map.entrySet()) {
       String finalDirName = tagFiles.getKey() + "/index.html";
-      toAdd.addAll(registerPaths(tagFiles.getValue(), baseDir.resolve(finalDirName),
-          conf.getPageSize(), resource, path -> (f -> toPageContent(f, locale, path))));
+      toAdd.addAll(registerPaths(tagFiles.getValue(), baseDir.resolve(finalDirName), conf, resource, path -> (f -> toPageContent(f, locale, path))));
     }
 
     return toAdd;
