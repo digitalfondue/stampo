@@ -19,6 +19,7 @@ import static java.util.Optional.ofNullable;
 
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -51,9 +52,7 @@ public class TaxonomyPaginator extends Paginator implements Directive {
       Map<String, Object> metadata) {
     return ofNullable(metadata.get(METADATA_PAGINATE_OVER_TAXONOMY)).map(Object::toString).map(
         taxonomy -> {
-          int pageSize =
-              ofNullable(metadata.get(METADATA_PAGINATE_PAGE_SIZE)).map(Integer.class::cast)
-                  .orElse(DEFAULT_PAGE_SIZE);
+          int pageSize = ofNullable(metadata.get(METADATA_PAGINATE_PAGE_SIZE)).map(Integer.class::cast).orElse(DEFAULT_PAGE_SIZE);
           return new TaxonomyPaginationConfiguration(taxonomy, pageSize);
         });
   }
@@ -87,7 +86,8 @@ public class TaxonomyPaginator extends Paginator implements Directive {
 
     for (Entry<String, List<FileResource>> tagFiles : map.entrySet()) {
       String finalDirName = tagFiles.getKey() + "/index.html";
-      toAdd.addAll(registerPaths(tagFiles.getValue(), baseDir.resolve(finalDirName), conf, resource, path -> (f -> toPageContent(f, locale, path))));
+      Map<String, Object> additionalModel = Collections.singletonMap("currentTaxonomy", tagFiles.getKey());
+      toAdd.addAll(registerPaths(tagFiles.getValue(), baseDir.resolve(finalDirName), conf, additionalModel, resource, path -> (f -> toPageContent(f, locale, path))));
     }
 
     return toAdd;
