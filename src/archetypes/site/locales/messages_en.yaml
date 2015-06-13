@@ -1,0 +1,17 @@
+news: News
+home: Home
+home.subtext: Great, stampo just built your first web site!
+
+navigation: Navigation
+
+contact: Contact
+contactus: E-mail
+
+social: Social
+
+welcome: Welcome to stampo
+
+pagination.page: Page
+pagination.of: of
+pagination.newer: Newer
+pagination.older: Older

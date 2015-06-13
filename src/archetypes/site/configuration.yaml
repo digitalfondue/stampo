@@ -1,0 +1,5 @@
+locales: 
+        - en
+        - it
+default-locale: en
+

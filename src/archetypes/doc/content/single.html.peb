@@ -1,0 +1,31 @@
+---
+directive: include-all
+include-all: doc/
+paginate-at-depth: 0
+add-numbering-to-titles: true
+---
+<!doctype html>
+<html>
+  <head>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/pure/0.6.0/pure.css">
+    <link rel="stylesheet" href="{{relativeRootPath}}/css/layouts/side-menu.css">
+    <link rel="stylesheet" href="{{relativeRootPath}}/css/custom.css">
+  </head>
+<body>
+
+
+<div id="main">
+    <div class="header">
+      <h1>My Documentation</h1>  
+    </div>
+    <div class="content">  
+        <div class="summary">{{summary|raw}}</div>
+        <div>{{includeAllResult|raw}}</div>
+    </div>
+</div>
+
+
+
+
+</body>
+</html>

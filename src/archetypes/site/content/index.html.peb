@@ -1,0 +1,16 @@
+{% extends "common/base-page.peb" %}
+
+{% block title%}{{message('home')}}{% endblock %}
+
+{% block homeSelected %}active{%endblock %}
+
+{% block section %}{%endblock %}
+
+{% block content %}
+<h1 class="hidden">{{message('welcome')}}</h1>
+<div class="row main-content-description">
+	<div class="twelfe columns">
+		<p>{{message('home.subtext')}}</p>
+	</div>
+</div>
+{% endblock %}

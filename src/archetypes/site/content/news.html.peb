@@ -1,0 +1,48 @@
+---
+directive: dir-pagination
+paginate-over-directory: content/news
+paginate-page-size: 1
+paginate-recursive: true
+---
+
+{% extends "common/base-page.peb" %}
+
+{% block title%}{{message('news')}}{% endblock %}
+
+{% block newsSelected %}active{%endblock %}
+
+{% block section %}news{%endblock %}
+
+{% block content %}
+<h1 class="hidden">{{message('news')}}</h1>
+<ul class="news">
+{% for news in pagination.pageContent %}
+  <li>
+	<span class="date">{{news.resource.metadata.rawMap.date | date("dd.MM.yyyy")}}</span>
+	<a href="{{news.relativeUrlToContent}}">{{news.resource.metadata.rawMap.title}}</a>
+  </li>
+{% endfor %}
+</ul>
+
+{% if not pagination.pageCount == 1 %}
+	<div class="navigation">
+		{% if not pagination.firstPage %}
+		<a class="pagination-control" href="{{pagination.previousPageRelativeLink}}">{{message('pagination.newer')}}</a>
+		{% else %}
+		<span class="pagination-inactive">{{message('pagination.newer')}}</span>
+		{% endif %}
+
+		<span class="pages">
+		{{message('pagination.page')}} {{pagination.currentPage}} {{message('pagination.of')}} {{pagination.pageCount}}
+		</span>
+
+		{% if not pagination.lastPage %}
+		<a class="pagination-control" href="{{pagination.nextPageRelativeLink}}">{{message('pagination.older')}}</a>
+		{% else %}
+		<span class="pagination-inactive">{{message('pagination.older')}}</span>
+		{% endif %}
+	</div>
+{% endif %}
+
+
+{% endblock %}

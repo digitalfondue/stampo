@@ -1,0 +1,18 @@
+{%extends "common/base-page.peb" %}
+
+{% block title %}News - {{metadata.rawMap.title}}{% endblock %}
+
+{% block newsSelected %}selected{%endblock %}
+
+{% block section %}news/{{resource.fileNameWithoutExtensions}}{%endblock %}
+
+
+{% block content %}
+<div class="row main-content-description">
+	<div class="twelfe columns">
+		{{metadata.rawMap.date | date("dd.MM.yyyy")}}
+		{{content|raw}}
+	</div>
+</div>
+
+{%endblock %}

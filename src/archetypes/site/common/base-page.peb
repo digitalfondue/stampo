@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html class="overflow-y-scroll" lang="{{locale}}">
+	<head>
+	  <link rel="stylesheet" href="{{relativeRootPath}}/css/normalize.css">
+	  <link rel="stylesheet" href="{{relativeRootPath}}/css/skeleton.css">
+ 	  <link rel="stylesheet" href="{{relativeRootPath}}/css/custom.css">
+ 	  <title>Stampo test site - {% block title %}{%endblock %}</title>
+	</head>
+	<body class="site">
+		<header>
+			<nav class="navbar">
+				<div class="container">
+					  <ul class="navbar-list left">
+							<li class="{% block homeSelected %}{%endblock %}"><a href="{{relativeRootPathLocalized}}">{{message('home')}}</a>
+							<li class="{% block newsSelected %}{%endblock %}"><a href="{{relativeRootPathLocalized}}/news">{{message('news')}}</a>
+					  </ul>
+					  <ul class="navbar-list right">
+							<li><a href="/{% block section %}{% endblock %}" hreflang="en">EN</a>
+							<li><a href="/it/{% block section %}{% endblock %}" hreflang="it">IT</a>
+					  </ul>
+				</div>
+			</nav>
+		</header>
+
+		<main class="site-content">
+			<div class="news container main-content">
+				<div>{% block content %}{% endblock %}</div>
+			</div>
+		</main>
+		
+		<footer class="footer">
+			<div class="container">
+				<ol class="footer-columns">
+					<li class="footer-column">
+						<span class="footer-column-title">{{message('navigation')}}</span>
+						<ol>
+							<li><a href="{{relativeRootPathLocalized}}/news">{{message('news')}}</a></li>
+						</ol>
+					</li>
+					<li class="footer-column">
+						<span class="footer-column-title">{{message('contact')}}</span>
+						<ol>
+							<li><a href="mailto:test@test.com">{{message('contactus')}}</a></li>
+						</ol>
+					</li>
+					<li class="footer-column">
+						<span class="footer-column-title">{{message('social')}}</span>
+						<ol>
+							<li><a href="https://twitter.com">Twitter</a></li>
+							<li><a href="https://github.com">Github</a></li>
+						</ol>
+					</li>
+				</ol>
+			</div>
+		</footer>
+	</body>
+</html>
