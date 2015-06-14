@@ -1,0 +1,23 @@
+{% macro render_post(postUrl, resource, content, relativeRootPathLocalized) %}
+<section class="post">
+	<header class="post-header">
+		<h2 class="post-title"><a href="{{postUrl}}">{{resource.metadata.rawMap.title}}</a></h2>
+
+			
+		<p class="post-meta">{{resource.metadata.rawMap.date | date("dd.MM.yyyy")}}
+			{% if false == resource.metadata.rawMap.authors.isEmpty %}
+				{{message('post.postedBy')}} {% for author in resource.metadata.rawMap.authors %}{{author}} {% endfor %}
+			{% endif %}
+				
+			{% if false == resource.metadata.rawMap.tags.isEmpty %}
+				{% for tag in resource.metadata.rawMap.tags %}
+					<a class="post-category" href="{{relativeRootPathLocalized}}/tags/{{tag}}">{{tag}}</a>
+				{% endfor %}
+			{% endif %}
+		</p>
+			
+	</header>
+
+	<div class="post-description">{{content|raw}}</div>
+</section>
+{% endmacro %}

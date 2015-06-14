@@ -3,32 +3,21 @@ directive: taxonomy-pagination
 paginate-over-taxonomy: tags
 paginate-page-size: 5
 ---
-
+{% import "common/render-post-macro.peb" %}
+{% import "common/render-pagination-macro.peb" %}
 {% extends "common/base-page.peb" %}
 
 {% block title%}{{message('tag')}}: {{currentTaxonomy}} - {{message('posts.page')}} {{pagination.currentPage}}{% endblock %}
 
-{% block section %}posts/{{currentTaxonomy}}{%endblock %}
-
 {% block content %}
 
-{{outputPath}}
+<div class="posts">
+	<h1 class="content-subhead">Posts in {{currentTaxonomy}}</h1>
 
-<ul>
 {% for post in pagination.pageContent %}
-  <li>
-    <a href="{{post.relativeUrlToContent}}"><div>{{post.renderedResource | raw}}</div></a>
+	{{render_post(post.relativeUrlToContent, post.resource, post.renderedResource, relativeRootPathLocalized)}}
 {% endfor %}
-</ul>
+</div>
 
-{% if not pagination.firstPage %}
-<a href="{{pagination.previousPageRelativeLink}}">« Newer Posts</a>
-{% endif %}
-
-{{pagination.currentPage}} / {{pagination.pageCount}}
-
-{% if not pagination.lastPage %}
-<a href="{{pagination.nextPageRelativeLink}}">Older Posts »</a>
-{% endif %}
-
+{{render_pagination(pagination)}}
 {% endblock %}

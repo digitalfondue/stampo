@@ -3,30 +3,38 @@
 	<head>
 	  <meta charset="UTF-8">
  	  <title>{{message('title')}} - {% block title %}{%endblock %}</title>
+ 	  
+	  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/pure/0.6.0/pure.css">
+	  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/pure/0.6.0/grids-responsive.css">
+	  <link rel="stylesheet" href="{{relativeRootPath}}/css/blog.css">
+ 	  
 	</head>
-	<body class="site">
-		<header>
-			<nav class="navbar">
-				<div class="container">
-					  <h1>{{message('header')}}</h1>
-					  <ul class="navbar-list right">
-							<li><a href="/{% block section %}{% endblock %}" hreflang="en">EN</a>
-							<li><a href="/it/{% block section %}{% endblock %}" hreflang="it">IT</a>
-					  </ul>
-				</div>
-			</nav>
-		</header>
-
-		<main class="site-content">
-			<div class="container main-content">
-				<div>{% block content %}{% endblock %}</div>
-			</div>
-		</main>
+	<body>
+	
+		<div id="layout" class="pure-g">
 		
-		<footer class="footer">
-			<div class="container">
-				{{message('footer')}}
-			</div>
-		</footer>
+			<div class="sidebar pure-u-1 pure-u-md-1-4">
+		        <div class="header">
+		            <h1 class="brand-title"><a href="{{relativeRootPathLocalized}}">{{message('header')}}</a></h1>
+		            <h2 class="brand-tagline">{{message('tagline')}}</h2>
+		
+		            <nav class="nav">
+		                <ul class="nav-list">
+		                    <li class="nav-item">
+		                    	<a class="pure-button" href="{{switchToLocale('en')}}" hreflang="en">EN</a>
+		                    </li>
+		                    <li class="nav-item">
+		                    	<a class="pure-button" href="{{switchToLocale('it')}}" hreflang="it">IT</a>
+		                    </li>
+		                </ul>
+		            </nav>
+		        </div>
+		    </div>
+		    
+		    <div class="content pure-u-1 pure-u-md-3-4">
+		    	{% block content %}{% endblock %}
+		    </div>
+		</div>
+
 	</body>
 </html>

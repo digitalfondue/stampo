@@ -5,28 +5,24 @@ paginate-page-size: 5
 paginate-recursive: true
 paginate-match: ['glob:content/posts/*.md']
 ---
-
+{% import "common/render-post-macro.peb" %}
+{% import "common/render-pagination-macro.peb" %}
 {% extends "common/base-page.peb" %}
 
 {% block title%}{{message('posts.page')}} {{pagination.currentPage}}{% endblock %}
 
 {% block content %}
 
-<ul>
+<!-- A wrapper for all the blog posts -->
+<div class="posts">
+	<h1 class="content-subhead">Recent Posts</h1>
+
 {% for post in pagination.pageContent %}
-  <li>
-    <a href="{{post.relativeUrlToContent}}"><span>{{post.resource.metadata.rawMap.title}}</span></a>
+	{{render_post(post.relativeUrlToContent, post.resource, post.renderedResource, relativeRootPathLocalized)}}
 {% endfor %}
-</ul>
+</div>
 
-{% if not pagination.firstPage %}
-<a href="{{pagination.previousPageRelativeLink}}">« {{message('posts.pagination.newer')}}</a>
-{% endif %}
 
-{{pagination.currentPage}} / {{pagination.pageCount}}
-
-{% if not pagination.lastPage %}
-<a href="{{pagination.nextPageRelativeLink}}">{{message('posts.pagination.older')}} »</a>
-{% endif %}
+{{render_pagination(pagination)}}
 
 {% endblock %}
