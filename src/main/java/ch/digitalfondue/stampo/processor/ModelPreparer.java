@@ -48,6 +48,7 @@ public class ModelPreparer {
     model.put("resource", resource);
     model.put("metadata", resource.getMetadata());
     model.put("relativeRootPath", PathUtils.relativePathTo(configuration.getBaseOutputDir(), outputPath));
+    model.put("fileResourceOutputPath", outputPath);
     
     if(configuration.getLocales().size() > 1 && !configuration.getDefaultLocale().map(locale::equals).orElse(false)) {
       model.put("relativeRootPathLocalized", PathUtils.relativePathTo(configuration.getBaseOutputDir().resolve(locale.toLanguageTag()), outputPath));

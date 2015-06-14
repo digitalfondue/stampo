@@ -16,6 +16,7 @@
 package ch.digitalfondue.stampo.renderer.freemarker;
 
 import java.io.StringWriter;
+import java.nio.file.Path;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -25,6 +26,7 @@ import java.util.Map;
 import java.util.ResourceBundle;
 import java.util.function.Function;
 
+import ch.digitalfondue.stampo.PathUtils;
 import ch.digitalfondue.stampo.StampoGlobalConfiguration;
 import ch.digitalfondue.stampo.exception.LayoutException;
 import ch.digitalfondue.stampo.exception.TemplateException;
@@ -121,6 +123,14 @@ public class FreemarkerRenderer implements Renderer {
           .orElse(loc);
     };
     model.put("defaultOrLocale", defaultOrLocale);
+    
+    TemplateMethodModelEx switchToLocale = (arguments) -> {
+      String localeToSwitch = arguments.get(0).toString();
+      Path fileResourceOutputPath = (Path) model.get("fileResourceOutputPath");
+      return PathUtils.switchToLocale(Locale.forLanguageTag(localeToSwitch), locale, fileResourceOutputPath, configuration);
+    };
+    
+    model.put("switchToLocale", switchToLocale);
   }
 
   private static Configuration getConfiguration(Directory root,

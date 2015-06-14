@@ -15,6 +15,7 @@
  */
 package ch.digitalfondue.stampo.renderer.pebble;
 
+import java.nio.file.Path;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -26,6 +27,7 @@ import java.util.Optional;
 import java.util.ResourceBundle;
 import java.util.ResourceBundle.Control;
 
+import ch.digitalfondue.stampo.PathUtils;
 import ch.digitalfondue.stampo.StampoGlobalConfiguration;
 
 import com.mitchellbosecke.pebble.error.AttributeNotFoundException;
@@ -48,7 +50,30 @@ class PebbleExtension extends AbstractExtension {
     f.put("message", new MessageFunction(configuration, Optional.of("messages")));
     f.put("fromMap", new FromMapFunction());
     f.put("defaultOrLocale", new DefaultOrLocale());
+    f.put("switchToLocale", new SwitchToLocale());
     return f;
+  }
+  
+  private static final class SwitchToLocale implements Function {
+
+    @Override
+    public List<String> getArgumentNames() {
+      return Arrays.asList("locale");
+    }
+
+    @Override
+    public Object execute(Map<String, Object> args) {
+      try {
+        String localeToSwitch = (String) args.get("locale");
+        EvaluationContext context = (EvaluationContext) args.get("_context");
+        Locale currentLocale = context.getLocale();
+        StampoGlobalConfiguration conf = (StampoGlobalConfiguration) context.get("configuration");
+        Path fileResourceOutputPath = (Path) context.get("fileResourceOutputPath");
+        return PathUtils.switchToLocale(Locale.forLanguageTag(localeToSwitch), currentLocale, fileResourceOutputPath, conf);
+      } catch (AttributeNotFoundException e) {
+        throw new IllegalStateException(e);
+      }
+    }
   }
   
   private static final class DefaultOrLocale implements Function {

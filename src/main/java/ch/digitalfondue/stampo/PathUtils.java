@@ -16,6 +16,7 @@
 package ch.digitalfondue.stampo;
 
 import java.nio.file.Path;
+import java.util.Locale;
 import java.util.Optional;
 
 import com.google.common.io.Files;
@@ -36,5 +37,21 @@ public class PathUtils {
     }
     String relUrl = basePath.relativize(path).toString();
     return "".equals(relUrl) ? "." : relUrl;
+  }
+  
+  public static String switchToLocale(Locale localeToSwitch, Locale currentLocale, Path outputPath, StampoGlobalConfiguration conf) {
+    if (conf.getLocales().size() < 2 || localeToSwitch.equals(currentLocale)) {
+      return relativePathTo(outputPath, outputPath);
+    }
+    
+    boolean currentLocaleIsDefault = conf.getDefaultLocale().map(currentLocale::equals).orElse(false);
+    boolean localeToSwitchIsDefault = conf.getDefaultLocale().map(localeToSwitch::equals).orElse(false);
+    
+    
+    Path currentLocaleBaseDir = conf.getBaseOutputDir().resolve(currentLocaleIsDefault ? "" : currentLocale.toLanguageTag());
+    Path localeToSwitchBaseDir = conf.getBaseOutputDir().resolve(localeToSwitchIsDefault ? "" : localeToSwitch.toLanguageTag());
+    Path switchedLocalePath = localeToSwitchBaseDir.resolve(currentLocaleBaseDir.relativize(outputPath));
+    
+    return relativePathTo(switchedLocalePath, outputPath);
   }
 }
