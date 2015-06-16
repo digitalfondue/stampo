@@ -279,6 +279,21 @@
 							<appendAssemblyId>false</appendAssemblyId>
 						</configuration> 
 					</execution>
+					<execution>
+						<id>template-basic</id>
+						<phase>compile</phase>
+						<goals>
+							<goal>single</goal>
+						</goals>
+						<configuration>
+							<descriptors>
+								<descriptor>src/assembly/template-basic.xml</descriptor>
+							</descriptors>
+							<finalName>basic</finalName>
+							<outputDirectory>${project.build.directory}/classes/templates</outputDirectory>
+							<appendAssemblyId>false</appendAssemblyId>
+						</configuration> 
+					</execution>
 				</executions>
 			</plugin>
 			<plugin>
