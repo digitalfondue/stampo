@@ -53,6 +53,10 @@ If you want to include stampo as a library, it's available from maven central:
 </dependency>
 ```
 
+## As a maven plugin
+
+Stampo is available as a maven plugin, see https://github.com/digitalfondue/stampo-maven-plugin .
+
 ## Features
 
  - easy multi language support

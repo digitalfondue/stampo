@@ -15,8 +15,8 @@
 							<li class="{% block newsSelected %}{%endblock %}"><a href="{{relativeRootPathLocalized}}/news">{{message('news')}}</a>
 					  </ul>
 					  <ul class="navbar-list right">
-							<li><a href="/{% block section %}{% endblock %}" hreflang="en">EN</a>
-							<li><a href="/it/{% block section %}{% endblock %}" hreflang="it">IT</a>
+							<li><a href="{{switchToLocale('en')}}" hreflang="en">EN</a>
+							<li><a href="{{switchToLocale('it')}}" hreflang="it">IT</a>
 					  </ul>
 				</div>
 			</nav>

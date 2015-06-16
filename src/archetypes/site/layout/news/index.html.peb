@@ -4,9 +4,6 @@
 
 {% block newsSelected %}selected{%endblock %}
 
-{% block section %}news/{{resource.fileNameWithoutExtensions}}{%endblock %}
-
-
 {% block content %}
 <div class="row main-content-description">
 	<div class="twelfe columns">

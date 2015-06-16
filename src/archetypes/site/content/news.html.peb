@@ -11,8 +11,6 @@ paginate-recursive: true
 
 {% block newsSelected %}active{%endblock %}
 
-{% block section %}news{%endblock %}
-
 {% block content %}
 <h1 class="hidden">{{message('news')}}</h1>
 <ul class="news">
