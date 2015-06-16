@@ -1,4 +1,4 @@
 Site
 ----
 
-TBD
+This archetype is a simple multi language website.
