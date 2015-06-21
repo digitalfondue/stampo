@@ -118,6 +118,8 @@ public class IncludeAllPaginator implements Directive {
     
     List<IncludeAllPageWithOutput> pagesWithOutput = pagesWithDepth0Handled.stream()
             .map(iap -> addOutputInformation(iap, resource, includeAllBasePath, locale))
+            .filter(Optional::isPresent)
+            .map(Optional::get)
             .collect(Collectors.toList());
     
     IncludeAllPageAndToc pagesAndToc = addPaginationInformation(pagesWithOutput, includeChildSummary);
@@ -209,21 +211,22 @@ public class IncludeAllPaginator implements Directive {
   
   
   // generate the final output path
-  private IncludeAllPageWithOutput addOutputInformation(IncludeAllPage pages, FileResource baseResource, Path includeAllBasePath, Locale locale) {
+  private Optional<IncludeAllPageWithOutput> addOutputInformation(IncludeAllPage pages, FileResource baseResource, Path includeAllBasePath, Locale locale) {
 
     // depth = 0 is the file that has the include-all directive
     if (pages.depth == 0) {
-      return new IncludeAllPageWithOutput(pages, pages.files.get(0), pages.files.get(0).getPath(), locale);
+      return of(new IncludeAllPageWithOutput(pages, pages.files.get(0), pages.files.get(0).getPath(), locale));
     }
 
     Path baseResourceParentPath = baseResource.getPath().getParent();
-    FileResource virtualResource = pages.files.stream().findFirst()
-        .map(fr -> new VirtualPathFileResource(baseResourceParentPath.resolve(includeAllBasePath.relativize(fr.getPath()).toString()), fr))
-        .orElseThrow(IllegalStateException::new);
+    
+    Optional<FileResource> virtualResource = pages.files.stream().findFirst()
+        .map(fr -> new VirtualPathFileResource(baseResourceParentPath.resolve(includeAllBasePath.relativize(fr.getPath()).toString()), fr));
 
-    Path finalOutputPath = outputPathExtractor.apply(virtualResource).normalize();
-
-    return new IncludeAllPageWithOutput(pages, virtualResource, finalOutputPath, locale);
+    return virtualResource.map(vr -> {
+      Path finalOutputPath = outputPathExtractor.apply(vr).normalize();
+      return new IncludeAllPageWithOutput(pages, vr, finalOutputPath, locale);
+    });
   }
   
   private static class IncludeAllPageAndToc {

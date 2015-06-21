@@ -1,0 +1,7 @@
+locales: 
+        - en
+        - fr
+        - de
+
+taxonomies: [tags, authors]
+#use-ugly-url: true

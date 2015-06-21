@@ -19,7 +19,6 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.nio.file.Files.exists;
 import static java.nio.file.Files.isDirectory;
 import static java.nio.file.Files.newDirectoryStream;
-import static java.nio.file.Files.probeContentType;
 import io.undertow.Handlers;
 import io.undertow.Undertow;
 import io.undertow.io.DefaultIoCallback;
@@ -55,12 +54,12 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 
+import org.apache.tika.Tika;
 import org.xnio.IoUtils;
 
 import ch.digitalfondue.stampo.processor.AlphaNumericStringComparator;
 
 import com.google.common.io.CharStreams;
-
 
 public class ServeAndWatch {
 
@@ -71,6 +70,7 @@ public class ServeAndWatch {
   private final boolean autoReload;
   private final String reloadScript = getReloadScript();
   private final Runnable triggerBuild;
+  private final Tika fileMetadataParser = new Tika();
   
   private final AtomicBoolean run = new AtomicBoolean(false);
   private final CountDownLatch blockOnStart;
@@ -274,7 +274,7 @@ public class ServeAndWatch {
         }
       } else if (exists(p)) {
 
-        String contentType = probeContentType(p);
+        String contentType = fileMetadataParser.detect(p.toString());
 
         boolean isHtmlFile = contentType.equals("text/html");
         setContentTypeAndNoCache(ex, isHtmlFile ? "text/html;charset=utf-8" : contentType);
