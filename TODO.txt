@@ -1,5 +1,14 @@
 TODO:
 
+- refactor the whole rendering pipeline
+- refactor processing pipeline: add an additional stage. 
+  Currently for each resource we output directly the result. Instead, it would be better to first generate
+  a representation of the output tree, and then apply the processors.
+- add a global view of the generated structure as a model parameter for the sitemap generation usecase
+
+~~~ 
+ 
+
 - test pebble inheritance loading + inclusion
 - test freemarker inclusion
 
@@ -9,20 +18,11 @@ TODO:
 - add option for hiding files with a date in the future
 
 
-
 - support a "documentation use case".
 	- TBD:
 		- more tests
 		- add warning when h1..h6 don't have the name parameter (due to a "-" in the text value)
-
-
-- refactor the whole rendering pipeline
-
-- refactor processing pipeline: add an additional stage. 
-  Currently for each resource we output directly the result. Instead, it would be better to first generate
-  a representation of the output tree, and then apply the processors.
-  
-- add a global view of the generated structure as a model parameter for the sitemap generation usecase
+		- support decent chapter linking function
 
 - replace all syserr with java.util.logging : it's more sane if we want to use it as a lib...
 
@@ -37,6 +37,7 @@ TODO:
 
 - autoreload:
 	- return list of changed files (for css only reload)
+	
 
 - override for in config file:
 	- output dir

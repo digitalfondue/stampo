@@ -276,7 +276,7 @@ public class ServeAndWatch {
 
         String contentType = fileMetadataParser.detect(p.toString());
 
-        boolean isHtmlFile = contentType.equals("text/html");
+        boolean isHtmlFile = "text/html".equals(contentType);
         setContentTypeAndNoCache(ex, isHtmlFile ? "text/html;charset=utf-8" : contentType);
         ex.setResponseCode(200);
 
