@@ -239,7 +239,7 @@ public class ServeAndWatch {
       if (isPathDirectory && req.length() > 0 && !req.endsWith("/")) {
         // redirect to req+"/"
         ex.getResponseHeaders().put(Headers.LOCATION, "/" + req + "/");
-        ex.setResponseCode(302);
+        ex.setStatusCode(302);
         return;
       }
 
@@ -249,7 +249,7 @@ public class ServeAndWatch {
 
       if (isDirectory(p)) {
         setContentTypeAndNoCache(ex, "text/html;charset=utf-8");
-        ex.setResponseCode(200);
+        ex.setStatusCode(200);
 
         try (DirectoryStream<Path> ds = newDirectoryStream(p)) {
           Sender sender = ex.getResponseSender();
@@ -278,7 +278,7 @@ public class ServeAndWatch {
 
         boolean isHtmlFile = "text/html".equals(contentType);
         setContentTypeAndNoCache(ex, isHtmlFile ? "text/html;charset=utf-8" : contentType);
-        ex.setResponseCode(200);
+        ex.setStatusCode(200);
 
         Sender sender = ex.getResponseSender();
 
@@ -291,7 +291,7 @@ public class ServeAndWatch {
 
       } else {
         setContentTypeAndNoCache(ex, "text/html;charset=utf-8");
-        ex.setResponseCode(404);
+        ex.setStatusCode(404);
         ex.getResponseSender().send(
             injectWebsocketScript("<!DOCTYPE html><html><head></head><body>404 not found "
                 + ex.getRequestURI().toString() + "</body></html>"), UTF_8);
