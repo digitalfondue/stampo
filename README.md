@@ -49,7 +49,7 @@ If you want to include stampo as a library, it's available from maven central:
 <dependency>
 	<groupId>ch.digitalfondue.stampo</groupId>
 	<artifactId>stampo</artifactId>
-	<version>1.2.1</version>
+	<version>1.2.2</version>
 </dependency>
 ```
 
