@@ -106,7 +106,7 @@ public class ServeAndWatchTest {
       // static content
       Page page = webClient.getPage(url.concat("/texts/1.txt"));
       Assert.assertEquals("text/plain", page.getWebResponse().getContentType());
-      Assert.assertEquals("hello world", page.getWebResponse().getContentAsString("UTF-8"));
+      Assert.assertEquals("hello world", page.getWebResponse().getContentAsString(StandardCharsets.UTF_8));
       
       
       try {
@@ -121,7 +121,7 @@ public class ServeAndWatchTest {
       // newly created static content
       Page page2 = webClient.getPage(url.concat("/texts/2.txt"));
       Assert.assertEquals("text/plain", page2.getWebResponse().getContentType());
-      Assert.assertEquals("hello world 2", page2.getWebResponse().getContentAsString("UTF-8"));
+      Assert.assertEquals("hello world 2", page2.getWebResponse().getContentAsString(StandardCharsets.UTF_8));
       //
       
       
