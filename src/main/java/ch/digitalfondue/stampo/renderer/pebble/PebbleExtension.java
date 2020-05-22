@@ -30,7 +30,6 @@ import java.util.ResourceBundle.Control;
 import ch.digitalfondue.stampo.PathUtils;
 import ch.digitalfondue.stampo.StampoGlobalConfiguration;
 
-import com.mitchellbosecke.pebble.error.AttributeNotFoundException;
 import com.mitchellbosecke.pebble.extension.AbstractExtension;
 import com.mitchellbosecke.pebble.extension.Function;
 import com.mitchellbosecke.pebble.template.EvaluationContext;
@@ -63,16 +62,12 @@ class PebbleExtension extends AbstractExtension {
 
     @Override
     public Object execute(Map<String, Object> args) {
-      try {
-        String localeToSwitch = (String) args.get("locale");
-        EvaluationContext context = (EvaluationContext) args.get("_context");
-        Locale currentLocale = context.getLocale();
-        StampoGlobalConfiguration conf = (StampoGlobalConfiguration) context.get("configuration");
-        Path fileResourceOutputPath = (Path) context.get("fileResourceOutputPath");
-        return PathUtils.switchToLocale(Locale.forLanguageTag(localeToSwitch), currentLocale, fileResourceOutputPath, conf);
-      } catch (AttributeNotFoundException e) {
-        throw new IllegalStateException(e);
-      }
+      String localeToSwitch = (String) args.get("locale");
+      EvaluationContext context = (EvaluationContext) args.get("_context");
+      Locale currentLocale = context.getLocale();
+      StampoGlobalConfiguration conf = (StampoGlobalConfiguration) context.get("configuration");
+      Path fileResourceOutputPath = (Path) context.get("fileResourceOutputPath");
+      return PathUtils.switchToLocale(Locale.forLanguageTag(localeToSwitch), currentLocale, fileResourceOutputPath, conf);
     }
   }
   
@@ -84,15 +79,11 @@ class PebbleExtension extends AbstractExtension {
     
     @Override
     public Object execute(Map<String, Object> args) {
-      try {
-        String locale = (String) args.get("locale");
-        EvaluationContext context = (EvaluationContext) args.get("_context");
-        StampoGlobalConfiguration conf = (StampoGlobalConfiguration) context.get("configuration");
-        return conf.getDefaultLocale().map(l -> l.toLanguageTag().equals(locale) ? "" : locale)
-            .orElse(locale);
-      } catch (AttributeNotFoundException e) {
-        throw new IllegalStateException(e);
-      }
+      String locale = (String) args.get("locale");
+      EvaluationContext context = (EvaluationContext) args.get("_context");
+      StampoGlobalConfiguration conf = (StampoGlobalConfiguration) context.get("configuration");
+      return conf.getDefaultLocale().map(l -> l.toLanguageTag().equals(locale) ? "" : locale)
+          .orElse(locale);
     }
     
     
