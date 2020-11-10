@@ -1,7 +1,8 @@
 Stampo
 ======
 
-A static website/documentation generator with an emphasis on multi language website. [![Build Status](https://travis-ci.org/digitalfondue/stampo.svg?branch=master)](https://travis-ci.org/digitalfondue/stampo) [![Coverage Status](https://coveralls.io/repos/digitalfondue/stampo/badge.svg?branch=master)](https://coveralls.io/r/digitalfondue/stampo?branch=master)
+A static website/documentation generator with an emphasis on multi language website. 
+[![Build Status](https://img.shields.io/github/workflow/status/digitalfondue/stampo/Java%20CI%20with%20Maven)](https://github.com/digitalfondue/stampo/actions?query=workflow%3A%22Java+CI+with+Maven%22)
 
 **Require Java8**
 
