@@ -128,6 +128,9 @@ public class New implements Opts {
 
   private void extractFile(Path outputPath, ZipEntry ze, InputStream zip) {
     Path destinationPath = outputPath.resolve(ze.getName());
+    if (!destinationPath.normalize().startsWith(outputPath.normalize())) {
+      throw new RuntimeException("Bad zip entry");
+    }
     try {
       Files.createDirectories(destinationPath.getParent());
       Files.copy(zip, destinationPath);
